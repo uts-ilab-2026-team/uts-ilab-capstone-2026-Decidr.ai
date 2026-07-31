@@ -4,7 +4,7 @@ Project delivery, technical development and assessment evidence for UTS Innovati
 
 ## Repository layout
 
-    data/          Datasets, organised by phase release
+    data/          Datasets - not in git, create locally (see below)
     decidr/        Python source code
     docs/          Documentation, decision records, meeting notes
     framework/     Claim definition, credibility criteria, assessment methodology
@@ -24,6 +24,15 @@ Requires [uv](https://docs.astral.sh/uv/).
     git clone git@github.com:uts-ilab-2026-team/uts-ilab-capstone-2026-Decidr.ai.git
     cd uts-ilab-capstone-2026-Decidr.ai
     uv sync
+
+## Data
+
+Datasets are not committed to this repository. Create the folder locally and add the
+release files yourself:
+
+    mkdir -p data/raw data/interim data/processed
+
+Ask the team for the current phase release.
 
 ## Team
 
