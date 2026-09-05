@@ -1,0 +1,18 @@
+{
+  "approach_id": "approach_b_graph_hybrid",
+  "configuration_version": "0.1-experimental",
+  "claim_parser": "constrained_local_v1",
+  "retriever": "fts5_plus_optional_sentence_transformer",
+  "reranker": "optional_cross_encoder",
+  "fusion": "reciprocal_rank_fusion_k60",
+  "graph_expander": "bounded_metadata_graph_depth1",
+  "relationship_suggester": "local_heuristic_or_optional_llm_unvalidated",
+  "outcome_reasoner": "deterministic_v1",
+  "explanation_generator": "grounded_structured_v1",
+  "citation_validator": "strict_local_v1",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "cross_encoder_model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+  "prompt_template_version": "approach-b-0.1",
+  "random_seed": 2026,
+  "test_mode": true
+}

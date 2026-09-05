@@ -1,0 +1,29 @@
+{
+  "portfolio_version": "1.2-final",
+  "portfolio_status": "approved_and_frozen",
+  "approval_timestamp": "2026-09-04T03:07:38+10:00",
+  "approver": "Royston",
+  "claim_file": "framework/versions/v1.2-final/candidate_claim_portfolio.csv",
+  "claim_file_sha256": "663d1668168a7b4dd20d1b8e7ff3d727700ddbe05518e7b182c6ea3cd5da1519",
+  "design_file": "framework/versions/v1.2-final/candidate_claim_portfolio_design.csv",
+  "design_file_sha256": "aa5d124ccebfde4d13a473f21b5a3e346e857e793c18a274f2ee7619a5ebe457",
+  "study_configuration_file": "framework/versions/v1.2-final/human_study.json",
+  "study_configuration_sha256": "6fc46a801b7bfaab37fd991bab399d8bf772c11fe56bfbc1e1fb4cdd51412fb5",
+  "git_commit_hash": null,
+  "git_commit_note": "Git metadata is not available in this workspace.",
+  "corpus_fingerprint": "22f34686f926a8364f2d31f66601cbba9198c4927762d5ed167974e012b35478",
+  "ingestion_version": "ingestion-v1",
+  "frozen_components": [
+    "exact_claim_wording",
+    "structured_claim_fields",
+    "evidence_targets",
+    "applicable_periods",
+    "evaluation_split",
+    "quantitative_eligibility_rules",
+    "operational_definitions",
+    "denominator_rules"
+  ],
+  "reference_review_status": "awaiting_independent_reviews",
+  "reasoning_ruleset_status": "development_unfrozen",
+  "held_out_access_status": "sealed"
+}

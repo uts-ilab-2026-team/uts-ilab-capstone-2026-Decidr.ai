@@ -1,28 +1,34 @@
-from pathlib import Path
-
 from loguru import logger
-from tqdm import tqdm
 import typer
 
-from decidr.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
+from decidr.config import DATABASE_PATH, PHASE1_DATA_DIR, PHASE2_DATA_DIR, REPORTS_DIR
+from decidr.ingestion import ingest, write_exports
 
 app = typer.Typer()
 
 
 @app.command()
 def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    input_path: Path = RAW_DATA_DIR / "dataset.csv",
-    output_path: Path = PROCESSED_DATA_DIR / "dataset.csv",
-    # ----------------------------------------------
-):
-    # ---- REPLACE THIS WITH YOUR OWN CODE ----
-    logger.info("Processing dataset...")
-    for i in tqdm(range(10), total=10):
-        if i == 5:
-            logger.info("Something happened for iteration 5.")
-    logger.success("Processing dataset complete.")
-    # -----------------------------------------
+    phase1: str = str(PHASE1_DATA_DIR),
+    phase2: str = str(PHASE2_DATA_DIR),
+    database: str = str(DATABASE_PATH),
+    output: str = str(REPORTS_DIR / "ingestion"),
+) -> None:
+    """Ingest configured releases into the evidence ledger and write registers."""
+    from pathlib import Path
+
+    releases = {"phase1": Path(phase1), "phase2": Path(phase2)}
+    logger.info("Scanning configured releases without modifying raw data")
+    result = ingest(releases, Path(database))
+    write_exports(result, Path(output))
+    logger.success(
+        "Registered {} sources and {} evidence units; fingerprint={}",
+        len(result.sources),
+        len(result.evidence),
+        result.dataset_fingerprint,
+    )
+    for warning in result.warnings:
+        logger.warning(warning)
 
 
 if __name__ == "__main__":

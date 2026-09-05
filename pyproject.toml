@@ -20,18 +20,24 @@ dependencies = [
     "jupyterlab",
     "loguru",
     "matplotlib",
+    "networkx>=3.3,<4",
     "notebook",
     "numpy",
     "pandas",
+    "pydantic>=2.8,<3",
     "pip",
     "pytest",
     "python-dotenv",
     "ruff",
     "scikit-learn",
+    "streamlit>=1.40,<2",
     "tqdm",
     "typer",
 ]
 requires-python = "~=3.11.0"
+
+[project.optional-dependencies]
+semantic = ["sentence-transformers>=3,<6"]
 
 
 [tool.ruff]
@@ -45,4 +51,3 @@ extend-select = ["I"]  # Add import sorting
 [tool.ruff.lint.isort]
 known-first-party = ["decidr"]
 force-sort-within-sections = true
-

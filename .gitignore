@@ -1,5 +1,9 @@
 # Data
 /data/
+/reports/ingestion/
+/reports/evaluation/
+/reports/exports/
+/reports/study_materials/
 
 # Mac OS-specific storage files
 .DS_Store

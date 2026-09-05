@@ -1,0 +1,14 @@
+{
+  "config_version": "1.0",
+  "materiality_threshold": 0.5,
+  "dimension_weights": {
+    "relevance": 1.0,
+    "institutional_authority": 1.0,
+    "directness": 1.0,
+    "temporal_validity": 1.0,
+    "independence": 1.0,
+    "completeness": 1.0,
+    "organisational_applicability": 1.0
+  },
+  "interpretation": "The weighted value is an experimental materiality filter, not a probability of truth. Reviewers provide context-specific dimensions; no source type has permanent authority."
+}

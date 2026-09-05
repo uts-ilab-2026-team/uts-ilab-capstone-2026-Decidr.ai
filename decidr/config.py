@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -17,6 +18,18 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
 
 MODELS_DIR = PROJ_ROOT / "models"
+
+# The client releases may live outside the repository. Environment variables keep
+# those locations machine-specific and prevent accidental copies into version control.
+DEFAULT_CLIENT_DATA_ROOT = PROJ_ROOT.parent / "Decidr Capstone Project" / "04 Data" / "01 Raw"
+CLIENT_DATA_ROOT = Path(os.getenv("DECIDR_CLIENT_DATA_ROOT", DEFAULT_CLIENT_DATA_ROOT))
+PHASE1_DATA_DIR = Path(
+    os.getenv("DECIDR_PHASE1_DATA_DIR", CLIENT_DATA_ROOT / "phase1_framework_development")
+)
+PHASE2_DATA_DIR = Path(
+    os.getenv("DECIDR_PHASE2_DATA_DIR", CLIENT_DATA_ROOT / "phase2_model_development")
+)
+DATABASE_PATH = Path(os.getenv("DECIDR_DATABASE_PATH", PROCESSED_DATA_DIR / "evidence.sqlite3"))
 
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"

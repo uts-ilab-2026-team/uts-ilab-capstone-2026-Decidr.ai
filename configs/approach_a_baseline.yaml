@@ -1,0 +1,13 @@
+{
+  "approach_id": "approach_a_relational_lexical",
+  "configuration_version": "1.0",
+  "claim_parser": "frozen_or_manual",
+  "retriever": "sqlite_fts5_bm25",
+  "reranker": "none",
+  "graph_expander": "none",
+  "relationship_suggester": "human_only",
+  "outcome_reasoner": "deterministic_v1",
+  "explanation_generator": "structured_deterministic_v1",
+  "citation_validator": "strict_local_v1",
+  "test_mode": true
+}

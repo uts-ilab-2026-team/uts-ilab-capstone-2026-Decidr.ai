@@ -1,0 +1,39 @@
+{
+  "configuration_version": "1.1-final",
+  "portfolio_status": "approved_and_frozen",
+  "operational_definitions_status": "approved_and_frozen",
+  "reference_review_status": "awaiting_independent_reviews",
+  "reasoning_ruleset_status": "development_unfrozen",
+  "held_out_access_status": "sealed",
+  "reviewers": {
+    "reviewer-a": "Royston",
+    "reviewer-b": "Isanka"
+  },
+  "provisional_split": {
+    "development": [
+      "CAND-01",
+      "CAND-02",
+      "CAND-03",
+      "CAND-05",
+      "CAND-06",
+      "CAND-07"
+    ],
+    "held_out": [
+      "CAND-04",
+      "CAND-08"
+    ]
+  },
+  "operational_definitions": {
+    "majority_threshold": "strictly_greater_than_50_percent",
+    "within_six_weeks": "no_more_than_42_calendar_days",
+    "onboarding_duration_start": "recorded_assignment_timestamp",
+    "onboarding_duration_end": "recorded_completion_timestamp",
+    "ticket_before_escalation": "ticket_creation_timestamp_precedes_first_identifiable_engineering_escalation_timestamp",
+    "missing_timestamp_handling": "exclude_from_denominator_and_report_as_coverage_gap",
+    "duplicate_or_derived_record_handling": "do_not_count_as_independent_cases",
+    "timezone_handling": "interpret timezone-naive corpus timestamps consistently as Australia/Sydney local time; compare date-only records as local calendar dates"
+  },
+  "ruleset_version": "development-unfrozen",
+  "packet_generation_authorised": true,
+  "final_evaluation_authorised": false
+}
