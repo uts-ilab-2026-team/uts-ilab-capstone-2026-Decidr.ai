@@ -1,24 +1,34 @@
-"""Post-review deterministic assessment and traceable explanation."""
+"""Approach A post-review deterministic baseline assessment."""
 
 import hashlib
-import json
 
 import streamlit as st
 
+from decidr.approach_a import load_profile, run_approach_a
 from decidr.config import DATABASE_PATH, PROJ_ROOT
 from decidr.database import connect, save_claim_assessment
-from decidr.explanation import render_explanation
-from decidr.models import (
-    AtomicClaim,
-    ClaimAssessment,
-    ClaimEvidenceLink,
-    CredibilityAssessment,
-    Source,
+from decidr.models import AtomicClaim, ClaimAssessment
+from decidr.reasoning import load_reasoning_config
+
+
+def _corpus_fingerprint() -> str:
+    """Read the ingestion fingerprint without making the baseline depend on the report."""
+    report_path = PROJ_ROOT / "reports" / "ingestion" / "ingestion_report.md"
+    if not report_path.is_file():
+        return "unknown:no-ingestion-report"
+    report = report_path.read_text(encoding="utf-8")
+    marker = "Dataset fingerprint: `"
+    if marker not in report:
+        return "unknown:not-recorded"
+    return report.split(marker, 1)[1].split("`", 1)[0]
+
+
+st.title("Approach A — Deterministic Baseline Assessment")
+st.info(
+    "No LLM, embedding model, graph expansion, reranking, or automatic relationship "
+    "classification is used. The baseline combines FTS5/BM25 retrieval, completed human "
+    "reviews, and transparent deterministic rules."
 )
-from decidr.reasoning import ReviewedEvidence, assess_claim, load_reasoning_config
-
-
-st.title("Claim Assessment")
 with connect(DATABASE_PATH) as connection:
     completed = connection.execute(
         """
@@ -35,73 +45,62 @@ selection = st.selectbox("Completed review", [f"{row[0]} — {row[1]}" for row i
 claim_id, reviewer = selection.split(" — ", 1)
 with connect(DATABASE_PATH) as connection:
     claim = AtomicClaim.model_validate_json(
-        connection.execute("SELECT payload_json FROM claims WHERE claim_id=?", (claim_id,)).fetchone()[0]
+        connection.execute(
+            "SELECT payload_json FROM claims WHERE claim_id=?", (claim_id,)
+        ).fetchone()[0]
     )
-    rows = connection.execute(
-        """
-        SELECT l.payload_json, c.payload_json, s.payload_json
-        FROM claim_evidence_links l
-        JOIN credibility_assessments c ON c.link_id=l.link_id
-        JOIN evidence e ON e.evidence_id=l.evidence_id
-        JOIN sources s ON s.source_id=e.source_id
-        WHERE l.claim_id=? AND l.reviewer=?
-        """,
-        (claim_id, reviewer),
-    ).fetchall()
-reviewed = []
-for link_json, credibility_json, source_json in rows:
-    link = ClaimEvidenceLink.model_validate_json(link_json)
-    credibility = CredibilityAssessment.model_validate_json(credibility_json)
-    source = Source.model_validate_json(source_json)
-    with connect(DATABASE_PATH) as connection:
-        evidence_row = connection.execute(
-            "SELECT source_id, locator FROM evidence WHERE evidence_id=?", (link.evidence_id,)
-        ).fetchone()
-    reviewed.append(
-        ReviewedEvidence(
-            evidence_id=link.evidence_id,
-            source_id=evidence_row[0],
-            locator=evidence_row[1],
-            relationship=link.relationship,
-            target_match=link.target_match,
-            scope_match=link.scope_match,
-            condition_match=link.condition_match,
-            temporal_match=link.temporal_match,
-            credibility=credibility,
-            duplicate_group=source.duplicate_group,
-            lifecycle_status=source.lifecycle_status,
-        )
-    )
-gaps_text = st.text_area("Expected evidence gaps (one per line)")
-if st.button("Run deterministic assessment"):
-    config = load_reasoning_config(PROJ_ROOT / "configs" / "reasoning.json")
-    result = assess_claim(
-        reviewed,
-        [line.strip() for line in gaps_text.splitlines() if line.strip()],
-        config,
-        claim.evidence_target,
-    )
-    explanation = render_explanation(claim, result)
-    assessment_id = "AUTO-" + hashlib.sha256(f"{claim_id}\0{reviewer}".encode()).hexdigest()[:16]
-    assessment = ClaimAssessment(
-        assessment_id=assessment_id,
-        claim_id=claim_id,
-        reviewer=f"automated:{reviewer}",
-        outcome=result.outcome,
-        confidence=result.confidence,
-        uncertainty_explanation="Confidence follows decisive independent evidence and recorded gaps.",
-        explanation=explanation,
-        review_status="complete",
-    )
-    with connect(DATABASE_PATH) as connection:
-        save_claim_assessment(connection, assessment, list(result.traces))
-    st.metric("Outcome", result.outcome.value)
-    st.metric("Separate confidence", result.confidence.value)
-    st.markdown(explanation)
-    st.download_button("Download assessment Markdown", explanation, f"{claim_id}-assessment.md")
 
-reviewer_counts = {}
+st.caption(f"Using completed human relationship judgements from: {reviewer}")
+gaps_text = st.text_area("Expected evidence gaps (one per line)")
+if st.button("Run Approach A baseline"):
+    profile = load_profile(PROJ_ROOT / "configs" / "approach_a_baseline.yaml")
+    reasoning_config = load_reasoning_config(PROJ_ROOT / "configs" / "reasoning.json")
+    with connect(DATABASE_PATH) as connection:
+        result = run_approach_a(
+            connection,
+            claim.claim_text,
+            claim,
+            reviewer,
+            profile,
+            _corpus_fingerprint(),
+            reasoning_config=reasoning_config,
+            expected_evidence_gaps=[
+                line.strip() for line in gaps_text.splitlines() if line.strip()
+            ],
+        )
+        assessment_id = "AUTO-A-" + hashlib.sha256(
+            f"{claim_id}\0{reviewer}".encode()
+        ).hexdigest()[:16]
+        assessment = ClaimAssessment(
+            assessment_id=assessment_id,
+            claim_id=claim_id,
+            reviewer=f"automated:approach-a:{reviewer}",
+            outcome=result.outcome,
+            confidence=result.confidence,
+            uncertainty_explanation=(
+                "Confidence follows decisive independent evidence and recorded gaps."
+            ),
+            explanation=result.explanation,
+            review_status="complete",
+        )
+        save_claim_assessment(connection, assessment, result.rules_applied)
+
+    left, right = st.columns(2)
+    left.metric("Outcome", result.outcome.value)
+    right.metric("Separate confidence", result.confidence.value)
+    st.markdown(result.explanation)
+    st.download_button(
+        "Download assessment Markdown",
+        result.explanation,
+        f"{claim_id}-approach-a-assessment.md",
+    )
+    with st.expander("Baseline retrieval and reproducibility details"):
+        st.json(result.runtime_metadata)
+
+reviewer_counts: dict[str, int] = {}
 for row in completed:
     reviewer_counts[row[0]] = reviewer_counts.get(row[0], 0) + 1
 if reviewer_counts.get(claim_id, 0) < 2:
-    st.warning("Reference assessment incomplete: fewer than two independent reviewers are complete.")
+    st.warning(
+        "Reference assessment incomplete: fewer than two independent reviewers are complete."
+    )

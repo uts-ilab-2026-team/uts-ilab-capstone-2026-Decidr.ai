@@ -14,8 +14,16 @@ human references, and evaluation framework with Approach B.
 | Deterministic rule trace | Ready; ordered rule IDs and affected evidence persisted |
 | Retrieval trace | Ready; method, ranks, component scores, model metadata and latency persisted |
 | Common response schema | Ready; `AssessmentResult` adapter added |
+| End-to-end baseline runner | Ready; exact registered claim, FTS5/BM25, completed human reviews, deterministic rules |
+| No-LLM boundary | Ready; runtime metadata records `llm_used=false` and automatic relationship classification is disabled |
 | Held-out sealing | Ready; comparison/adjudication/evaluation gates remain closed |
 | TEST MODE and reset | Ready; visible indicators and namespace-limited reset operation |
 
 Test records must use reviewer identifiers beginning `test:`. The reset deletes only that namespace
 and cannot remove genuine study assessments.
+
+`run_approach_a` is the executable comparison boundary. It accepts a registered atomic claim,
+retrieves lexical candidates, loads only completed human relationship judgements for the selected
+reviewer, and emits the shared `AssessmentResult`. Retrieved-but-unreviewed evidence is recorded as
+an evidence gap, so incomplete review lowers confidence rather than being silently treated as
+absence or contradiction.
