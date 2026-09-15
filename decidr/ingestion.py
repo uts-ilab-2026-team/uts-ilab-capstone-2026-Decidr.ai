@@ -363,7 +363,12 @@ def ingest(releases: dict[str, Path], database_path: Path | None = None) -> Inge
         if not root.is_dir():
             result.warnings.append(f"Missing configured release directory: {release}={root}")
             continue
-        for path in sorted(item for item in root.rglob("*") if item.is_file()):
+        for path in sorted(
+            item
+            for item in root.rglob("*")
+            if item.is_file()
+            and not item.name.casefold().endswith(":zone.identifier")
+        ):
             source = build_source(path, root, release)
             if path.suffix.casefold() not in SUPPORTED_SUFFIXES:
                 source.ingestion_status = "excluded"

@@ -103,3 +103,7 @@ Hybrid retrieval is currently the strongest candidate for the main evidence-disc
 However, retrieval should remain a candidate-generation stage only. Temporal validity, source status, evidence dependence, organisational scope and credibility should remain part of later assessment logic.
 
 Further evaluation should test whether graph-based expansion adds useful evidence that hybrid text retrieval fails to recover.
+
+## Ingestion robustness
+
+During local retrieval evaluation, Windows `Zone.Identifier` sidecar files were found to be ingested as separate sources, doubling the registered corpus from 68 to 136 sources. The ingestion scan was updated to ignore these operating-system metadata files, and a regression test was added to prevent recurrence.
