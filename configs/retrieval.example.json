@@ -1,0 +1,26 @@
+{
+  "status": "boilerplate",
+  "default_mode": "lexical",
+  "top_k": 10,
+  "include_superseded": true,
+  "backends": {
+    "lexical": {
+      "enabled": false,
+      "implementation": null
+    },
+    "semantic": {
+      "enabled": false,
+      "implementation": null,
+      "model": null
+    },
+    "graph_aware": {
+      "enabled": false,
+      "implementation": null,
+      "max_hops": null
+    }
+  },
+  "ranking": {
+    "strategy": null,
+    "weights": {}
+  }
+}
