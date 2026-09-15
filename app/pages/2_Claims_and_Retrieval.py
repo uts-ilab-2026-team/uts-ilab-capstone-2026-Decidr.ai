@@ -8,8 +8,8 @@ import uuid
 import pandas as pd
 import streamlit as st
 
-from decidr.claims import check_atomicity, split_claim
 from decidr.candidate_portfolio import load_candidate_portfolio
+from decidr.claims import check_atomicity, split_claim
 from decidr.config import DATABASE_PATH, PROJ_ROOT
 from decidr.database import connect, save_claim, save_retrieval_run
 from decidr.hybrid import reciprocal_rank_fusion
@@ -21,13 +21,18 @@ from decidr.semantic import (
     semantic_search,
 )
 
-
 st.title("Claims and Lexical Retrieval")
 
 
 def optional_date(value: str) -> date | None:
     """Parse an optional reviewer-entered ISO date."""
     return date.fromisoformat(value.strip()) if value.strip() else None
+
+
+def phase_mirror_key(source_id: str, locator: str) -> tuple[str, str]:
+    """Identify the same source/location when it appears in multiple corpus phases."""
+    canonical_source = source_id.split(":", 1)[-1]
+    return canonical_source, locator
 
 
 candidate_path = PROJ_ROOT / "framework" / "candidate_claim_portfolio.csv"
@@ -217,6 +222,7 @@ if editable_claims:
                 save_claim(connection, child)
         st.success(f"Created {len(children)} child claims; original wording was preserved.")
 
+if claims:
     st.download_button(
         "Export claim register JSON",
         json.dumps([claim.model_dump(mode="json") for claim in claims], indent=2),
@@ -256,6 +262,15 @@ if editable_claims:
                     if method == "Semantic"
                     else reciprocal_rank_fusion(lexical, semantic, limit=limit)
                 )
+            mirror_counts: dict[tuple[str, str], int] = {}
+            for item in results:
+                key = phase_mirror_key(item.source_id, item.locator)
+                mirror_counts[key] = mirror_counts.get(key, 0) + 1
+
+            phase_mirror_duplicates = sum(
+                count - 1 for count in mirror_counts.values() if count > 1
+            )
+
             latency_ms = (perf_counter() - started) * 1000
             run_id = f"RUN-{uuid.uuid4().hex}"
             persisted = []
@@ -291,8 +306,21 @@ if editable_claims:
             )
         st.caption("Retrieval proposes candidates only; reviewers must assess applicability.")
         st.caption(f"Run `{run_id}` persisted in {latency_ms:.1f} ms.")
+        if phase_mirror_duplicates:
+            st.warning(
+                f"{phase_mirror_duplicates} result(s) appear to repeat the same source/location "
+                "across corpus phases. They are retained for provenance but should not be treated "
+                "as independent corroborating evidence."
+            )
+        seen_mirror_keys: set[tuple[str, str]] = set()
         for item in results:
-            with st.expander(f"#{item.rank} {item.source_id} — {item.locator}"):
+            key = phase_mirror_key(item.source_id, item.locator)
+            mirror_label = " ⚠ phase mirror" if key in seen_mirror_keys else ""
+            seen_mirror_keys.add(key)
+
+            with st.expander(
+                f"#{item.rank} {item.source_id} — {item.locator}{mirror_label}"
+            ):
                 if method == "Lexical":
                     st.write(item.match_explanation)
                     st.code(f"BM25 display score: {item.score:.6f}")
