@@ -104,3 +104,23 @@ def test_missing_release_is_reported_not_fatal(tmp_path):
     assert result.warnings == [
         f"Missing configured release directory: missing={tmp_path / 'does-not-exist'}"
     ]
+
+
+def test_superseded_date_populates_effective_end_date(tmp_path):
+    root = tmp_path / "release"
+    policy = root / "02_policies" / "POL-99.md"
+    policy.parent.mkdir(parents=True)
+
+    policy.write_text(
+        "# POL-99 — Historical Policy\n\n"
+        "- **Effective date:** 2021-06-01\n"
+        "- **Superseded date:** 2025-02-28\n\n"
+        "## Rule\n\nHistorical rule.\n",
+        encoding="utf-8",
+    )
+
+    result = ingest({"test": root})
+
+    source = next(item for item in result.sources if item.source_id == "test:POL-99")
+    assert source.effective_start_date.isoformat() == "2021-06-01"
+    assert source.effective_end_date.isoformat() == "2025-02-28"

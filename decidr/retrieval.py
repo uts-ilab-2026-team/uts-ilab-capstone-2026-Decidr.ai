@@ -40,16 +40,11 @@ class RetrievalResult:
     match_explanation: str
 
 
-def claim_terms(claim: AtomicClaim, synonyms: dict[str, list[str]] | None = None) -> list[str]:
-    """Build the shared lexical representation from structured claim fields."""
-    values = [
-        claim.subject,
-        claim.predicate,
-        claim.object,
-        claim.process or "",
-        claim.scope or "",
-        *claim.conditions,
-    ]
+def _normalise_terms(
+    values: list[str],
+    synonyms: dict[str, list[str]] | None = None,
+) -> list[str]:
+    """Tokenise query values consistently for lexical retrieval."""
     terms: list[str] = []
     for value in values:
         for term in TOKEN_PATTERN.findall(value.casefold()):
@@ -63,16 +58,35 @@ def claim_terms(claim: AtomicClaim, synonyms: dict[str, list[str]] | None = None
     return terms
 
 
-def lexical_search(
+def claim_terms(claim: AtomicClaim, synonyms: dict[str, list[str]] | None = None) -> list[str]:
+    """Build the lexical representation from structured claim fields."""
+    return _normalise_terms(
+        [
+            claim.subject,
+            claim.predicate,
+            claim.object,
+            claim.process or "",
+            claim.scope or "",
+            *claim.conditions,
+        ],
+        synonyms,
+    )
+
+
+def query_terms(query: str, synonyms: dict[str, list[str]] | None = None) -> list[str]:
+    """Build a lexical representation directly from a free-text corpus query."""
+    return _normalise_terms([query], synonyms)
+
+
+def _lexical_search_terms(
     connection: sqlite3.Connection,
-    claim: AtomicClaim,
-    limit: int = 20,
-    synonyms: dict[str, list[str]] | None = None,
+    terms: list[str],
+    limit: int,
 ) -> list[RetrievalResult]:
-    """Rank evidence with BM25 and state exactly which query terms matched."""
-    terms = claim_terms(claim, synonyms)
+    """Run whole-corpus FTS5 retrieval for already-normalised terms."""
     if not terms:
         return []
+
     query = " OR ".join(f'"{term.replace(chr(34), "")}"' for term in terms)
     rows = connection.execute(
         """
@@ -85,6 +99,7 @@ def lexical_search(
         """,
         (query, limit),
     ).fetchall()
+
     results = []
     for rank, row in enumerate(rows, start=1):
         text_lower = row[3].casefold()
@@ -102,3 +117,31 @@ def lexical_search(
             )
         )
     return results
+
+
+def lexical_search(
+    connection: sqlite3.Connection,
+    claim: AtomicClaim,
+    limit: int = 20,
+    synonyms: dict[str, list[str]] | None = None,
+) -> list[RetrievalResult]:
+    """Rank whole-corpus evidence from a structured claim."""
+    return _lexical_search_terms(
+        connection,
+        claim_terms(claim, synonyms),
+        limit,
+    )
+
+
+def lexical_search_text(
+    connection: sqlite3.Connection,
+    query: str,
+    limit: int = 20,
+    synonyms: dict[str, list[str]] | None = None,
+) -> list[RetrievalResult]:
+    """Rank whole-corpus evidence directly from a free-text query."""
+    return _lexical_search_terms(
+        connection,
+        query_terms(query, synonyms),
+        limit,
+    )

@@ -137,9 +137,11 @@ def build_source(path: Path, root: Path, release: str) -> Source:
     role_function = metadata.get("role / function")
     author = owner or (role_function.split(",", 1)[0] if role_function else None)
     effective_raw = metadata.get("effective date")
+    superseded_raw = metadata.get("superseded date")
     date_raw = metadata.get("date") or metadata.get("interview date")
     creation_date = _parse_date(date_raw or metadata.get("last updated"))
     effective_start = _parse_date(effective_raw)
+    effective_end = _parse_date(superseded_raw)
     approval = metadata.get("approval status")
     if is_superseded:
         lifecycle = "superseded"
@@ -153,7 +155,14 @@ def build_source(path: Path, root: Path, release: str) -> Source:
         "release": "direct:configured_root",
         "checksum": "calculated:sha256",
     }
-    for key in ("version", "approval status", "effective date", "document owner", "owner"):
+    for key in (
+        "version",
+        "approval status",
+        "effective date",
+        "superseded date",
+        "document owner",
+        "owner",
+    ):
         if key in metadata:
             provenance[key.replace(" ", "_")] = f"direct:markdown_metadata:{key}"
     notes = [f"release={release}", f"relative_path={relative.as_posix()}"]
@@ -174,6 +183,7 @@ def build_source(path: Path, root: Path, release: str) -> Source:
         author_or_system=author,
         creation_date=creation_date,
         effective_start_date=effective_start,
+        effective_end_date=effective_end,
         version=metadata.get("version"),
         approval_status=approval,
         formality_level="formal" if source_type in {"policy", "procedure"} else "operational",

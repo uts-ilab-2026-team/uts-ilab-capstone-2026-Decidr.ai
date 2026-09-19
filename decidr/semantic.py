@@ -83,17 +83,17 @@ def _cosine(left: list[float], right: list[float]) -> float:
     return numerator / denominator if denominator else 0.0
 
 
-def semantic_search(
+def _semantic_search_text(
     connection: sqlite3.Connection,
-    claim: AtomicClaim,
+    query: str,
     embedder: Embedder,
     limit: int = 20,
 ) -> list[SemanticResult]:
-    """Rank all evidence by cached local-vector cosine similarity."""
+    """Rank all evidence against a supplied query using cached local embeddings."""
     rows = connection.execute(
         "SELECT evidence_id, source_id, locator, text_content FROM evidence ORDER BY evidence_id"
     ).fetchall()
-    query_vector = embedder.encode([claim_text(claim)])[0]
+    query_vector = embedder.encode([query])[0]
     scored: list[tuple[float, sqlite3.Row]] = []
     missing: list[sqlite3.Row] = []
     vectors: dict[str, list[float]] = {}
@@ -143,3 +143,36 @@ def semantic_search(
         )
         for rank, (score, row) in enumerate(scored[:limit], start=1)
     ]
+
+def semantic_search(
+    connection: sqlite3.Connection,
+    claim: AtomicClaim,
+    embedder: Embedder,
+    limit: int = 20,
+) -> list[SemanticResult]:
+    """Rank whole-corpus evidence from a structured claim."""
+    return _semantic_search_text(
+        connection,
+        claim_text(claim),
+        embedder,
+        limit,
+    )
+
+
+def semantic_search_text(
+    connection: sqlite3.Connection,
+    query: str,
+    embedder: Embedder,
+    limit: int = 20,
+) -> list[SemanticResult]:
+    """Rank whole-corpus evidence directly from a free-text query."""
+    cleaned = query.strip()
+    if not cleaned:
+        return []
+    return _semantic_search_text(
+        connection,
+        cleaned,
+        embedder,
+        limit,
+    )
+
