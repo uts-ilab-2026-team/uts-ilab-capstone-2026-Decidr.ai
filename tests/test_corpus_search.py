@@ -198,8 +198,115 @@ def test_gap_signals_report_missing_structured_data(tmp_path):
     with connect(database) as connection:
         package = search_corpus(
             connection,
-            "DEAL-72 discount approval",
+            "What discount or approval information is missing for DEAL-72?",
             semantic=False,
         )
 
     assert "structured_fields_missing" in package.gap_signals
+
+
+def test_semantic_not_requested_is_not_reported_unavailable(tmp_path):
+    release = tmp_path / "release"
+    policy = release / "02_policies" / "POL-97.md"
+    policy.parent.mkdir(parents=True)
+    policy.write_text(
+        "# POL-97 — Test Policy\n\nFinance approval is required.\n",
+        encoding="utf-8",
+    )
+
+    database = tmp_path / "ledger.sqlite3"
+    ingest({"test": release}, database)
+
+    with connect(database) as connection:
+        package = search_corpus(
+            connection,
+            "Finance approval",
+            semantic=False,
+        )
+
+    assert "semantic_retrieval_unavailable" not in package.gap_signals
+
+
+def test_search_surfaces_explicit_possible_duplicate_reference(tmp_path):
+    release = tmp_path / "release"
+    tasks = release / "06_tasks" / "project-tasks.csv"
+    tasks.parent.mkdir(parents=True)
+    tasks.write_text(
+        "task_id,project,comments\n"
+        "TASK-072,Ferry kickoff,Original onboarding task\n"
+        "TASK-073,Ferry kickoff,Possible duplicate of TASK-072 - imported record\n",
+        encoding="utf-8",
+    )
+
+    database = tmp_path / "ledger.sqlite3"
+    ingest({"test": release}, database)
+
+    with connect(database) as connection:
+        package = search_corpus(
+            connection,
+            "possible duplicate TASK-072 Ferry kickoff",
+            semantic=False,
+        )
+
+    duplicate = next(
+        result
+        for result in package.results
+        if "TASK-073" in result.text
+    )
+
+    assert duplicate.possible_duplicate_of == ("TASK-072",)
+
+
+def test_retrieval_package_serialises_to_json(tmp_path):
+    import json
+
+    from decidr.corpus_search import package_to_json
+
+    release = tmp_path / "release"
+    policy = release / "02_policies" / "POL-96.md"
+    policy.parent.mkdir(parents=True)
+    policy.write_text(
+        "# POL-96 — Test Policy\n\nDiscount approval evidence.\n",
+        encoding="utf-8",
+    )
+
+    database = tmp_path / "ledger.sqlite3"
+    ingest({"test": release}, database)
+
+    with connect(database) as connection:
+        package = search_corpus(
+            connection,
+            "discount approval",
+            semantic=False,
+        )
+
+    payload = json.loads(package_to_json(package))
+
+    assert payload["query"] == "discount approval"
+    assert payload["results"]
+    assert payload["results"][0]["source_title"]
+    assert "gap_signals" in payload
+
+
+def test_blank_fields_do_not_create_gap_for_unrelated_query(tmp_path):
+    release = tmp_path / "release"
+    tasks = release / "06_tasks" / "project-tasks.csv"
+    tasks.parent.mkdir(parents=True)
+    tasks.write_text(
+        "task_id,blockers,completion_date,comments\n"
+        "TASK-072,,,Original onboarding task\n"
+        "TASK-073,,,Possible duplicate of TASK-072\n",
+        encoding="utf-8",
+    )
+
+    database = tmp_path / "ledger.sqlite3"
+    ingest({"test": release}, database)
+
+    with connect(database) as connection:
+        package = search_corpus(
+            connection,
+            "Is TASK-073 a possible duplicate of TASK-072?",
+            semantic=False,
+        )
+
+    assert "structured_fields_missing" not in package.gap_signals

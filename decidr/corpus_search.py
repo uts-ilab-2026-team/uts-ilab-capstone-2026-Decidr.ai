@@ -1,7 +1,7 @@
 """Whole-corpus hybrid retrieval with provenance-aware diversification."""
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date
 import json
 import re
@@ -20,10 +20,12 @@ from decidr.semantic import (
 class CorpusResult:
     evidence_id: str
     source_id: str
+    source_title: str
     locator: str
     text: str
     rank: int
     hybrid_score: float
+    ranking_score: float
     lexical_rank: int | None
     semantic_rank: int | None
     source_type: str
@@ -35,8 +37,9 @@ class CorpusResult:
     creation_date: str | None
     temporal_status: str
     duplicate_group: str | None
-    independence_group: str
+    provenance_group: str
     provenance_sources: tuple[str, ...]
+    possible_duplicate_of: tuple[str, ...]
     missing_fields: tuple[str, ...]
 
 
@@ -46,7 +49,7 @@ class CorpusSearchPackage:
     results: tuple[CorpusResult, ...]
     candidate_count: int
     unique_sources: int
-    independent_source_groups: int
+    distinct_provenance_groups: int
     duplicate_results_collapsed: int
     source_type_counts: dict[str, int]
     semantic_status: str
@@ -161,6 +164,35 @@ def _missing_fields(evidence: dict) -> tuple[str, ...]:
         )
     )
 
+
+_DUPLICATE_REFERENCE_PATTERN = re.compile(
+    r"\b(?:possible\s+)?duplicate\s+of\s+([A-Z][A-Z0-9_-]*-\d+)\b",
+    re.IGNORECASE,
+)
+
+
+def _possible_duplicate_references(evidence: dict) -> tuple[str, ...]:
+    structured = evidence.get("structured_metadata", {})
+    record = structured.get("record")
+
+    if isinstance(record, dict):
+        content = " ".join(
+            str(value)
+            for value in record.values()
+            if value not in (None, "")
+        )
+    else:
+        content = str(evidence.get("text", ""))
+
+    return tuple(
+        sorted(
+            {
+                match.group(1).upper()
+                for match in _DUPLICATE_REFERENCE_PATTERN.finditer(content)
+            }
+        )
+    )
+
 def _evidence_group_key(item, source: dict) -> str:
     duplicate_group = source.get("duplicate_group")
     if duplicate_group:
@@ -169,29 +201,39 @@ def _evidence_group_key(item, source: dict) -> str:
 
 
 
-def _temporal_priority(status: str, has_query_period: bool) -> int:
-    """Prefer temporally applicable evidence without discarding historical context."""
+def _temporal_factor(status: str, has_query_period: bool) -> float:
+    """Adjust relevance modestly for temporal fit without overriding relevance."""
     if not has_query_period:
-        return {
-            "current_or_unspecified": 0,
-            "draft": 1,
-            "historical_or_stale": 2,
-        }.get(status, 1)
+        return 1.0
 
     return {
-        "applicable_to_query_period": 0,
-        "recorded_in_query_period": 1,
-        "temporal_scope_unknown": 2,
-        "recorded_outside_query_period": 3,
-        "outside_query_period": 4,
-    }.get(status, 2)
+        "applicable_to_query_period": 1.25,
+        "recorded_in_query_period": 1.0,
+        "temporal_scope_unknown": 0.90,
+        "recorded_outside_query_period": 0.65,
+        "outside_query_period": 0.50,
+    }.get(status, 0.90)
 
+
+def _missing_data_query(query: str) -> bool:
+    lower = query.casefold()
+    return any(
+        phrase in lower
+        for phrase in (
+            "missing",
+            "incomplete",
+            "blank",
+            "not recorded",
+            "not found",
+        )
+    )
 
 def _gap_signals(
     results: list[CorpusResult],
     semantic_status: str,
     has_query_period: bool,
-    independent_groups: int,
+    provenance_groups: int,
+    missing_data_requested: bool,
 ) -> tuple[str, ...]:
     """Describe retrieval limitations without making a credibility judgement."""
     signals: list[str] = []
@@ -200,13 +242,16 @@ def _gap_signals(
         signals.append("no_evidence_retrieved")
         return tuple(signals)
 
-    if semantic_status != "available":
+    if semantic_status not in {"available", "not_requested"}:
         signals.append("semantic_retrieval_unavailable")
 
-    if independent_groups <= 1:
-        signals.append("limited_independent_source_coverage")
+    if provenance_groups <= 1:
+        signals.append("limited_provenance_diversity")
 
-    if any(result.missing_fields for result in results):
+    if (
+        missing_data_requested
+        and any(result.missing_fields for result in results)
+    ):
         signals.append("structured_fields_missing")
 
     if has_query_period:
@@ -244,7 +289,7 @@ def search_corpus(
             results=(),
             candidate_count=0,
             unique_sources=0,
-            independent_source_groups=0,
+            distinct_provenance_groups=0,
             duplicate_results_collapsed=0,
             source_type_counts={},
             semantic_status="not_requested",
@@ -302,17 +347,33 @@ def search_corpus(
 
     has_query_period = query_start is not None or query_end is not None
 
+    missing_data_requested = _missing_data_query(cleaned)
+    ranking_scores: dict[str, float] = {}
+
+    for key in group_order:
+        representative = grouped[key][0]
+        source = sources[representative.source_id]
+        status = _temporal_status(source, query_start, query_end)
+
+        score = representative.combined_score * _temporal_factor(
+            status,
+            has_query_period,
+        )
+
+        if (
+            missing_data_requested
+            and _missing_fields(
+                evidence_metadata.get(representative.evidence_id, {})
+            )
+        ):
+            score *= 1.75
+
+        ranking_scores[key] = score
+
     ordered_groups = sorted(
         group_order,
         key=lambda key: (
-            _temporal_priority(
-                _temporal_status(
-                    sources[grouped[key][0].source_id],
-                    query_start,
-                    query_end,
-                ),
-                has_query_period,
-            ),
+            -ranking_scores[key],
             -grouped[key][0].combined_score,
         ),
     )
@@ -336,10 +397,12 @@ def search_corpus(
             CorpusResult(
                 evidence_id=representative.evidence_id,
                 source_id=representative.source_id,
+                source_title=source.get("title", representative.source_id),
                 locator=representative.locator,
                 text=representative.text,
                 rank=len(results) + 1,
                 hybrid_score=representative.combined_score,
+                ranking_score=ranking_scores[key],
                 lexical_rank=representative.lexical_rank,
                 semantic_rank=representative.semantic_rank,
                 source_type=source.get("source_type", "unknown"),
@@ -355,8 +418,11 @@ def search_corpus(
                     query_end,
                 ),
                 duplicate_group=source.get("duplicate_group"),
-                independence_group=source_group,
+                provenance_group=source_group,
                 provenance_sources=provenance_sources,
+                possible_duplicate_of=_possible_duplicate_references(
+                    evidence_metadata.get(representative.evidence_id, {})
+                ),
                 missing_fields=_missing_fields(
                     evidence_metadata.get(representative.evidence_id, {})
                 ),
@@ -381,6 +447,7 @@ def search_corpus(
         semantic_status,
         has_query_period,
         len(source_counts),
+        missing_data_requested,
     )
 
     return CorpusSearchPackage(
@@ -388,11 +455,29 @@ def search_corpus(
         results=tuple(results),
         candidate_count=len(fused),
         unique_sources=len(all_sources),
-        independent_source_groups=len(source_counts),
+        distinct_provenance_groups=len(source_counts),
         duplicate_results_collapsed=duplicate_results_collapsed,
         source_type_counts=dict(sorted(source_types.items())),
         semantic_status=semantic_status,
         query_period_start=query_start.isoformat() if query_start else None,
         query_period_end=query_end.isoformat() if query_end else None,
         gap_signals=gaps,
+    )
+
+
+def package_to_dict(package: CorpusSearchPackage) -> dict[str, object]:
+    """Return a transport-safe representation for UI/framework integrations."""
+    return asdict(package)
+
+
+def package_to_json(
+    package: CorpusSearchPackage,
+    indent: int | None = 2,
+) -> str:
+    """Serialise a retrieval package for APIs, debugging and handoff."""
+    return json.dumps(
+        package_to_dict(package),
+        ensure_ascii=False,
+        indent=indent,
+        sort_keys=True,
     )
