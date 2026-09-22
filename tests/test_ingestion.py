@@ -124,3 +124,65 @@ def test_superseded_date_populates_effective_end_date(tmp_path):
     source = next(item for item in result.sources if item.source_id == "test:POL-99")
     assert source.effective_start_date.isoformat() == "2021-06-01"
     assert source.effective_end_date.isoformat() == "2025-02-28"
+
+
+def test_structured_csv_context_populates_existing_evidence_fields(tmp_path):
+    root = tmp_path / "release"
+    tasks = root / "08_project_tasks" / "project_tasks.csv"
+    audit = root / "09_audit_log" / "system_audit_log.csv"
+    deals = root / "07_crm" / "crm_deals.csv"
+    for path in (tasks, audit, deals):
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    tasks.write_text(
+        "task_id,process_or_capability,owner_role,owner_name,due_date\n"
+        "TASK-TEST,Customer Onboarding,Implementation Specialist,Ben Lockwood,2026-01-10\n",
+        encoding="utf-8",
+    )
+    audit.write_text(
+        "event_id,timestamp,system,actor_role,actor_name,action\n"
+        "AUD-TEST,2026-02-18 16:30,Billing Integration,Senior Engineer,Ana Kowalski,"
+        "Deployed fix\n",
+        encoding="utf-8",
+    )
+    deals.write_text(
+        "deal_id,ae_owner,discount_pct,approval_record,approval_role,close_date\n"
+        "DEAL-TEST,Callum Reyes,20,Recorded in CRM,Head of Finance,2026-01-20\n",
+        encoding="utf-8",
+    )
+
+    result = ingest({"test": root})
+    evidence = {item.row_identifier: item for item in result.evidence}
+
+    task = evidence["TASK-TEST"]
+    assert (task.process, task.actor, task.role, task.system) == (
+        "Customer Onboarding",
+        "Ben Lockwood",
+        "Implementation Specialist",
+        "Project System",
+    )
+    assert task.structured_metadata["field_mapping"]["process"] == (
+        "direct:csv_column:process_or_capability"
+    )
+
+    event = evidence["AUD-TEST"]
+    assert (event.actor, event.role, event.system) == (
+        "Ana Kowalski",
+        "Senior Engineer",
+        "Billing Integration",
+    )
+    assert event.structured_metadata["field_mapping"]["system"] == (
+        "direct:csv_column:system"
+    )
+
+    deal = evidence["DEAL-TEST"]
+    assert deal.actor == "Callum Reyes"
+    assert deal.role == "Head of Finance"
+    assert deal.system == "CRM"
+    assert deal.structured_metadata["record"]["discount_pct"] == "20"
+    assert deal.structured_metadata["field_mapping"]["system"] == (
+        "inferred:source_type:crm_records"
+    )
+    assert deal.structured_metadata["field_mapping"]["role"] == (
+        "direct:csv_column:approval_role"
+    )

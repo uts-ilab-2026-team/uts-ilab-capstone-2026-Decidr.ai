@@ -260,6 +260,69 @@ def extract_markdown(source: Source, path: Path) -> list[Evidence]:
     return units
 
 
+def _csv_value(row: dict[str, str], field: str) -> str | None:
+    """Return a non-empty CSV value without inventing missing metadata."""
+    value = row.get(field)
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None
+
+
+def _csv_context(
+    source: Source,
+    row: dict[str, str],
+) -> tuple[dict[str, str | None], dict[str, str]]:
+    """Map explicit structured fields into the shared Evidence context schema."""
+    context: dict[str, str | None] = {
+        "process": None,
+        "actor": None,
+        "role": None,
+        "system": None,
+    }
+    provenance: dict[str, str] = {}
+
+    if source.source_type == "project_tasks":
+        mappings = {
+            "process": "process_or_capability",
+            "actor": "owner_name",
+            "role": "owner_role",
+        }
+        for target, field in mappings.items():
+            value = _csv_value(row, field)
+            if value:
+                context[target] = value
+                provenance[target] = f"direct:csv_column:{field}"
+        context["system"] = "Project System"
+        provenance["system"] = "inferred:source_type:project_tasks"
+
+    elif source.source_type == "audit_events":
+        mappings = {
+            "actor": "actor_name",
+            "role": "actor_role",
+            "system": "system",
+        }
+        for target, field in mappings.items():
+            value = _csv_value(row, field)
+            if value:
+                context[target] = value
+                provenance[target] = f"direct:csv_column:{field}"
+
+    elif source.source_type == "crm_records":
+        actor = _csv_value(row, "ae_owner")
+        if actor:
+            context["actor"] = actor
+            provenance["actor"] = "direct:csv_column:ae_owner"
+        role = _csv_value(row, "approval_role")
+        if role:
+            context["role"] = role
+            provenance["role"] = "direct:csv_column:approval_role"
+        context["system"] = "CRM"
+        provenance["system"] = "inferred:source_type:crm_records"
+
+    return context, provenance
+
+
 def extract_csv(source: Source, path: Path) -> list[Evidence]:
     """Extract one faithful evidence unit per CSV record."""
     units: list[Evidence] = []
@@ -274,6 +337,7 @@ def extract_csv(source: Source, path: Path) -> list[Evidence]:
             faithful = json.dumps(row, ensure_ascii=False, sort_keys=True)
             relevant_dates = [_parse_date(value) for value in row.values()]
             relevant_dates = [value for value in relevant_dates if value]
+            context, field_mapping = _csv_context(source, row)
             units.append(
                 Evidence(
                     evidence_id=_evidence_id(source.source_id, locator),
@@ -282,10 +346,18 @@ def extract_csv(source: Source, path: Path) -> list[Evidence]:
                     text=faithful,
                     source_type=source.source_type,
                     row_identifier=row_identifier,
+                    process=context["process"],
+                    actor=context["actor"],
+                    role=context["role"],
+                    system=context["system"],
                     relevant_start_date=min(relevant_dates) if relevant_dates else None,
                     relevant_end_date=max(relevant_dates) if relevant_dates else None,
                     extraction_method="csv_dict_row_v1",
-                    structured_metadata={"row_number": row_number, "record": row},
+                    structured_metadata={
+                        "row_number": row_number,
+                        "record": row,
+                        "field_mapping": field_mapping,
+                    },
                 )
             )
     return units

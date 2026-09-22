@@ -8,10 +8,12 @@ import re
 import sqlite3
 
 from decidr.hybrid import reciprocal_rank_fusion
+from decidr.models import AtomicClaim
 from decidr.retrieval import lexical_search_text
 from decidr.semantic import (
     SemanticUnavailableError,
     SentenceTransformerEmbedder,
+    claim_text,
     semantic_search_text,
 )
 
@@ -23,6 +25,11 @@ class CorpusResult:
     source_title: str
     locator: str
     text: str
+    row_identifier: str | None
+    process: str | None
+    actor: str | None
+    role: str | None
+    system: str | None
     rank: int
     hybrid_score: float
     ranking_score: float
@@ -272,15 +279,16 @@ def _gap_signals(
 
     return tuple(signals)
 
-def search_corpus(
+def _search_corpus(
     connection: sqlite3.Connection,
     query: str,
     limit: int = 10,
     candidate_limit: int = 30,
     semantic: bool = True,
     max_per_source: int = 2,
+    query_period: tuple[date | None, date | None] | None = None,
 ) -> CorpusSearchPackage:
-    """Search the complete evidence corpus and return diversified evidence."""
+    """Search the complete evidence corpus with an optional explicit period."""
 
     cleaned = query.strip()
     if not cleaned:
@@ -328,7 +336,7 @@ def search_corpus(
 
     sources = _source_metadata(connection)
     evidence_metadata = _evidence_metadata(connection)
-    query_start, query_end = parse_query_period(cleaned)
+    query_start, query_end = query_period or parse_query_period(cleaned)
 
     grouped: dict[str, list] = {}
     group_order: list[str] = []
@@ -382,6 +390,7 @@ def search_corpus(
         items = grouped[key]
         representative = items[0]
         source = sources[representative.source_id]
+        evidence = evidence_metadata.get(representative.evidence_id, {})
 
         duplicate_results_collapsed += len(items) - 1
 
@@ -400,6 +409,11 @@ def search_corpus(
                 source_title=source.get("title", representative.source_id),
                 locator=representative.locator,
                 text=representative.text,
+                row_identifier=evidence.get("row_identifier"),
+                process=evidence.get("process"),
+                actor=evidence.get("actor"),
+                role=evidence.get("role"),
+                system=evidence.get("system"),
                 rank=len(results) + 1,
                 hybrid_score=representative.combined_score,
                 ranking_score=ranking_scores[key],
@@ -421,11 +435,9 @@ def search_corpus(
                 provenance_group=source_group,
                 provenance_sources=provenance_sources,
                 possible_duplicate_of=_possible_duplicate_references(
-                    evidence_metadata.get(representative.evidence_id, {})
+                    evidence
                 ),
-                missing_fields=_missing_fields(
-                    evidence_metadata.get(representative.evidence_id, {})
-                ),
+                missing_fields=_missing_fields(evidence),
             )
         )
 
@@ -462,6 +474,45 @@ def search_corpus(
         query_period_start=query_start.isoformat() if query_start else None,
         query_period_end=query_end.isoformat() if query_end else None,
         gap_signals=gaps,
+    )
+
+
+def search_corpus(
+    connection: sqlite3.Connection,
+    query: str,
+    limit: int = 10,
+    candidate_limit: int = 30,
+    semantic: bool = True,
+    max_per_source: int = 2,
+) -> CorpusSearchPackage:
+    """Search the complete evidence corpus from a free-text query."""
+    return _search_corpus(
+        connection,
+        query,
+        limit=limit,
+        candidate_limit=candidate_limit,
+        semantic=semantic,
+        max_per_source=max_per_source,
+    )
+
+
+def search_claim_corpus(
+    connection: sqlite3.Connection,
+    claim: AtomicClaim,
+    limit: int = 10,
+    candidate_limit: int = 30,
+    semantic: bool = True,
+    max_per_source: int = 2,
+) -> CorpusSearchPackage:
+    """Search from a validated claim and use its explicit applicability period."""
+    return _search_corpus(
+        connection,
+        claim_text(claim),
+        limit=limit,
+        candidate_limit=candidate_limit,
+        semantic=semantic,
+        max_per_source=max_per_source,
+        query_period=(claim.applicable_start_date, claim.applicable_end_date),
     )
 
 

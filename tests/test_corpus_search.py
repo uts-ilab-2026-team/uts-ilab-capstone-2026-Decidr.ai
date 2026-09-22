@@ -1,6 +1,9 @@
-from decidr.corpus_search import search_corpus
+from datetime import date
+
+from decidr.corpus_search import search_claim_corpus, search_corpus
 from decidr.database import connect
 from decidr.ingestion import ingest
+from decidr.models import AtomicClaim
 
 
 def test_search_corpus_collapses_exact_phase_duplicates(tmp_path):
@@ -310,3 +313,69 @@ def test_blank_fields_do_not_create_gap_for_unrelated_query(tmp_path):
         )
 
     assert "structured_fields_missing" not in package.gap_signals
+
+
+def test_claim_search_uses_structured_period_without_date_words(tmp_path):
+    old_root = tmp_path / "old"
+    new_root = tmp_path / "new"
+    old = old_root / "02_policies" / "POL-98.md"
+    new = new_root / "02_policies" / "POL-99.md"
+    old.parent.mkdir(parents=True)
+    new.parent.mkdir(parents=True)
+    old.write_text(
+        "# POL-98 — Discount Policy\n\n"
+        "- **Effective date:** 2021-01-01\n"
+        "- **Superseded date:** 2024-12-31\n\n"
+        "Discount approval threshold was 10%.\n",
+        encoding="utf-8",
+    )
+    new.write_text(
+        "# POL-99 — Discount Policy\n\n"
+        "- **Effective date:** 2025-01-01\n\n"
+        "Discount approval threshold is 15%.\n",
+        encoding="utf-8",
+    )
+    database = tmp_path / "ledger.sqlite3"
+    ingest({"old": old_root, "new": new_root}, database)
+    claim = AtomicClaim(
+        claim_id="C-HISTORICAL",
+        subject="discount approval threshold",
+        predicate="was",
+        object="10%",
+        claim_type="formal_rule",
+        claim_text="The discount approval threshold was 10%.",
+        applicable_start_date=date(2021, 1, 1),
+        applicable_end_date=date(2024, 12, 31),
+    )
+
+    with connect(database) as connection:
+        package = search_claim_corpus(connection, claim, semantic=False)
+
+    assert package.query_period_start == "2021-01-01"
+    assert package.query_period_end == "2024-12-31"
+    assert package.results[0].source_id == "old:POL-98"
+    assert package.results[0].temporal_status == "applicable_to_query_period"
+
+
+def test_corpus_result_exposes_structured_graph_context(tmp_path):
+    release = tmp_path / "release"
+    tasks = release / "08_project_tasks" / "project_tasks.csv"
+    tasks.parent.mkdir(parents=True)
+    tasks.write_text(
+        "task_id,process_or_capability,owner_role,owner_name,comments\n"
+        "TASK-009,Customer Onboarding,Implementation Specialist,Ben Lockwood,"
+        "Completed onboarding handover\n",
+        encoding="utf-8",
+    )
+    database = tmp_path / "ledger.sqlite3"
+    ingest({"test": release}, database)
+
+    with connect(database) as connection:
+        package = search_corpus(connection, "TASK-009 onboarding", semantic=False)
+
+    result = package.results[0]
+    assert result.row_identifier == "TASK-009"
+    assert result.process == "Customer Onboarding"
+    assert result.actor == "Ben Lockwood"
+    assert result.role == "Implementation Specialist"
+    assert result.system == "Project System"

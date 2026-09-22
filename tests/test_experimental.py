@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from decidr.database import connect, save_claim, save_link
-from decidr.graph import build_claim_graph
+from decidr.graph import build_claim_graph, build_ledger_graph
 from decidr.hybrid import reciprocal_rank_fusion
 from decidr.ingestion import ingest
 from decidr.models import AtomicClaim, ClaimEvidenceLink, EvidenceRelationship
@@ -109,3 +109,36 @@ def test_claim_graph_is_bounded_to_linked_evidence(tmp_path):
 def test_rrf_rejects_invalid_constant():
     with pytest.raises(ValueError):
         reciprocal_rank_fusion([], [], k=0)
+
+
+def test_structured_evidence_creates_graph_context_edges(tmp_path):
+    release = tmp_path / "release"
+    audit = release / "09_audit_log" / "system_audit_log.csv"
+    audit.parent.mkdir(parents=True)
+    audit.write_text(
+        "event_id,timestamp,system,actor_role,actor_name,action\n"
+        "AUD-TEST,2026-02-18 16:30,Billing Integration,Senior Engineer,Ana Kowalski,"
+        "Deployed fix\n",
+        encoding="utf-8",
+    )
+    database = tmp_path / "ledger.sqlite3"
+    ingest({"test": release}, database)
+
+    with connect(database) as connection:
+        graph = build_ledger_graph(connection)
+
+    assert "person:Ana Kowalski" in graph
+    assert "role:Senior Engineer" in graph
+    assert "system:Billing Integration" in graph
+    assert "operational_event:AUD-TEST" in graph
+    targets = {
+        target
+        for _, target, data in graph.edges(data=True)
+        if data["relationship"] == "APPLIES_TO"
+    }
+    assert {
+        "person:Ana Kowalski",
+        "role:Senior Engineer",
+        "system:Billing Integration",
+        "operational_event:AUD-TEST",
+    } <= targets
