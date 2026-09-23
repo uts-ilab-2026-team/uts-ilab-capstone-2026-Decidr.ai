@@ -36,7 +36,7 @@ def _ledger(tmp_path):
         encoding="utf-8",
     )
     database = tmp_path / "ledger.sqlite3"
-    result = ingest({"test": release}, database)
+    result = ingest({"phase2": release}, database)
     claim = AtomicClaim(
         claim_id="C1",
         subject="discount",
@@ -59,7 +59,7 @@ def test_semantic_search_caches_evidence_embeddings(tmp_path):
         second = semantic_search(connection, claim, embedder)
         cached = connection.execute("SELECT COUNT(*) FROM embedding_cache").fetchone()[0]
 
-    assert first[0].source_id == "test:POL-01"
+    assert first[0].source_id == "phase2:POL-01"
     assert [item.evidence_id for item in first] == [item.evidence_id for item in second]
     assert embedder.calls == first_calls + 1  # second call encodes only the query
     assert cached == len(ingestion_result.evidence)

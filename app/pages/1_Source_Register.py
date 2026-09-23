@@ -29,7 +29,7 @@ fields = [
     "ingestion_status",
     "exclusion_reason",
 ]
-st.dataframe(pd.DataFrame([{key: item.get(key) for key in fields} for item in sources]), use_container_width=True)
+st.dataframe(pd.DataFrame([{key: item.get(key) for key in fields} for item in sources]), width="stretch")
 if sources:
     selected = st.selectbox("Inspect source", [item["source_id"] for item in sources])
     source = next(item for item in sources if item["source_id"] == selected)

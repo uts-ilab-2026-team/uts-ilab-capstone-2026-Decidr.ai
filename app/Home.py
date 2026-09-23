@@ -1,47 +1,65 @@
-"""Decidr credibility-assessment prototype overview."""
+"""Decidr claim-first employee application, with separate research navigation."""
 
-import sqlite3
-
+from app.employee import (
+    assess_page,
+    explorer_page,
+    register_page,
+    review_page,
+    risks_page,
+    source_page,
+)
 import streamlit as st
 
+from decidr.claim_workflow import corpus_state, initialise_workflow
 from decidr.config import DATABASE_PATH
+from decidr.database import connect
 
-
-st.set_page_config(page_title="Decidr", page_icon="🔎", layout="wide")
-st.title("Decidr evidence credibility prototype")
-st.error("TEST MODE — experimental and test-namespaced records are excluded from formal evaluation.")
-st.warning(
-    "Decision-support research prototype only. It assesses evidential support for scoped "
-    "claims; it does not establish organisational truth and must not be used for automated "
-    "employment, disciplinary, or legal decisions."
-)
-
+st.set_page_config(page_title="Decidr · Claim assessment", page_icon="🔎", layout="wide")
 if not DATABASE_PATH.exists():
-    st.error("No evidence ledger found. Run `uv run python -m decidr.dataset` first.")
+    st.title("Decidr")
+    st.info("Create the Phase 2 evidence ledger first: uv run python -m decidr.dataset")
     st.stop()
-
-with sqlite3.connect(DATABASE_PATH) as connection:
-    source_count = connection.execute("SELECT COUNT(*) FROM sources").fetchone()[0]
-    evidence_count = connection.execute("SELECT COUNT(*) FROM evidence").fetchone()[0]
-    claim_count = connection.execute("SELECT COUNT(*) FROM claims").fetchone()[0]
-    excluded_count = connection.execute(
-        "SELECT COUNT(*) FROM sources WHERE ingestion_status='excluded'"
-    ).fetchone()[0]
-
-columns = st.columns(4)
-columns[0].metric("Registered sources", source_count)
-columns[1].metric("Evidence units", evidence_count)
-columns[2].metric("Claims", claim_count)
-columns[3].metric("Source exclusions", excluded_count)
-
-st.subheader("Baseline workflow")
-st.markdown(
-    "1. Inspect the approved frozen portfolio in **Claims and Retrieval**.\n"
-    "2. Royston and Isanka work independently in isolated reviewer workspaces.\n"
-    "3. Compare and adjudicate development claims only after both reviews are complete.\n"
-    "4. Keep held-out comparison and evaluation sealed until the reasoning ruleset is frozen."
+with connect(DATABASE_PATH) as connection:
+    initialise_workflow(connection)
+    state = corpus_state(connection)
+st.sidebar.title("Decidr")
+st.sidebar.caption("Organisational claims, evidence and knowledge risks")
+st.sidebar.caption(
+    f"Corpus snapshot convention: {state['snapshot_date'] or 'Set date during review'}"
 )
-st.caption(
-    "The corpus is synthetic/anonymised, the claim portfolio is purposive, source authority "
-    "is contextual, and absence of evidence is not evidence of absence."
+st.sidebar.caption("System assessment · Optional subsequent human review · Qualitative confidence")
+nav = st.navigation(
+    {
+        "Employee": [
+            st.Page(assess_page, title="Assess a Claim", default=True),
+            st.Page(register_page, title="Claim Register"),
+            st.Page(risks_page, title="Knowledge Risks"),
+            st.Page(explorer_page, title="Evidence Explorer"),
+        ],
+        "Research / admin": [
+            st.Page(review_page, title="Claim evidence review"),
+            st.Page("pages/1_Source_Register.py", title="Source register"),
+            st.Page("pages/2_Claims_and_Retrieval.py", title="Study claims and retrieval"),
+            st.Page("pages/3_Human_Review.py", title="Blind study review"),
+            st.Page("pages/4_Claim_Assessment.py", title="Approach A baseline"),
+            st.Page("pages/5_Evidence_Graph.py", title="Research evidence graph"),
+            st.Page("pages/6_Reviewer_Comparison.py", title="Reviewer comparison"),
+            st.Page("pages/7_Evaluation.py", title="Evaluation gates"),
+            st.Page("pages/8_Configuration_and_Audit.py", title="Configuration and audit"),
+            st.Page("pages/9_Study_Setup.py", title="Study setup"),
+            st.Page(
+                "pages/10_Approach_B_Graph_and_LLM_Assistant.py",
+                title="Archived question experiments",
+            ),
+            st.Page("pages/11_Approach_Comparison.py", title="Approach comparison"),
+        ],
+    }
 )
+if nav.title == "Archived question experiments":
+    st.warning(
+        "Research artifact: question interpretation and automatic relationship suggestions are experimental and are not used by the employee claim-first workflow."
+    )
+if source_id := st.query_params.get("source"):
+    source_page(source_id)
+else:
+    nav.run()

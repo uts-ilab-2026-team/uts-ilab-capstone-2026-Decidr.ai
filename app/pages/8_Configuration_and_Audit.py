@@ -48,7 +48,7 @@ st.dataframe(
         retrieval_runs,
         columns=["run_id", "claim_id", "method", "model", "version", "latency_ms", "created_at"],
     ),
-    use_container_width=True,
+    width="stretch",
 )
 
 st.subheader("Audit history")
@@ -57,7 +57,7 @@ st.dataframe(
         audit_rows,
         columns=["id", "actor", "action", "entity_type", "entity_id", "changed_fields", "time"],
     ),
-    use_container_width=True,
+    width="stretch",
 )
 
 if st.button("Export all registers and available reports"):

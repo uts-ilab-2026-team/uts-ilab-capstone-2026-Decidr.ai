@@ -1,3 +1,7 @@
+> **Status: archived instructions / research history.** Archived initial implementation plan. Its status and environment statements describe the original checkpoint.
+> Use [current employee guidance](claim_first.md), [architecture](architecture.md) and the
+> [documentation inventory](documentation_inventory.md). The original body below is retained.
+
 # Implementation plan
 
 ## Phase A — discovery and design

@@ -17,7 +17,7 @@ if not claims:
 claim_id = st.selectbox("Claim", claims)
 with connect(DATABASE_PATH) as connection:
     graph = build_claim_graph(connection, claim_id)
-st.graphviz_chart(to_graphviz(graph), use_container_width=True)
+st.graphviz_chart(to_graphviz(graph), width="stretch")
 st.write(f"{graph.number_of_nodes()} nodes · {graph.number_of_edges()} relationships")
 st.dataframe(
     [
@@ -29,5 +29,5 @@ st.dataframe(
         }
         for source, target, attributes in graph.edges(data=True)
     ],
-    use_container_width=True,
+    width="stretch",
 )

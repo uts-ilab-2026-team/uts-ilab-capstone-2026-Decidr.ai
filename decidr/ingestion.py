@@ -7,17 +7,21 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import sqlite3
 import subprocess
+import tempfile
 
+from decidr.corpus import INGESTION_VERSION, RELEASE_PURPOSES, ledger_fingerprint
 from decidr.database import connect, initialise_database, upsert_source, upsert_source_evidence
 from decidr.models import Evidence, Source
+from decidr.source_metadata import METADATA_VERSION, approval_lifecycle, header_date, read_header
 
 SUPPORTED_SUFFIXES = {".md", ".csv"}
 TECHNICAL_NAMES = {"README.md"}
 ANNOTATION_NAMES = {"labelled_claims_sample.csv"}
-METADATA_PATTERN = re.compile(r"^- \*\*(?P<key>[^*]+):\*\*\s*(?P<value>.*)$")
 HEADING_PATTERN = re.compile(r"^(?P<level>#{1,6})\s+(?P<title>.+?)\s*$")
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 SOURCE_CODE_PATTERN = re.compile(r"\b(?:POL|PROC|INT|MTG)-\d+\b")
@@ -34,13 +38,16 @@ class IngestionResult:
     started_at: str = ""
     completed_at: str = ""
     code_version: str = "unknown"
-    configuration_version: str = "ingestion-v1"
+    configuration_version: str = INGESTION_VERSION
+    available_releases: list[dict] = field(default_factory=list)
 
     def summary(self) -> dict[str, object]:
         statuses = Counter(source.ingestion_status for source in self.sources)
         types = Counter(source.source_type for source in self.sources)
         return {
             "dataset_fingerprint": self.dataset_fingerprint,
+            "available_releases": self.available_releases,
+            "active_releases": ["phase2_model_development"],
             "source_count": len(self.sources),
             "evidence_count": len(self.evidence),
             "status_counts": dict(sorted(statuses.items())),
@@ -102,21 +109,6 @@ def _parse_date(value: str | None) -> date | None:
     return date.fromisoformat(match.group())
 
 
-def _markdown_header(path: Path) -> tuple[str, dict[str, str]]:
-    title = path.stem
-    metadata: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8-sig").splitlines():
-        heading = HEADING_PATTERN.match(line)
-        if heading and heading.group("level") == "#":
-            title = heading.group("title").strip()
-        match = METADATA_PATTERN.match(line)
-        if match:
-            metadata[match.group("key").strip().casefold()] = match.group("value").strip()
-        if metadata and line.startswith("## "):
-            break
-    return title, metadata
-
-
 def _source_code(path: Path, title: str) -> str:
     match = SOURCE_CODE_PATTERN.search(f"{path.stem} {title}")
     return match.group() if match else _slug(path.stem)
@@ -127,8 +119,8 @@ def build_source(path: Path, root: Path, release: str) -> Source:
     relative = path.relative_to(root)
     checksum = sha256_file(path)
     source_type = _source_type(relative)
-    title, metadata = (
-        _markdown_header(path) if path.suffix.casefold() == ".md" else (path.stem, {})
+    title, metadata, header_evidence, conflicts = (
+        read_header(path) if path.suffix.casefold() == ".md" else (path.stem, {}, [], [])
     )
     code = _source_code(path, title)
     excluded = path.name in TECHNICAL_NAMES or path.name in ANNOTATION_NAMES
@@ -136,26 +128,67 @@ def build_source(path: Path, root: Path, release: str) -> Source:
     owner = metadata.get("document owner") or metadata.get("owner")
     role_function = metadata.get("role / function")
     author = owner or (role_function.split(",", 1)[0] if role_function else None)
-    effective_raw = metadata.get("effective date")
-    date_raw = metadata.get("date") or metadata.get("interview date")
-    creation_date = _parse_date(date_raw or metadata.get("last updated"))
-    effective_start = _parse_date(effective_raw)
+    creation_date = header_date(metadata, "date", conflicts) or header_date(
+        metadata, "interview date", conflicts
+    )
+    last_updated = header_date(metadata, "last updated", conflicts)
+    effective_start = header_date(metadata, "effective date", conflicts)
+    superseded_date = header_date(metadata, "superseded date", conflicts)
     approval = metadata.get("approval status")
-    if is_superseded:
-        lifecycle = "superseded"
-    elif approval and "draft" in approval.casefold():
-        lifecycle = "draft"
-    else:
-        lifecycle = "current"
+    lifecycle, clauses, approval_conflicts = approval_lifecycle(approval, code)
+    conflicts.extend(approval_conflicts)
+    for entry in header_evidence:
+        entry["source_id"] = f"{release}:{code}"
+        if entry["key"] == "approval status":
+            entry["clauses"] = clauses
+    if is_superseded or superseded_date:
+        explicitly_current = any(
+            clause["scope"] == "own_document"
+            and re.search(r"\bcurrent\b", clause["quote"], re.IGNORECASE)
+            for clause in clauses
+        )
+        if lifecycle in {"draft", "unknown", "withdrawn"} or explicitly_current:
+            conflicts.append(
+                {
+                    "field": "lifecycle_status",
+                    "values": [lifecycle, "superseded"],
+                    "reason": "Supersession conflicts with own approval status.",
+                }
+            )
+            lifecycle = "unknown"
+        else:
+            lifecycle = "superseded"
+    if any(c["field"] == "approval_status" for c in conflicts):
+        lifecycle = "unknown"
+    lifecycle = lifecycle or "current"
+    if effective_start and superseded_date and effective_start > superseded_date:
+        conflicts.append(
+            {
+                "field": "supersession",
+                "values": [effective_start.isoformat(), superseded_date.isoformat()],
+                "reason": "Superseded date precedes effective start; dates retained unresolved.",
+            }
+        )
     provenance = {
         "title": "direct:markdown_h1" if path.suffix.casefold() == ".md" else "inferred:filename",
         "source_type": "inferred:directory",
         "release": "direct:configured_root",
         "checksum": "calculated:sha256",
+        "lifecycle_status": "derived:document_scoped_approval_and_supersession"
+        if approval or is_superseded or superseded_date
+        else "inferred:active_directory_default",
     }
-    for key in ("version", "approval status", "effective date", "document owner", "owner"):
+    for key in metadata:
         if key in metadata:
             provenance[key.replace(" ", "_")] = f"direct:markdown_metadata:{key}"
+    for field_name, header_key in (
+        ("creation_date", "date" if "date" in metadata else "interview date"),
+        ("last_updated_date", "last updated"),
+        ("effective_start_date", "effective date"),
+        ("superseded_date", "superseded date"),
+    ):
+        if header_key in metadata:
+            provenance[field_name] = f"direct:markdown_metadata:{header_key}"
     notes = [f"release={release}", f"relative_path={relative.as_posix()}"]
     supersedes = metadata.get("supersedes")
     if supersedes:
@@ -174,6 +207,8 @@ def build_source(path: Path, root: Path, release: str) -> Source:
         author_or_system=author,
         creation_date=creation_date,
         effective_start_date=effective_start,
+        superseded_date=superseded_date,
+        last_updated_date=last_updated,
         version=metadata.get("version"),
         approval_status=approval,
         formality_level="formal" if source_type in {"policy", "procedure"} else "operational",
@@ -189,6 +224,9 @@ def build_source(path: Path, root: Path, release: str) -> Source:
         checksum=checksum,
         metadata_notes="; ".join(notes),
         metadata_provenance=provenance,
+        metadata_version=METADATA_VERSION,
+        metadata_evidence=header_evidence,
+        metadata_conflicts=conflicts,
     )
 
 
@@ -292,23 +330,45 @@ def _apply_duplicate_and_version_links(sources: list[Source]) -> None:
             group = f"sha256:{checksum}"
             for source in matches:
                 source.duplicate_group = group
+    links: set[tuple[str, str]] = set()
+    by_id = {source.source_id: source for source in sources}
     for source in sources:
-        declared = re.search(r"declared_supersedes=([^;]+)", source.metadata_notes or "")
-        if not declared:
-            continue
-        predecessor_code = SOURCE_CODE_PATTERN.search(declared.group(1))
-        if not predecessor_code:
-            continue
-        candidates = by_code.get(predecessor_code.group(), [])
-        same_release = [
-            item
-            for item in candidates
-            if item.source_id.split(":", 1)[0] == source.source_id.split(":", 1)[0]
-        ]
-        if same_release:
-            predecessor = same_release[0]
-            source.predecessor_source_id = predecessor.source_id
-            predecessor.successor_source_id = source.source_id
+        for entry in source.metadata_evidence:
+            if entry["key"] not in {"supersedes", "superseded by"}:
+                continue
+            codes = set(entry["references"])
+            candidates = [
+                item
+                for code in codes
+                for item in by_code.get(code, [])
+                if item.source_id.split(":", 1)[0] == source.source_id.split(":", 1)[0]
+                and item.source_id != source.source_id
+            ]
+            if len(codes) != 1 or len(candidates) != 1:
+                entry["resolution"] = "unresolved_document_identity"
+                continue
+            other = candidates[0]
+            entry["resolution"] = other.source_id
+            links.add(
+                (source.source_id, other.source_id)
+                if entry["key"] == "supersedes"
+                else (other.source_id, source.source_id)
+            )
+    for sid, source in by_id.items():
+        for field_name, candidates in (
+            ("predecessor_source_id", sorted(b for a, b in links if a == sid)),
+            ("successor_source_id", sorted(a for a, b in links if b == sid)),
+        ):
+            if len(candidates) == 1:
+                setattr(source, field_name, candidates[0])
+            elif candidates:
+                source.metadata_conflicts.append(
+                    {
+                        "field": "supersession",
+                        "values": candidates,
+                        "reason": f"Conflicting {field_name} declarations; no link selected.",
+                    }
+                )
 
 
 def _normalised_shingles(path: Path, width: int = 5) -> set[tuple[str, ...]]:
@@ -360,8 +420,22 @@ def ingest(releases: dict[str, Path], database_path: Path | None = None) -> Inge
     result = IngestionResult(started_at=started)
     source_paths: dict[str, Path] = {}
     for release, root in sorted(releases.items()):
+        purpose = RELEASE_PURPOSES.get(
+            release,
+            {"directory": root.name, "purpose": "unconfigured; not modelling", "active": False},
+        )
+        result.available_releases.append(
+            {
+                "release": release,
+                **purpose,
+                "available": root.is_dir(),
+                "file_count": sum(p.is_file() for p in root.rglob("*")) if root.is_dir() else 0,
+            }
+        )
         if not root.is_dir():
             result.warnings.append(f"Missing configured release directory: {release}={root}")
+            continue
+        if not purpose["active"]:
             continue
         for path in sorted(item for item in root.rglob("*") if item.is_file()):
             source = build_source(path, root, release)
@@ -392,17 +466,56 @@ def ingest(releases: dict[str, Path], database_path: Path | None = None) -> Inge
     result.completed_at = datetime.now(UTC).isoformat()
     result.code_version = code_version(Path(__file__).resolve().parents[1])
     if database_path:
-        initialise_database(database_path)
+        if not result.sources or any(
+            source.ingestion_status == "failed" for source in result.sources
+        ):
+            raise ValueError(
+                "Active Phase 2 corpus is missing or extraction failed; existing ledger preserved."
+            )
+        rebuild_ledger(result, database_path)
+    return result
+
+
+def rebuild_ledger(result: IngestionResult, database_path: Path) -> None:
+    """Build fresh indexes and atomically install them; archive the previous ledger."""
+    database_path.parent.mkdir(parents=True, exist_ok=True)
+    if database_path.exists():
+        with connect(database_path) as existing:
+            try:
+                unchanged = ledger_fingerprint(existing) == result.dataset_fingerprint
+            except (ValueError, sqlite3.OperationalError):
+                unchanged = False
+            if unchanged:
+                # Re-registration of an unchanged active corpus must preserve reviews.
+                return
+    descriptor, temporary = tempfile.mkstemp(
+        prefix="modelling-", suffix=".sqlite3", dir=database_path.parent
+    )
+    os.close(descriptor)
+    fresh = Path(temporary)
+    try:
+        initialise_database(fresh)
         evidence_by_source: dict[str, list[Evidence]] = defaultdict(list)
         for item in result.evidence:
             evidence_by_source[item.source_id].append(item)
-        with connect(database_path) as connection:
+        with connect(fresh) as connection:
             for source in result.sources:
                 upsert_source(connection, source)
                 upsert_source_evidence(
                     connection, source.source_id, evidence_by_source[source.source_id]
                 )
-    return result
+        if database_path.exists():
+            archive = database_path.parent / "archive"
+            archive.mkdir(exist_ok=True)
+            stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+            with (
+                sqlite3.connect(database_path) as previous,
+                sqlite3.connect(archive / f"{database_path.stem}-{stamp}.sqlite3") as backup,
+            ):
+                previous.backup(backup)
+        os.replace(fresh, database_path)
+    finally:
+        fresh.unlink(missing_ok=True)
 
 
 def write_exports(result: IngestionResult, output_dir: Path) -> None:
@@ -440,8 +553,22 @@ def write_exports(result: IngestionResult, output_dir: Path) -> None:
     lines.extend(
         f"- {key.replace('_', ' ').title()}: {value}"
         for key, value in summary.items()
-        if key != "dataset_fingerprint"
+        if key not in {"dataset_fingerprint", "available_releases"}
     )
+    lines.extend(
+        [
+            "",
+            "## Release purposes",
+            "",
+            "Only Phase 2 sources contribute to the active SQLite ledger, indexes and fingerprint.",
+            "Phase 1 remains available on disk as archived framework-development material; it is not modelling evidence.",
+            "",
+        ]
+    )
+    for release in result.available_releases:
+        lines.append(
+            f"- {release['directory']}: {release['purpose']}; available={release['available']}; files={release['file_count']}; active={release['active']}"
+        )
     if result.warnings:
         lines.extend(["", "## Warnings", "", *[f"- {warning}" for warning in result.warnings]])
     (output_dir / "ingestion_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")

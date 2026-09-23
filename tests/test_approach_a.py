@@ -2,7 +2,7 @@ import sqlite3
 
 import pytest
 
-from decidr.approach_a import RegisteredClaimParser, run_approach_a
+from decidr.approach_a import RegisteredClaimParser, load_completed_human_reviews, run_approach_a
 from decidr.models import (
     AtomicClaim,
     ClaimEvidenceLink,
@@ -12,7 +12,7 @@ from decidr.models import (
     EvidenceRelationship,
     Source,
 )
-
+from decidr.retrieval import lexical_search
 
 PROFILE = {
     "approach_id": "approach_a_relational_lexical",
@@ -30,12 +30,14 @@ def _ledger() -> tuple[sqlite3.Connection, AtomicClaim]:
     connection.executescript(
         """
         CREATE TABLE claims (claim_id TEXT PRIMARY KEY, payload_json TEXT NOT NULL);
-        CREATE TABLE sources (source_id TEXT PRIMARY KEY, payload_json TEXT NOT NULL);
+        CREATE TABLE sources (source_id TEXT PRIMARY KEY, payload_json TEXT NOT NULL,
+                              ingestion_status TEXT NOT NULL);
         CREATE TABLE evidence (
             evidence_id TEXT PRIMARY KEY,
             source_id TEXT NOT NULL,
             locator TEXT NOT NULL,
-            text_content TEXT NOT NULL
+            text_content TEXT NOT NULL,
+            payload_json TEXT NOT NULL
         );
         CREATE VIRTUAL TABLE evidence_fts USING fts5(
             evidence_id UNINDEXED, text_content, tokenize='porter unicode61'
@@ -68,7 +70,9 @@ def _ledger() -> tuple[sqlite3.Connection, AtomicClaim]:
         claim_text="Discounts require Finance approval.",
     )
     source = Source(
-        source_id="S1",
+        source_id="phase2:S1",
+        metadata_notes="release=phase2",
+        ingestion_status="ingested",
         title="Discount policy",
         original_file_path="POL-01.md",
         source_type="policy",
@@ -105,12 +109,19 @@ def _ledger() -> tuple[sqlite3.Connection, AtomicClaim]:
         "INSERT INTO claims VALUES (?, ?)", (claim.claim_id, claim.model_dump_json())
     )
     connection.execute(
-        "INSERT INTO sources VALUES (?, ?)", (source.source_id, source.model_dump_json())
+        "INSERT INTO sources VALUES (?, ?, ?)",
+        (source.source_id, source.model_dump_json(), source.ingestion_status),
     )
     evidence_text = "Finance approval is required for discounts."
     connection.execute(
-        "INSERT INTO evidence VALUES (?, ?, ?, ?)",
-        ("E1", source.source_id, "section:rule#block:1", evidence_text),
+        "INSERT INTO evidence VALUES (?, ?, ?, ?, ?)",
+        (
+            "E1",
+            source.source_id,
+            "section:rule#block:1",
+            evidence_text,
+            '{"structured_metadata":{"release":"phase2"}}',
+        ),
     )
     connection.execute("INSERT INTO evidence_fts VALUES (?, ?)", ("E1", evidence_text))
     connection.execute(
@@ -143,6 +154,11 @@ def test_baseline_uses_human_reviews_and_never_an_llm():
     connection, claim = _ledger()
     connection.execute("INSERT INTO claim_assessments VALUES ('C1', 'reviewer-a', 'complete')")
 
+    assert [item.evidence_id for item in lexical_search(connection, claim)] == ["E1"]
+    assert [
+        item.evidence_id for item in load_completed_human_reviews(connection, claim, "reviewer-a")
+    ] == ["E1"]
+
     result = run_approach_a(
         connection,
         claim.claim_text,
@@ -155,7 +171,7 @@ def test_baseline_uses_human_reviews_and_never_an_llm():
     assert result.outcome == ClaimOutcome.SUPPORTED
     assert result.supporting_evidence[0]["evidence_id"] == "E1"
     assert result.citations == [
-        {"evidence_id": "E1", "source_id": "S1", "locator": "section:rule#block:1"}
+        {"evidence_id": "E1", "source_id": "phase2:S1", "locator": "section:rule#block:1"}
     ]
     assert result.runtime_metadata["relationship_source"] == "completed_human_review_only"
     assert result.runtime_metadata["automatic_relationship_classification"] is False

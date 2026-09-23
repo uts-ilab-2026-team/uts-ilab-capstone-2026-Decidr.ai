@@ -60,6 +60,12 @@ registered but excluded from organisational evidence.
 Exact copies receive a shared checksum group. Highly similar non-identical documents are
 only flagged as review candidates and are not automatically treated as dependent.
 
+The [metadata correction findings](docs/source_metadata_correction.md) and
+[versioned development dataset](reports/metadata-correction-development-v1/README.md) retain
+exact header evidence, separate own status from document references, and leave supersession
+boundary semantics unresolved. The corrected fixed-output comparison does not enable either
+experimental alternative. Original datasets, results and working-ledger snapshots are preserved.
+
 ## Quality checks
 
     uv run ruff format --check .
@@ -68,24 +74,27 @@ only flagged as review candidates and are not automatically treated as dependent
 
 The real-corpus smoke test skips automatically when the external releases are unavailable.
 
-## Baseline application
+## Claim-first application
 
-Start the local interface after ingestion:
+Start the employee interface after ingestion:
 
     uv run streamlit run app/Home.py
 
-The baseline workflow is deliberately reviewer-led:
+**Assess a Claim**, **Claim Register**, **Knowledge Risks** and **Evidence Explorer** form
+one claim-first workflow. Submitting confirms the employee's exact wording. Bounded intake
+preserves values and scope; ambiguous meaning stays pending. Resolved submissions receive an automatic provisional verdict and separate qualitative
+confidence before optional human review. Unclassified evidence remains visible and may change
+the verdict. Human corrections create separate immutable assessments. Search and
+provenance inspection remain available without creating an assessment.
 
-1. Create a structured claim and inspect its atomicity warning.
-2. Run FTS5/BM25 lexical retrieval and inspect the terms responsible for every match.
-3. Enter evidence applicability, relationship, credibility dimensions, and a blind
-   claim-level judgement under a reviewer identifier.
-4. Open Claim Assessment only after completing the blind review, run the deterministic
-   rules, and download the cited Markdown explanation.
+Review application claims under **Research / admin → Claim evidence review**. The existing
+Approach A baseline, Approach B experiments, blind reviewer tools, study setup, audit and
+evaluation gates remain in that separate area. No LLM or external service is needed.
 
-Different reviewer identifiers retain separate records. The application warns that the
-reference remains incomplete until at least two independent reviewers finish; it never
-creates a second reviewer automatically.
+See [claim-first usage, architecture and limits](docs/claim_first.md) for automatic assessment,
+source dependence, temporal applicability, sensitivity, print/export and a verified
+source-grounded development demo. Existing reviews are never manufactured to populate the
+employee dashboard. Reviewer identifiers are local audit labels, not access control.
 
 ## Experimental retrieval and graph
 
@@ -109,6 +118,16 @@ claim-level differences. An adjudicator can resolve them or explicitly preserve 
 disagreement; the application does not infer consensus.
 
 ## Evaluation
+
+The [hardcoding audit](docs/retrieval_hardcoding_audit.md) and
+[full-pipeline benchmark protocol](docs/retrieval_benchmark_protocol.md) address
+generalisation to unseen Phase 3 claims. The Phase 2 benchmark compares retrieval
+under matched evidence budgets, distinguishes documents from passages and unjudged
+results from irrelevant evidence, and preserves automatic assessments before review.
+Its proposed labels remain provisional; it does not establish Phase 3 readiness.
+The local [findings and versioned comparisons](reports/retrieval-generalisation-phase2/findings.md)
+include lexical, semantic, hybrid and graph methods, a fresh-ingestion replay, and blind
+review materials.
 
 Run the guarded evaluation and synthetic behavioral challenges with:
 
@@ -137,6 +156,13 @@ same client-data approval required for raw evidence.
 
 ## Documentation
 
+Start with the [documentation inventory](docs/documentation_inventory.md): current guidance,
+unpromoted experiments, known limitations, and archived instructions are explicitly separated.
+The [structured-extraction experiment](docs/structured_extraction_experiment.md) compares
+component extraction, relationships and verdicts on development data only. It is disabled;
+production remains `bounded-evidence-5`. Graph-expansion benefit is measured separately.
+
+
 - `docs/repository_data_audit.md` — corpus and repository audit
 - `docs/architecture.md` — component boundaries and data flow
 - `docs/data_dictionary.md` — field meanings
@@ -155,8 +181,8 @@ same client-data approval required for raw evidence.
   locally; lexical retrieval remains supported.
 - **No evaluation score:** complete two independent human reviews, adjudicate them, and run an
   automated assessment for the same claim. An absent score is expected before that point.
-- **Git status unavailable:** this extracted directory was not a Git working tree during the
-  initial audit; code-version recording therefore remains `unknown` until used in a checkout.
+- **Historical audit differences:** early reports describe a pre-checkout environment and older
+  corpus counts. See the documentation inventory; those reports do not describe current setup.
 
 ## Human-study preparation
 

@@ -7,7 +7,9 @@ import math
 import sqlite3
 from typing import Protocol
 
+from decidr.corpus import eligible_modelling_evidence
 from decidr.models import AtomicClaim
+from decidr.retrieval import SearchQuery
 
 
 class SemanticUnavailableError(RuntimeError):
@@ -75,25 +77,30 @@ def claim_text(claim: AtomicClaim) -> str:
     )
 
 
-def _cosine(left: list[float], right: list[float]) -> float:
-    if len(left) != len(right) or not left:
-        raise ValueError("Embedding vectors must be non-empty and have equal dimensions")
-    numerator = sum(a * b for a, b in zip(left, right, strict=True))
-    denominator = math.sqrt(sum(a * a for a in left)) * math.sqrt(sum(b * b for b in right))
-    return numerator / denominator if denominator else 0.0
-
-
-def semantic_search(
+def semantic_text_search(
     connection: sqlite3.Connection,
-    claim: AtomicClaim,
+    query: SearchQuery,
     embedder: Embedder,
     limit: int = 20,
 ) -> list[SemanticResult]:
-    """Rank all evidence by cached local-vector cosine similarity."""
+    """Rank eligible modelling evidence against neutral raw-question text."""
     rows = connection.execute(
-        "SELECT evidence_id, source_id, locator, text_content FROM evidence ORDER BY evidence_id"
+        """
+        SELECT e.evidence_id, e.source_id, e.locator, e.text_content,
+               e.payload_json, s.payload_json, s.ingestion_status
+        FROM evidence e
+        JOIN sources s ON s.source_id = e.source_id
+        ORDER BY e.evidence_id
+        """
     ).fetchall()
-    query_vector = embedder.encode([claim_text(claim)])[0]
+    rows = [
+        row
+        for row in rows
+        if eligible_modelling_evidence(json.loads(row[5]), json.loads(row[4]), row[6])
+    ]
+    if not rows:
+        return []
+    query_vector = embedder.encode([query.text])[0]
     scored: list[tuple[float, sqlite3.Row]] = []
     missing: list[sqlite3.Row] = []
     vectors: dict[str, list[float]] = {}
@@ -143,3 +150,21 @@ def semantic_search(
         )
         for rank, (score, row) in enumerate(scored[:limit], start=1)
     ]
+
+
+def _cosine(left: list[float], right: list[float]) -> float:
+    if len(left) != len(right) or not left:
+        raise ValueError("Embedding vectors must be non-empty and have equal dimensions")
+    numerator = sum(a * b for a, b in zip(left, right, strict=True))
+    denominator = math.sqrt(sum(a * a for a in left)) * math.sqrt(sum(b * b for b in right))
+    return numerator / denominator if denominator else 0.0
+
+
+def semantic_search(
+    connection: sqlite3.Connection,
+    claim: AtomicClaim,
+    embedder: Embedder,
+    limit: int = 20,
+) -> list[SemanticResult]:
+    """Rank all evidence by cached local-vector cosine similarity."""
+    return semantic_text_search(connection, SearchQuery(claim_text(claim)), embedder, limit)

@@ -3,6 +3,9 @@
 from dataclasses import dataclass
 from typing import Any
 
+from decidr.config import DATABASE_PATH, PROJ_ROOT
+from decidr.corpus import freeze_compatibility
+
 
 @dataclass(frozen=True, slots=True)
 class ComparisonReadiness:
@@ -17,7 +20,10 @@ def comparison_readiness(
     blockers = []
     if completed_reviewers < 2:
         blockers.append("Two independent human reviews are not complete.")
-    development_ready = completed_reviewers >= 2 and development_references > 0
+    compatible, note = freeze_compatibility(DATABASE_PATH, configuration, PROJ_ROOT)
+    if not compatible:
+        blockers.append(note)
+    development_ready = compatible and completed_reviewers >= 2 and development_references > 0
     held_out_ready = (
         development_ready
         and configuration.get("reasoning_ruleset_status") == "approved_and_frozen"
@@ -25,5 +31,7 @@ def comparison_readiness(
         and configuration.get("final_evaluation_authorised") is True
     )
     if not held_out_ready:
-        blockers.append("Held-out comparison remains sealed until ruleset freeze and authorization.")
+        blockers.append(
+            "Held-out comparison remains sealed until ruleset freeze and authorization."
+        )
     return ComparisonReadiness(development_ready, held_out_ready, tuple(blockers))

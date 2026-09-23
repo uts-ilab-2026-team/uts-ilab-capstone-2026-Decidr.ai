@@ -1,8 +1,8 @@
-import json
+import pytest
 
 from decidr.challenges import run_challenges
 from decidr.database import connect, initialise_database, save_claim, save_evaluation_error
-from decidr.evaluate import build_evaluation, write_evaluation
+from decidr.evaluate import build_evaluation
 from decidr.evaluation import outcome_metrics, retrieval_metrics, traceability_check
 from decidr.models import AtomicClaim, ClaimOutcome, EvaluationError
 
@@ -28,7 +28,11 @@ def test_complete_retrieval_pool_calculates_metrics():
 def test_outcome_metrics_are_per_claim_and_confusion_based():
     result = outcome_metrics(
         {"C1": ClaimOutcome.SUPPORTED, "C2": ClaimOutcome.CONTESTED},
-        {"C1": ClaimOutcome.SUPPORTED, "C2": ClaimOutcome.CONTRADICTED, "C3": ClaimOutcome.SUPPORTED},
+        {
+            "C1": ClaimOutcome.SUPPORTED,
+            "C2": ClaimOutcome.CONTRADICTED,
+            "C3": ClaimOutcome.SUPPORTED,
+        },
     )
 
     assert result.evaluated_claims == 2
@@ -57,15 +61,8 @@ def test_all_ten_challenges_pass_and_are_labelled_synthetic():
 def test_empty_reference_evaluation_does_not_fabricate_results(tmp_path):
     database = tmp_path / "ledger.sqlite3"
     initialise_database(database)
-    report = build_evaluation(database)
-    output = tmp_path / "evaluation"
-    write_evaluation(report, output)
-
-    assert report["research_results"]["adjudicated_reference_count"] == 0
-    assert report["research_results"]["outcome_evaluation"]["agreement_rate"] is None
-    assert report["challenge_results_are_research_performance"] is False
-    exported = json.loads((output / "evaluation_results.json").read_text(encoding="utf-8"))
-    assert exported["research_results"]["limitation"].startswith("No resolved")
+    with pytest.raises(ValueError, match="Formal evaluation blocked"):
+        build_evaluation(database)
 
 
 def test_per_claim_error_taxonomy_record_is_persisted(tmp_path):

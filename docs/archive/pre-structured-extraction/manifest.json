@@ -1,0 +1,54 @@
+{
+  "README.md": {
+    "archive": "docs/archive/pre-structured-extraction/README-repository-original.md",
+    "sha256": "d51b40fca5534ace6b42d07a221297b8ed26d20d270b502ae670adc005ce8cfd"
+  },
+  "docs/architecture.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/architecture.md",
+    "sha256": "e4f2efc4c06aab8a1d5021244efef5e7230bdd6e182f3faebd5ca26f5a6b8aee"
+  },
+  "docs/system_card.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/system_card.md",
+    "sha256": "71a9b667f888f7fa166e411aab0561278ce37e6b7104c43759f426b707449221"
+  },
+  "docs/claim_first.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/claim_first.md",
+    "sha256": "bb9f029d2b6784a836dd7c1fd8c0fd0b2d11c65dd6a5702bc983704fd8c54fa9"
+  },
+  "docs/automatic_claim_assessment.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/automatic_claim_assessment.md",
+    "sha256": "28627f91f60ed1e745af98eb9773f3e583aa57795e356206a7f6d6519ac9d8c7"
+  },
+  "docs/guides/adding_a_claim.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/guides/adding_a_claim.md",
+    "sha256": "e70dc55fd69a7551a9e290cc438e052504ba593c08ae1a375d0f7628baed6427"
+  },
+  "docs/guides/adding_a_retrieval_method.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/guides/adding_a_retrieval_method.md",
+    "sha256": "e0789eb809bc8bba95dc6bdae32bd2a6d3ae08e1075740bd6166d44d98b2a329"
+  },
+  "docs/ollama_interpretation.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/ollama_interpretation.md",
+    "sha256": "807e35ef16bb8c1f6d50cce194da34dcc2a045656a9b53fa2c18857b553d0bfc"
+  },
+  "docs/query_frames_1_1.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/query_frames_1_1.md",
+    "sha256": "8cb639fa3c119049ae8b81c079c586ba24098441e26a96d783cc0e9c62fa7f5a"
+  },
+  "docs/interpretation_1_2.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/interpretation_1_2.md",
+    "sha256": "c8d3e50e267aaccb28c554c6cb40d852cce0973c899940b87ab33e9124eaa679"
+  },
+  "docs/interpretation_1_3.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/interpretation_1_3.md",
+    "sha256": "c162a260e0d6e7790711c83d924e593c36faa54ddbdf593899d5824b9ab94872"
+  },
+  "docs/approach_b_experiment.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/approach_b_experiment.md",
+    "sha256": "b8a4a4fd579e2e1a15c82357e715f1ecd490d3315610ba49e1ad8f5c2563d37e"
+  },
+  "docs/implementation_plan.md": {
+    "archive": "docs/archive/pre-structured-extraction/docs/implementation_plan.md",
+    "sha256": "a8f95dac3e3ac5bbd26d8907f2f49668e58b99611239f3495ba728499447c501"
+  }
+}

@@ -39,7 +39,7 @@ outcomes = research["outcome_evaluation"]
 if outcomes["agreement_rate"] is not None:
     st.metric("Outcome agreement", f"{outcomes['agreement_rate']:.1%}")
     st.subheader("Confusion matrix")
-    st.dataframe(pd.DataFrame(outcomes["confusion_matrix"]).T, use_container_width=True)
+    st.dataframe(pd.DataFrame(outcomes["confusion_matrix"]).T, width="stretch")
     st.write("Disagreement claims:", outcomes["disagreements"] or "None")
 else:
     st.info("No outcome metric is shown until resolved adjudicated references can be compared.")
@@ -60,7 +60,7 @@ st.dataframe(
             for item in challenges
         ]
     ),
-    use_container_width=True,
+    width="stretch",
 )
 st.subheader("Error taxonomy")
 with connect(DATABASE_PATH) as connection:
@@ -72,7 +72,7 @@ with connect(DATABASE_PATH) as connection:
         )
     ]
 if errors:
-    st.dataframe(pd.DataFrame(errors), use_container_width=True)
+    st.dataframe(pd.DataFrame(errors), width="stretch")
 elif claims:
     st.info("No qualitative errors have been recorded yet.")
 else:
@@ -102,5 +102,5 @@ if claims:
         st.success("Per-claim error recorded.")
 
 st.subheader("Controlled component comparison")
-st.dataframe(pd.DataFrame(report["component_comparison"]), use_container_width=True)
+st.dataframe(pd.DataFrame(report["component_comparison"]), width="stretch")
 st.caption("Blank observed-benefit/error fields mean no adjudicated comparison has been run.")

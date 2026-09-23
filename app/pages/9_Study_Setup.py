@@ -58,12 +58,12 @@ st.dataframe(
             for claim in claims
         ]
     ),
-    use_container_width=True,
+    width="stretch",
 )
 st.subheader("Completed human assessments")
 st.dataframe(
     pd.DataFrame(completed_rows, columns=["claim_id", "reviewer", "outcome", "confidence"]),
-    use_container_width=True,
+    width="stretch",
 )
 
 with st.form("reviewers"):

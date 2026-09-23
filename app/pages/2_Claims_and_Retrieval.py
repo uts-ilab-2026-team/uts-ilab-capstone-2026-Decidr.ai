@@ -72,9 +72,9 @@ if candidate_path.is_file():
             "evaluation_split": "Split",
         }
     )
-    st.dataframe(display, use_container_width=True, hide_index=True)
+    st.dataframe(display, width="stretch", hide_index=True)
     with st.expander("Full administrative claim metadata"):
-        st.dataframe(candidates, use_container_width=True, hide_index=True)
+        st.dataframe(candidates, width="stretch", hide_index=True)
     st.download_button(
         "Download candidate portfolio CSV",
         candidate_path.read_bytes(),
@@ -90,7 +90,7 @@ if candidate_path.is_file():
     if design_path.is_file():
         with st.expander("Portfolio-design record (excluded from blind reviewer packets)"):
             design = pd.read_csv(design_path, dtype=str, keep_default_na=False)
-            st.dataframe(design, use_container_width=True, hide_index=True)
+            st.dataframe(design, width="stretch", hide_index=True)
             st.download_button(
                 "Download portfolio-design CSV",
                 design_path.read_bytes(),

@@ -1,6 +1,6 @@
 {
   "approach_id": "approach_a_relational_lexical",
-  "configuration_version": "1.1",
+  "configuration_version": "1.1-phase2-only",
   "claim_parser": "frozen_or_manual",
   "retriever": "sqlite_fts5_bm25",
   "retrieval_limit": 30,
@@ -12,5 +12,6 @@
   "ruleset_version": "deterministic_v1",
   "explanation_generator": "structured_deterministic_v1",
   "citation_validator": "strict_local_v1",
-  "test_mode": true
+  "test_mode": true,
+  "active_modelling_release": "phase2"
 }

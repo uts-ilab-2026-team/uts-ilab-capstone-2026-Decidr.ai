@@ -28,6 +28,7 @@ class ReviewedEvidence:
     duplicate_group: str | None = None
     lifecycle_status: str = "current"
     superseded_is_temporally_justified: bool = False
+    policy_practice_violation: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,6 +100,9 @@ def assess_claim(
     excluded: list[tuple[ReviewedEvidence, str]] = []
     applicable: list[ReviewedEvidence] = []
     for item in reviewed:
+        if item.source_id.startswith("phase1:"):
+            excluded.append((item, "framework-development-only release; excluded from modelling"))
+            continue
         matches = (item.target_match, item.scope_match, item.condition_match, item.temporal_match)
         if item.relationship == EvidenceRelationship.NOT_APPLICABLE or not all(matches):
             excluded.append((item, "failed applicability dimensions or marked not applicable"))
@@ -115,22 +119,24 @@ def assess_claim(
     )
 
     independent: list[ReviewedEvidence] = []
-    seen_groups: set[str] = set()
+    seen_groups: set[tuple[str, EvidenceRelationship]] = set()
     for item in sorted(
         applicable, key=lambda value: credibility_value(value.credibility, config), reverse=True
     ):
-        group = item.duplicate_group
-        if group and group in seen_groups:
+        group = item.duplicate_group or item.source_id
+        key = (group, item.relationship)
+        if key in seen_groups and item.relationship != EvidenceRelationship.CONTEXTUAL:
             excluded.append((item, f"dependent duplicate group {group}"))
             continue
-        if group:
-            seen_groups.add(group)
+        seen_groups.add(key)
         independent.append(item)
     traces.append(
         {
             "rule_id": "R2_DEPENDENCE_ADJUSTMENT",
             "evidence_ids": [item.evidence_id for item in independent],
-            "details": {"duplicate_groups_counted_once": sorted(seen_groups)},
+            "details": {
+                "duplicate_groups_counted_once": sorted({group for group, _ in seen_groups})
+            },
         }
     )
 
@@ -154,19 +160,32 @@ def assess_claim(
         "support": sorted({item.credibility.evidence_mode.value for item in supporting}),
         "contradict": sorted({item.credibility.evidence_mode.value for item in all_contradicting}),
     }
-    divergence = bool(supporting and all_contradicting) and (
-        EvidenceMode.FORMAL_RULE.value in modes["support"] + modes["contradict"]
-        and EvidenceMode.OBSERVED_PRACTICE.value in modes["support"] + modes["contradict"]
+    explicit_divergence = [
+        item
+        for item in material
+        if item.policy_practice_violation
+        and evidence_target == EvidenceTarget.PRESCRIBED_RULE
+        and item.credibility.evidence_mode == EvidenceMode.OBSERVED_PRACTICE
+    ]
+    divergence = (
+        bool((supporting or contradicting) and explicit_divergence)
+        or bool(supporting and all_contradicting)
+        and (
+            EvidenceMode.FORMAL_RULE.value in modes["support"] + modes["contradict"]
+            and EvidenceMode.OBSERVED_PRACTICE.value in modes["support"] + modes["contradict"]
+        )
     )
     traces.append(
         {
             "rule_id": "R3_POLICY_PRACTICE_SEPARATION",
-            "evidence_ids": [item.evidence_id for item in supporting + all_contradicting],
+            "evidence_ids": [
+                item.evidence_id for item in supporting + all_contradicting + explicit_divergence
+            ],
             "details": {
                 "modes": modes,
                 "divergence_visible": divergence,
                 "practice_violations_excluded_from_rule_contradiction": [
-                    item.evidence_id for item in practice_divergence
+                    item.evidence_id for item in practice_divergence + explicit_divergence
                 ],
             },
         }
@@ -204,7 +223,9 @@ def assess_claim(
                 "details": {"gaps": list(gaps), "treated_as_contradiction": False},
             }
         )
-    decisive_count = len(supporting) + len(contradicting)
+    decisive_count = len(
+        {item.duplicate_group or item.source_id for item in supporting + contradicting}
+    )
     if decisive_count >= 2 and not gaps:
         confidence = ConfidenceLevel.HIGHER
     elif decisive_count >= 1:

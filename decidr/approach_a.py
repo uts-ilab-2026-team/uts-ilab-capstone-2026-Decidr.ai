@@ -23,7 +23,8 @@ from decidr.models import (
     Source,
 )
 from decidr.reasoning import ReasoningConfig, ReasoningResult, ReviewedEvidence, assess_claim
-from decidr.retrieval import RetrievalResult, lexical_search
+from decidr.retrieval import lexical_search
+from decidr.source_metadata import metadata_constraint
 
 
 @dataclass(slots=True)
@@ -61,24 +62,14 @@ class RegisteredClaimParser:
         return matches
 
 
-@dataclass(slots=True)
-class LexicalRetriever:
-    """Interpretable FTS5/BM25 retriever used by the baseline."""
-
-    connection: sqlite3.Connection
-    synonyms: dict[str, list[str]] | None = None
-
-    def retrieve(self, claim: AtomicClaim, limit: int = 20) -> list[RetrievalResult]:
-        """Retrieve ranked evidence and retain term-level match reasons."""
-        return lexical_search(self.connection, claim, limit=limit, synonyms=self.synonyms)
-
-
 def _period_justifies_superseded_source(claim: AtomicClaim, source: Source) -> bool:
     """Allow a superseded source only when the claim is explicitly scoped to its period."""
     if claim.applicable_start_date is None and claim.applicable_end_date is None:
         return False
     lower_bound = claim.applicable_start_date or date.min
     upper_bound = claim.applicable_end_date or date.max
+    if metadata_constraint(source.model_dump(mode="json"), lower_bound, upper_bound)[0]:
+        return False
     source_start = source.effective_start_date or date.min
     source_end = source.effective_end_date or date.max
     return source_start <= lower_bound and upper_bound <= source_end
@@ -119,7 +110,13 @@ def load_completed_human_reviews(
                 target_match=link.target_match,
                 scope_match=link.scope_match,
                 condition_match=link.condition_match,
-                temporal_match=link.temporal_match,
+                temporal_match=link.temporal_match
+                and metadata_constraint(
+                    source.model_dump(mode="json"),
+                    claim.applicable_start_date or date.min,
+                    claim.applicable_end_date or claim.applicable_start_date or date.max,
+                )[0]
+                is None,
                 credibility=credibility,
                 duplicate_group=source.duplicate_group,
                 lifecycle_status=source.lifecycle_status,
@@ -247,7 +244,7 @@ def run_approach_a(
     started = perf_counter()
     retrieval_started = perf_counter()
     limit = int(config.get("retrieval_limit", 30))
-    retrieved = LexicalRetriever(connection).retrieve(claim, limit=limit)
+    retrieved = lexical_search(connection, claim, limit=limit)
     retrieval_latency_ms = (perf_counter() - retrieval_started) * 1000
     retrieved_ids = {item.evidence_id for item in retrieved}
 

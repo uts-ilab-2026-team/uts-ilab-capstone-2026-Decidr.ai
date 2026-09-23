@@ -1,4 +1,8 @@
-# Adding a claim
+# Adding a research claim
+
+For employee use, follow [current claim assessment](../claim_first.md): automatic assessment
+comes before optional human review. The steps below belong to Research/admin and formal
+study preparation; do not use submitted or held-out study records for development tuning.
 
 1. Start the app and open **Claims and Retrieval**.
 2. Enter the original wording, subject, relationship, object, process, scope, conditions,

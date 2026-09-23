@@ -1,42 +1,32 @@
 # Decidr prototype system card
 
-## Intended use
+This local prototype supports research and review of scoped organisational claims in the
+synthetic/anonymised Northfield corpus. It must not be represented as establishing objective
+truth or making employment, legal, disciplinary or compliance decisions.
 
-Research and reviewer decision support for assessing evidential support for atomic,
-scope-and-time-bounded organisational claims in the synthetic/anonymised Northfield corpus.
+The current employee workflow produces an automatic provisional assessment before optional
+human review. Production remains the bounded deterministic classifier; no paid service or
+LLM is required. Unknown interpretation can block an assessment, while incomplete evidence
+classification is reported alongside an existing provisional verdict. Source excerpts,
+explanations, cited recommendations and immutable history remain available.
 
-## Prohibited use
+The corpus and examples are purposive. Development annotations are author-proposed and
+require independent adjudication. No independent human validation or held-out performance
+is claimed by the structured-extraction experiment. Workflow test counts establish software
+behaviour, not semantic accuracy. Research performance metrics still require genuine
+independent review/adjudication and complete evidence pools where applicable.
 
-It must not make automated employment, disciplinary, legal, compliance, or personnel
-decisions; rank employees; or be represented as establishing objective organisational truth.
+The unpromoted local-model experiment extracts model-proposed assertions. Exact citations
+verify text provenance only; they do not prove actor identity, authority, negation, event
+identity or truth. Unknowns remain explicit. The candidate and its assertion graph overlay
+are disabled, with no production imports or working-ledger writes.
 
-## Components
+Principal remaining risks are unsupported grammar; policy/practice conflation; confusing
+unassigned authority with absent documentation; incorrect negation, boundaries or clocks;
+model-proposed normalisations; incomplete retrieval; unknown source dependence; and missing
+effective dates. Human review follows the automatic verdict and can create a corrected
+snapshot, but does not retroactively make earlier results validated.
 
-The core is local and deterministic: read-only ingestion, SQLite ledger, FTS5 retrieval,
-human applicability/credibility review, explicit rules, cited explanations, and audit/export.
-Optional local embeddings recover paraphrases. A NetworkX graph supports provenance and
-dependence inspection but never decides outcomes. No paid API or LLM is required.
-
-## Data and evaluation
-
-The corpus is synthetic/anonymised and the claim portfolio is purposive. Human adjudication
-is a research judgement rather than unquestionable ground truth. Current research outcome
-performance is unavailable because no two-reviewer adjudicated references exist. Synthetic
-challenge passes are software behavior checks only.
-
-## Principal risks and mitigations
-
-- Context mismatch: reviewers explicitly assess target, scope, conditions, and period.
-- Authority bias: source authority is a contextual dimension, never a universal hierarchy.
-- Copy inflation: checksum groups count once; near copies are flagged for review.
-- Stale evidence: superseded sources require period justification.
-- Policy/practice collapse: formal and observed evidence remain separated in traces.
-- False certainty: four-way outcome and confidence are separate; gaps lower confidence.
-- Semantic false positives: embeddings cannot bypass applicability.
-- Explanation hallucination: deterministic text renders structured evidence and rules only.
-
-## Reproducibility
-
-The ledger records checksums, dataset fingerprint, model identifiers, configurations,
-reviewers, timestamps, splits, retrieval runs, rule traces, and audit events. Randomness is
-not used by the deterministic baseline.
+[Known limitations](known_limitations.md), [comparative experiment](structured_extraction_experiment.md)
+and [current architecture](architecture.md) distinguish measured results from untested
+assumptions. Earlier system-card instructions are [archived](archive/pre-structured-extraction/docs/system_card.md).

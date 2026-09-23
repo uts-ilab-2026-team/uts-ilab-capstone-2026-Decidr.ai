@@ -37,8 +37,8 @@ def test_ingestion_is_traceable_and_idempotent(tmp_path):
     _write_fixture(release)
     database = tmp_path / "ledger.sqlite3"
 
-    first = ingest({"test": release}, database)
-    second = ingest({"test": release}, database)
+    first = ingest({"phase2": release}, database)
+    second = ingest({"phase2": release}, database)
 
     assert len(first.sources) == 3
     assert len(first.evidence) == 4
@@ -53,12 +53,18 @@ def test_ingestion_is_traceable_and_idempotent(tmp_path):
         assert connection.execute("SELECT COUNT(*) FROM evidence").fetchone()[0] == 4
 
 
-def test_exact_duplicates_are_grouped_across_releases(tmp_path):
+def test_exact_duplicates_are_grouped_within_active_release(tmp_path):
     phase1 = tmp_path / "phase1"
     phase2 = tmp_path / "phase2"
     _write_fixture(phase1)
     _write_fixture(phase2)
 
+    import shutil
+
+    shutil.copyfile(
+        phase2 / "02_policies/POL-01_policy.md", phase2 / "02_policies/POL-02_policy.md"
+    )
+    # Distinct source identifiers are extracted from filenames, even for identical content.
     result = ingest({"phase1": phase1, "phase2": phase2})
     policies = [source for source in result.sources if source.source_type == "policy"]
 
@@ -68,16 +74,14 @@ def test_exact_duplicates_are_grouped_across_releases(tmp_path):
 
 
 def test_near_duplicates_are_candidates_not_independent_groups(tmp_path):
-    phase1 = tmp_path / "phase1"
-    phase2 = tmp_path / "phase2"
-    _write_fixture(phase1)
-    _write_fixture(phase2)
-    changed = phase2 / "02_policies" / "POL-01_policy.md"
-    changed.write_text(changed.read_text(encoding="utf-8") + "Minor wording.\n", encoding="utf-8")
-
-    result = ingest({"phase1": phase1, "phase2": phase2})
+    release = tmp_path / "phase2"
+    _write_fixture(release)
+    original = release / "02_policies/POL-01_policy.md"
+    (release / "02_policies/POL-02_policy.md").write_text(
+        original.read_text() + "Minor wording.\n"
+    )
+    result = ingest({"phase2": release})
     policies = [source for source in result.sources if source.source_type == "policy"]
-
     assert all(source.duplicate_group is None for source in policies)
     assert all("near_duplicate_candidate=" in source.metadata_notes for source in policies)
 
@@ -85,7 +89,7 @@ def test_near_duplicates_are_candidates_not_independent_groups(tmp_path):
 def test_exports_include_report_and_registers(tmp_path):
     release = tmp_path / "release"
     _write_fixture(release)
-    result = ingest({"test": release})
+    result = ingest({"phase2": release})
     output = tmp_path / "exports"
 
     write_exports(result, output)

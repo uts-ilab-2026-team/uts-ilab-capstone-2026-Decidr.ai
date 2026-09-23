@@ -7,7 +7,8 @@ from loguru import logger
 import typer
 
 from decidr.challenges import challenge_export
-from decidr.config import DATABASE_PATH, REPORTS_DIR
+from decidr.config import DATABASE_PATH, PROJ_ROOT, REPORTS_DIR
+from decidr.corpus import freeze_compatibility
 from decidr.database import connect
 from decidr.evaluation import outcome_metrics, serialise_evaluation
 from decidr.models import Adjudication, ClaimAssessment, ClaimOutcome
@@ -17,6 +18,15 @@ app = typer.Typer()
 
 def build_evaluation(database_path: Path) -> dict[str, object]:
     """Build only evaluations justified by records currently in the ledger."""
+    configuration = json.loads((PROJ_ROOT / "configs/human_study.json").read_text())
+    compatible, note = freeze_compatibility(database_path, configuration, PROJ_ROOT)
+    if (
+        not compatible
+        or not configuration.get("final_evaluation_authorised")
+        or configuration.get("held_out_access_status") != "unlocked"
+        or configuration.get("reasoning_ruleset_status") != "approved_and_frozen"
+    ):
+        raise ValueError("Formal evaluation blocked: " + note)
     with connect(database_path) as connection:
         adjudication_rows = connection.execute(
             """SELECT payload_json FROM adjudications

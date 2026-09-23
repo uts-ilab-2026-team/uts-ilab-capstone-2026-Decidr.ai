@@ -44,11 +44,9 @@ def test_ingestion_audit_reports_every_registered_source():
     )
     statuses = [source["ingestion_status"] for source in register]
 
-    assert len(register) == 68
-    assert statuses.count("ingested") == 65
-    assert statuses.count("excluded") == 3
+    assert len(register) == 45
+    assert statuses.count("ingested") == 44
+    assert statuses.count("excluded") == 1
     assert {source["source_id"] for source in register if source["ingestion_status"] == "excluded"} == {
-        "phase1:readme",
-        "phase1:labelled-claims-sample",
         "phase2:readme",
     }

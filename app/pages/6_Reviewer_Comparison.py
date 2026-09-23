@@ -58,7 +58,7 @@ st.dataframe(
             for item in selected
         ]
     ),
-    use_container_width=True,
+    width="stretch",
 )
 with connect(DATABASE_PATH) as connection:
     links = connection.execute(
@@ -83,7 +83,7 @@ st.dataframe(
             for row in links
         ]
     ),
-    use_container_width=True,
+    width="stretch",
 )
 
 with st.form("adjudication"):

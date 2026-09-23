@@ -13,7 +13,7 @@ def test_lexical_retrieval_returns_match_reasons(tmp_path):
         encoding="utf-8",
     )
     database = tmp_path / "ledger.sqlite3"
-    ingest({"test": release}, database)
+    ingest({"phase2": release}, database)
     claim = AtomicClaim(
         claim_id="C1",
         subject="discount",
@@ -27,6 +27,6 @@ def test_lexical_retrieval_returns_match_reasons(tmp_path):
         results = lexical_search(connection, claim)
 
     assert results
-    assert results[0].source_id == "test:POL-01"
+    assert results[0].source_id == "phase2:POL-01"
     assert "approval" in results[0].matched_terms
     assert "FTS5 BM25 match on" in results[0].match_explanation

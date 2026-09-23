@@ -17,10 +17,10 @@ def test_real_corpus_read_only_smoke_test():
 
     result = ingest(roots)
 
-    assert len(result.sources) == 68
-    assert len(result.evidence) > 425
+    assert len(result.sources) == 45
+    assert len(result.evidence) == 812
     assert result.warnings == []
-    assert sum(source.duplicate_group is not None for source in result.sources) >= 40
+    assert all(source.source_id.startswith("phase2:") for source in result.sources)
     assert _file_state(roots.values()) == before
 
 

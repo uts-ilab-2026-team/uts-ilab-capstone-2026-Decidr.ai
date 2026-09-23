@@ -1,0 +1,30 @@
+{
+  "DEV-03": [
+    {
+      "question": "What discount percentage triggers Finance approval?",
+      "raw_content": "{\"original_question\":\"What discount percentage triggers Finance approval?\",\"frames\":[{\"original_question\":\"What discount percentage triggers Finance approval?\",\"intent\":\"threshold_lookup\",\"assessment_target\":\"prescribed_rule\",\"process\":\"Finance approval\",\"known_subject\":null,\"predicate\":\"triggers\",\"object\":\"discount percentage\",\"scope\":null,\"conditions\":[],\"numeric_values\":[],\"temporal_scope\":[],\"modality\":null,\"polarity\":\"positive\",\"requested_fields\":[\"threshold\"],\"source_spans\":[{\"field\":\"predicate\",\"text\":\"triggers\"},{\"field\":\"object\",\"text\":\"discount percentage\"},{\"field\":\"process\",\"text\":\"Finance approval\"}],\"needs_clarification\":false,\"missing_material_fields\":[\"object referent\"],\"clarification_question\":\"What does discount percentage refer to?\"}]}"
+    }
+  ],
+  "DEV-07": [
+    {
+      "question": "Who approves renewals",
+      "raw_content": "{\"original_question\":\"Who approves renewals\",\"frames\":[{\"original_question\":\"Who approves renewals\",\"intent\":\"authority_lookup\",\"assessment_target\":\"prescribed_rule\",\"process\":\"renewal approval\",\"known_subject\":null,\"predicate\":\"approves\",\"object\":\"renewals\",\"scope\":null,\"conditions\":[],\"numeric_values\":[],\"temporal_scope\":[],\"modality\":null,\"polarity\":\"positive\",\"requested_fields\":[\"authorised_role\"],\"source_spans\":[{\"field\":\"predicate\",\"text\":\"approves\"},{\"field\":\"object\",\"text\":\"renewals\"}],\"needs_clarification\":false,\"missing_material_fields\":[],\"clarification_question\":null}]}"
+    },
+    {
+      "question": "when must approval be obtained?",
+      "raw_content": "{\"original_question\":\"when must approval be obtained?\",\"frames\":[{\"original_question\":\"when must approval be obtained?\",\"intent\":\"timing_lookup\",\"assessment_target\":\"prescribed_rule\",\"process\":\"approval process\",\"known_subject\":null,\"predicate\":\"must\",\"object\":\"approval\",\"scope\":null,\"conditions\":[\"obtained\"],\"numeric_values\":[],\"temporal_scope\":[\"must\"],\"modality\":\"must\",\"polarity\":\"positive\",\"requested_fields\":[\"timing\"],\"source_spans\":[{\"field\":\"predicate\",\"text\":\"must\"},{\"field\":\"object\",\"text\":\"approval\"},{\"field\":\"conditions\",\"text\":\"obtained\"}],\"needs_clarification\":false,\"missing_material_fields\":[],\"clarification_question\":null}]}"
+    }
+  ],
+  "DEV-10": [
+    {
+      "question": "What procedure must employees follow to decommission a quantum sensor calibration station?",
+      "raw_content": "{\"original_question\":\"What procedure must employees follow to decommission a quantum sensor calibration station?\",\"frames\":[{\"original_question\":\"What procedure must employees follow to decommission a quantum sensor calibration station?\",\"intent\":\"procedure_lookup\",\"assessment_target\":\"prescribed_rule\",\"process\":\"decommissioning a quantum sensor calibration station\",\"known_subject\":\"employees\",\"predicate\":\"follow\",\"object\":\"procedure\",\"scope\":null,\"conditions\":[\"to decommission a quantum sensor calibration station\"],\"numeric_values\":[],\"temporal_scope\":[],\"modality\":\"must\",\"polarity\":\"positive\",\"requested_fields\":[\"procedure\"],\"source_spans\":[{\"field\":\"predicate\",\"text\":\"follow\"},{\"field\":\"object\",\"text\":\"procedure\"},{\"field\":\"process\",\"text\":\"decommissioning a quantum sensor calibration station\"},{\"field\":\"conditions\",\"text\":\"to decommission a quantum sensor calibration station\"}],\"needs_clarification\":false,\"missing_material_fields\":[],\"clarification_question\":null}]}"
+    }
+  ],
+  "DEV-12": [
+    {
+      "question": "What steps must employees follow to request an equipment transfer?",
+      "raw_content": "{\"original_question\":\"What steps must employees follow to request an equipment transfer?\",\"frames\":[{\"original_question\":\"What steps must employees follow to request an equipment transfer?\",\"intent\":\"procedure_lookup\",\"assessment_target\":\"actual_practice\",\"process\":\"equipment transfer request\",\"known_subject\":\"employees\",\"predicate\":\"follow\",\"object\":\"steps to request an equipment transfer\",\"scope\":null,\"conditions\":[\"to request an equipment transfer\"],\"numeric_values\":[],\"temporal_scope\":[],\"modality\":\"must\",\"polarity\":\"positive\",\"requested_fields\":[\"procedure\"],\"source_spans\":[{\"field\":\"predicate\",\"text\":\"follow\"},{\"field\":\"object\",\"text\":\"steps to request an equipment transfer\"},{\"field\":\"known_subject\",\"text\":\"employees\"},{\"field\":\"conditions\",\"text\":\"to request an equipment transfer\"}],\"needs_clarification\":false,\"missing_material_fields\":[],\"clarification_question\":null}]}"
+    }
+  ]
+}

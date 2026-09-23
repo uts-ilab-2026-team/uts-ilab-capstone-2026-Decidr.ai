@@ -43,6 +43,8 @@ class EvidenceMode(StrEnum):
 
 class EvidenceTarget(StrEnum):
     PRESCRIBED_RULE = "prescribed_rule"
+    ACTUAL_PRACTICE = "actual_practice"
+    RECORDED_STATE = "recorded_state"
     ROUTINE_PRACTICE = "routine_practice"
     SPECIFIC_EVENT = "specific_event"
     SYSTEM_RECORD = "system_record"
@@ -59,6 +61,8 @@ class Source(StrictModel):
     creation_date: date | None = None
     effective_start_date: date | None = None
     effective_end_date: date | None = None
+    superseded_date: date | None = None
+    last_updated_date: date | None = None
     version: str | None = None
     approval_status: str | None = None
     formality_level: str | None = None
@@ -72,6 +76,9 @@ class Source(StrictModel):
     checksum: str = Field(pattern=r"^[0-9a-f]{64}$")
     metadata_notes: str | None = None
     metadata_provenance: dict[str, str] = Field(default_factory=dict)
+    metadata_version: str | None = None
+    metadata_evidence: list[dict[str, Any]] = Field(default_factory=list)
+    metadata_conflicts: list[dict[str, Any]] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_dates(self) -> "Source":
@@ -128,6 +135,9 @@ class AtomicClaim(StrictModel):
     evaluation_split: str = Field(default="development", pattern="^(development|held_out)$")
     inclusion_status: str = Field(default="included", pattern="^(included|excluded)$")
     exclusion_reason: str | None = None
+    proposition_polarity: str = Field(
+        default="positive", pattern="^(positive|negative|permission_without_approval)$"
+    )
     original_claim_text: str | None = None
     parent_claim_id: str | None = None
     portfolio_status: str = Field(
