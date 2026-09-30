@@ -31,7 +31,7 @@ jobs:
 
       - name: Lint graph files
         run: >-
-          python -m ruff check --ignore N999
+          python -m ruff check
           framework/graph_prototype
           decidr/graph_app
           tests/test_graph_prototype.py
