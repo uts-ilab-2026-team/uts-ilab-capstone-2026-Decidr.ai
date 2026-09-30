@@ -1,3 +1,4 @@
+# ruff: noqa: N999
 """Home page for the standalone graph-governed prototype."""
 
 from framework.graph_prototype import GRAPH_PATH, OrganisationalGraph

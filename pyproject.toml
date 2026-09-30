@@ -20,6 +20,7 @@ dependencies = [
     "jupyterlab",
     "loguru",
     "matplotlib",
+    "networkx>=3.3,<4",
     "notebook",
     "numpy",
     "pandas",
@@ -28,6 +29,7 @@ dependencies = [
     "python-dotenv",
     "ruff",
     "scikit-learn",
+    "streamlit>=1.40,<2",
     "tqdm",
     "typer",
 ]
