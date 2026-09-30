@@ -1,0 +1,350 @@
+{
+  "graph_version": "initial-prototype-1.0",
+  "nodes": [
+    {
+      "id": "person:lior-ben-david",
+      "kind": "person",
+      "label": "Lior Ben-David",
+      "attributes": {"status": "active", "start_date": "2022-04-01", "remote": "in-office"}
+    },
+    {
+      "id": "person:ana-kowalski",
+      "kind": "person",
+      "label": "Ana Kowalski",
+      "attributes": {"status": "active", "start_date": "2021-02-01", "remote": "remote"}
+    },
+    {
+      "id": "person:marcus-lee",
+      "kind": "person",
+      "label": "Marcus Lee",
+      "attributes": {"status": "active", "start_date": "2023-01-09", "remote": "in-office"}
+    },
+    {
+      "id": "person:priya-nair",
+      "kind": "person",
+      "label": "Priya Nair",
+      "attributes": {"status": "active", "start_date": "2020-08-03", "remote": "in-office"}
+    },
+    {
+      "id": "role:head-engineering",
+      "kind": "role",
+      "label": "Head of Engineering",
+      "attributes": {"responsibilities": "Engineering delivery and production deployment sign-off", "level": "executive"}
+    },
+    {
+      "id": "role:senior-engineer",
+      "kind": "role",
+      "label": "Senior Engineer",
+      "attributes": {"responsibilities": "Core platform engineering and billing integration", "level": "senior"}
+    },
+    {
+      "id": "role:head-sales",
+      "kind": "role",
+      "label": "Head of Sales",
+      "attributes": {"responsibilities": "Sales leadership and deal execution", "level": "executive"}
+    },
+    {
+      "id": "role:head-finance",
+      "kind": "role",
+      "label": "Head of Finance & People Ops",
+      "attributes": {"responsibilities": "Financial approval and people operations", "level": "executive"}
+    },
+    {
+      "id": "function:engineering",
+      "kind": "function",
+      "label": "Engineering & Product",
+      "attributes": {}
+    },
+    {
+      "id": "function:sales",
+      "kind": "function",
+      "label": "Sales",
+      "attributes": {}
+    },
+    {
+      "id": "function:finance",
+      "kind": "function",
+      "label": "Finance & People Ops",
+      "attributes": {}
+    },
+    {
+      "id": "process:discount-approval",
+      "kind": "process",
+      "label": "P3 Discount approval",
+      "attributes": {"code": "P3"}
+    },
+    {
+      "id": "process:billing-integration",
+      "kind": "process",
+      "label": "P7 Billing integration",
+      "attributes": {"code": "P7"}
+    },
+    {
+      "id": "system:crm",
+      "kind": "system",
+      "label": "CRM",
+      "attributes": {}
+    },
+    {
+      "id": "system:billing",
+      "kind": "system",
+      "label": "Billing Integration",
+      "attributes": {}
+    },
+    {
+      "id": "fact:discount-new-business",
+      "kind": "fact",
+      "label": "New-business discount approval",
+      "attributes": {
+        "statement": "Discounts of 15 percent or greater for new-business deals require written approval from the Head of Finance and People Ops before Closed Won",
+        "category": "authority",
+        "scope": "new-business discounts"
+      }
+    },
+    {
+      "id": "fact:discount-renewal",
+      "kind": "fact",
+      "label": "Renewal discount cap",
+      "attributes": {
+        "statement": "Renewal discounts are capped at 10 percent unless separately approved",
+        "category": "authority",
+        "scope": "renewal discounts"
+      }
+    },
+    {
+      "id": "fact:billing-signoff-2026-02-18",
+      "kind": "fact",
+      "label": "Emergency billing deployment sign-off",
+      "attributes": {
+        "statement": "The emergency billing deployment recorded on 18 February 2026 received Head of Engineering sign-off before release",
+        "category": "timeline",
+        "scope": "billing deployment on 2026-02-18"
+      }
+    },
+    {
+      "id": "document:POL-01",
+      "kind": "document",
+      "label": "POL-01 Discount Approval Policy v3.0",
+      "attributes": {
+        "type": "policy",
+        "status": "current",
+        "approval_status": "approved",
+        "effective_date": "2025-03-01",
+        "last_updated": "2025-03-01",
+        "source_class": "approved_policy",
+        "duplicate_group": "POL-01-v3"
+      }
+    },
+    {
+      "id": "document:POL-02-SUPERSEDED",
+      "kind": "document",
+      "label": "POL-02 Discount Approval Policy v2 — Superseded",
+      "attributes": {
+        "type": "policy",
+        "status": "superseded",
+        "approval_status": "superseded",
+        "effective_date": "2023-01-01",
+        "effective_end_date": "2025-02-28",
+        "last_updated": "2023-01-01",
+        "source_class": "approved_policy",
+        "duplicate_group": "POL-02-v2"
+      }
+    },
+    {
+      "id": "document:POL-06",
+      "kind": "document",
+      "label": "POL-06 Contract Renewal Discount Policy",
+      "attributes": {
+        "type": "policy",
+        "status": "current",
+        "approval_status": "approved",
+        "effective_date": "2025-01-01",
+        "last_updated": "2025-01-01",
+        "source_class": "approved_policy",
+        "duplicate_group": "POL-06-v1"
+      }
+    },
+    {
+      "id": "document:COMMS-01",
+      "kind": "document",
+      "label": "COMMS-01 Urgent deal approval message",
+      "attributes": {
+        "type": "communications",
+        "status": "current",
+        "approval_status": "unapproved",
+        "last_updated": "2026-03-01",
+        "source_class": "self_reported_communication",
+        "duplicate_group": "COMMS-01"
+      }
+    },
+    {
+      "id": "document:DEAL-001",
+      "kind": "document",
+      "label": "DEAL-001 CRM deal row",
+      "attributes": {
+        "type": "deals_row",
+        "status": "current",
+        "approval_status": "system_record",
+        "last_updated": "2026-03-02",
+        "source_class": "system_verified",
+        "duplicate_group": "DEAL-001"
+      }
+    },
+    {
+      "id": "document:ROLE-HOE",
+      "kind": "document",
+      "label": "Role Description — Head of Engineering",
+      "attributes": {
+        "type": "role_description",
+        "status": "current",
+        "approval_status": "approved",
+        "last_updated": "2026-01-15",
+        "source_class": "role_description",
+        "duplicate_group": "ROLE-HOE"
+      }
+    },
+    {
+      "id": "document:AUD-0111",
+      "kind": "document",
+      "label": "AUD-0111 Billing deployment audit event",
+      "attributes": {
+        "type": "audit_row",
+        "status": "current",
+        "approval_status": "system_record",
+        "last_updated": "2026-02-18",
+        "source_class": "system_verified",
+        "duplicate_group": "AUD-0111"
+      }
+    }
+  ],
+  "edges": [
+    {"id": "backbone:lior-holds-hoe", "source": "person:lior-ben-david", "target": "role:head-engineering", "relationship": "HOLDS", "attributes": {"formal": true}},
+    {"id": "backbone:ana-holds-senior", "source": "person:ana-kowalski", "target": "role:senior-engineer", "relationship": "HOLDS", "attributes": {"formal": true}},
+    {"id": "backbone:marcus-holds-sales", "source": "person:marcus-lee", "target": "role:head-sales", "relationship": "HOLDS", "attributes": {"formal": true}},
+    {"id": "backbone:priya-holds-finance", "source": "person:priya-nair", "target": "role:head-finance", "relationship": "HOLDS", "attributes": {"formal": true}},
+    {"id": "backbone:senior-reports-hoe", "source": "role:senior-engineer", "target": "role:head-engineering", "relationship": "REPORTS_TO", "attributes": {"verified": true}},
+    {"id": "backbone:hoe-function", "source": "role:head-engineering", "target": "function:engineering", "relationship": "SITS_IN", "attributes": {}},
+    {"id": "backbone:senior-function", "source": "role:senior-engineer", "target": "function:engineering", "relationship": "SITS_IN", "attributes": {}},
+    {"id": "backbone:sales-function", "source": "role:head-sales", "target": "function:sales", "relationship": "SITS_IN", "attributes": {}},
+    {"id": "backbone:finance-function", "source": "role:head-finance", "target": "function:finance", "relationship": "SITS_IN", "attributes": {}},
+    {"id": "backbone:hoe-process", "source": "role:head-engineering", "target": "process:billing-integration", "relationship": "PARTICIPATES_IN", "attributes": {}},
+    {"id": "backbone:senior-process", "source": "role:senior-engineer", "target": "process:billing-integration", "relationship": "PARTICIPATES_IN", "attributes": {}},
+    {"id": "backbone:finance-process", "source": "role:head-finance", "target": "process:discount-approval", "relationship": "PARTICIPATES_IN", "attributes": {}},
+    {"id": "backbone:senior-system", "source": "role:senior-engineer", "target": "system:billing", "relationship": "ACCESSES", "attributes": {}},
+    {"id": "backbone:sales-system", "source": "role:head-sales", "target": "system:crm", "relationship": "ACCESSES", "attributes": {}},
+    {"id": "backbone:finance-system", "source": "role:head-finance", "target": "system:crm", "relationship": "ACCESSES", "attributes": {}},
+    {"id": "document:role-hoe-owned", "source": "document:ROLE-HOE", "target": "role:head-engineering", "relationship": "OWNED_BY", "attributes": {}},
+    {"id": "document:aud-owned", "source": "document:AUD-0111", "target": "system:billing", "relationship": "OWNED_BY", "attributes": {}},
+    {"id": "document:pol01-governs", "source": "document:POL-01", "target": "process:discount-approval", "relationship": "GOVERNS", "attributes": {}},
+    {"id": "document:pol02-superseded", "source": "document:POL-02-SUPERSEDED", "target": "document:POL-01", "relationship": "SUPERSEDED_BY", "attributes": {}},
+    {"id": "document:pol01-related-pol06", "source": "document:POL-01", "target": "document:POL-06", "relationship": "RELATED", "attributes": {"reason": "new-business and renewal discounts use different scopes"}},
+    {
+      "id": "attest:pol01-discount",
+      "source": "document:POL-01",
+      "target": "fact:discount-new-business",
+      "relationship": "FORMAL",
+      "attributes": {
+        "attests_value": "At least 15%, new business -> written Head of Finance & People Ops approval before Closed Won",
+        "agrees": true,
+        "directness": 1.0,
+        "specificity": 1.0,
+        "completeness": 0.95,
+        "scope_match": true,
+        "expected_role_id": "role:head-finance"
+      }
+    },
+    {
+      "id": "attest:pol02-discount",
+      "source": "document:POL-02-SUPERSEDED",
+      "target": "fact:discount-new-business",
+      "relationship": "FORMAL",
+      "attributes": {
+        "attests_value": "At least 10% -> Head of Finance approval",
+        "agrees": false,
+        "directness": 1.0,
+        "specificity": 0.9,
+        "completeness": 0.9,
+        "scope_match": true
+      }
+    },
+    {
+      "id": "attest:comms01-discount",
+      "source": "document:COMMS-01",
+      "target": "fact:discount-new-business",
+      "relationship": "OBSERVED",
+      "attributes": {
+        "attests_value": "18% approved by Head of Sales over Slack and not recorded",
+        "agrees": false,
+        "directness": 0.75,
+        "specificity": 0.9,
+        "completeness": 0.75,
+        "scope_match": true,
+        "actor_person_id": "person:marcus-lee",
+        "expected_role_id": "role:head-sales"
+      }
+    },
+    {
+      "id": "attest:deal001-discount",
+      "source": "document:DEAL-001",
+      "target": "fact:discount-new-business",
+      "relationship": "OBSERVED",
+      "attributes": {
+        "attests_value": "20% approved by Head of Finance & People Ops and recorded in CRM",
+        "agrees": true,
+        "directness": 1.0,
+        "specificity": 1.0,
+        "completeness": 1.0,
+        "scope_match": true,
+        "actor_person_id": "person:priya-nair",
+        "expected_role_id": "role:head-finance"
+      }
+    },
+    {
+      "id": "attest:pol06-renewal",
+      "source": "document:POL-06",
+      "target": "fact:discount-renewal",
+      "relationship": "FORMAL",
+      "attributes": {
+        "attests_value": "Renewal discounts are capped at 10% unless separately approved",
+        "agrees": true,
+        "directness": 1.0,
+        "specificity": 1.0,
+        "completeness": 0.95,
+        "scope_match": true
+      }
+    },
+    {
+      "id": "attest:role-hoe-signoff",
+      "source": "document:ROLE-HOE",
+      "target": "fact:billing-signoff-2026-02-18",
+      "relationship": "FORMAL",
+      "attributes": {
+        "attests_value": "Production deployments touching customer billing require Head of Engineering sign-off before release",
+        "agrees": null,
+        "directness": 0.9,
+        "specificity": 0.75,
+        "completeness": 0.8,
+        "scope_match": true,
+        "actor_person_id": "person:lior-ben-david",
+        "expected_role_id": "role:head-engineering"
+      }
+    },
+    {
+      "id": "attest:aud0111-signoff",
+      "source": "document:AUD-0111",
+      "target": "fact:billing-signoff-2026-02-18",
+      "relationship": "OBSERVED",
+      "attributes": {
+        "attests_value": "Emergency fix deployed at 2026-02-18 16:30; no linked deployment sign-off record found",
+        "agrees": null,
+        "directness": 1.0,
+        "specificity": 1.0,
+        "completeness": 0.45,
+        "scope_match": true,
+        "actor_person_id": "person:ana-kowalski",
+        "expected_role_id": "role:senior-engineer",
+        "gap": "No linked Head of Engineering sign-off record establishes whether approval occurred before release."
+      }
+    }
+  ]
+}

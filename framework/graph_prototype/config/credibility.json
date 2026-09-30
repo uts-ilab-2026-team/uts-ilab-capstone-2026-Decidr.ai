@@ -1,0 +1,45 @@
+{
+  "config_version": "graph-prototype-1.0",
+  "materiality_threshold": 0.55,
+  "conflict_ratio": 0.35,
+  "dimension_weights": {
+    "source_authority": 1.0,
+    "approval_status": 1.0,
+    "version_recency": 1.0,
+    "directness": 1.0,
+    "specificity": 1.0,
+    "corroboration": 1.0,
+    "source_independence": 1.0,
+    "evidence_completeness": 1.0
+  },
+  "source_class_weights": {
+    "approved_policy": 1.0,
+    "approved_process": 0.95,
+    "decision_table": 0.9,
+    "role_description": 0.8,
+    "system_verified": 0.95,
+    "structured_operational_record": 0.9,
+    "meeting_record": 0.65,
+    "interview": 0.55,
+    "self_reported_communication": 0.25,
+    "unknown": 0.4
+  },
+  "approval_weights": {
+    "approved": 1.0,
+    "system_record": 0.95,
+    "accepted_record": 0.8,
+    "unapproved": 0.35,
+    "draft": 0.4,
+    "superseded": 0.1,
+    "unknown": 0.5
+  },
+  "lifecycle_multipliers": {
+    "current": 1.0,
+    "draft": 0.6,
+    "superseded": 0.2,
+    "unknown": 0.5
+  },
+  "undated_weight": 0.65,
+  "stale_weight": 0.25,
+  "recency_years": 5
+}
