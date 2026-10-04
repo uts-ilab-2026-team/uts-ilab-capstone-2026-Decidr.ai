@@ -25,14 +25,14 @@ jobs:
       - name: Check graph formatting
         run: >-
           python -m ruff format --check
-          framework/graph_prototype
+          framework
           decidr/graph_app
           tests/test_graph_prototype.py
 
       - name: Lint graph files
         run: >-
           python -m ruff check
-          framework/graph_prototype
+          framework
           decidr/graph_app
           tests/test_graph_prototype.py
 

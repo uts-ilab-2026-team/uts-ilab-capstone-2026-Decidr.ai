@@ -6,7 +6,8 @@ from dataclasses import asdict, dataclass
 from datetime import date
 from io import StringIO
 
-from .core import FactAssessment, GraphCredibilityFramework
+from framework.credibility import GraphCredibilityFramework
+from framework.models import FactAssessment
 
 
 @dataclass(frozen=True, slots=True)

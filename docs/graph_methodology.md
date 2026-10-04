@@ -6,13 +6,17 @@ second repository inside `framework`.
 
 ## Repository locations
 
-- `framework/graph_prototype/` contains graph validation, retrieval, credibility reasoning,
-  register logic, configuration and demonstration graph data.
+- `framework/` contains the framework as focused modules: `constants.py`, `errors.py`,
+  `models.py`, `config.py`, `graph.py` (validation, retrieval, visualisation),
+  `credibility.py` (reasoning) and `register.py`. The public API is exposed by
+  `framework/__init__.py` (`from framework import ...`).
+- `framework/data/` holds the credibility configuration (`credibility.json`) and the
+  demonstration graph (`prototype_graph.json`).
 - `decidr/graph_app/` contains the Streamlit user interface.
 - `tests/test_graph_prototype.py` contains the graph-specific automated tests.
 - `requirements-graph.txt` contains the additional runtime and test dependencies.
 - `setup_graph_and_run.ps1` and `setup_graph_and_run.sh` launch the prototype locally.
-- `.github/workflows/graph-quality.yml` checks only the newly added graph files.
+- `.github/workflows/graph-quality.yml` checks only the graph files.
 
 No existing ledger code, repository configuration, report or previous archive is modified by
 this layout.
@@ -53,5 +57,5 @@ py -3.11 -m venv .venv
 ```
 
 The bundled graph is synthetic demonstration data. Replace
-`framework/graph_prototype/data/prototype_graph.json` only with an approved graph that follows
-the same documented node-and-edge structure.
+`framework/data/prototype_graph.json` only with an approved graph that follows the same
+documented node-and-edge structure.

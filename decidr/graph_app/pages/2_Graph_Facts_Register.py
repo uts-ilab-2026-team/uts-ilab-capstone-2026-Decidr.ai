@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from framework.graph_prototype import (
+from framework import (
     CONFIG_PATH,
     GRAPH_PATH,
     GraphCredibilityFramework,
