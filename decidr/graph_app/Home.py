@@ -1,7 +1,7 @@
 # ruff: noqa: N999
 """Home page for the standalone graph-governed prototype."""
 
-from framework.graph_prototype import GRAPH_PATH, OrganisationalGraph
+from framework import GRAPH_PATH, OrganisationalGraph
 import streamlit as st
 
 st.set_page_config(page_title="Graph-governed credibility prototype", layout="wide")
