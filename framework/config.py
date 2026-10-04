@@ -29,10 +29,10 @@ class GraphCredibilityConfig:
         config = cls(**payload)
         if set(config.dimension_weights) != set(CREDIBILITY_DIMENSIONS):
             raise GraphValidationError(
-                "Graph credibility weights must cover exactly the eight declared dimensions"
+                "Graph credibility weights must cover exactly the same declared dimensions"
             )
         if not 0 <= config.materiality_threshold <= 1:
-            raise GraphValidationError("materiality_threshold must be between 0 and 1")
+            raise GraphValidationError("Materiality_threshold must be between 0 and 1")
         if sum(config.dimension_weights.values()) <= 0:
-            raise GraphValidationError("dimension weights must total above zero")
+            raise GraphValidationError("Dimension weights must total above zero")
         return config
