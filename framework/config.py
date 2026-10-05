@@ -26,7 +26,13 @@ class GraphCredibilityConfig:
     @classmethod
     def load(cls, path: Path) -> GraphCredibilityConfig:
         payload = json.loads(path.read_text(encoding="utf-8"))
-        config = cls(**payload)
+
+        try:
+            config = cls(**payload)
+        except TypeError as e:
+            raise GraphValidationError(
+                f"Invalid graph credibility configuration: {e}"
+            ) from e
         if set(config.dimension_weights) != set(CREDIBILITY_DIMENSIONS):
             raise GraphValidationError(
                 "Graph credibility weights must cover exactly the same declared dimensions"
