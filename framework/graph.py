@@ -24,6 +24,15 @@ class OrganisationalGraph:
 
     def __init__(self, nodes: list[GraphNode], edges: list[GraphEdge], *, version: str) -> None:
         self.version = version
+
+        node_ids = [node.node_id for node in nodes]
+        if len(node_ids) != len(set(node_ids)):
+            raise GraphValidationError("Node IDs must be unique")
+
+        edge_ids = [edge.edge_id for edge in edges]
+        if len(edge_ids) != len(set(edge_ids)):
+            raise GraphValidationError("Edge IDs must be unique")
+
         self.nodes = {node.node_id: node for node in nodes}
         self.edges = {edge.edge_id: edge for edge in edges}
         self.graph = nx.MultiDiGraph(graph_version=version)
@@ -72,8 +81,6 @@ class OrganisationalGraph:
     def _validate(self) -> None:
         if len(self.nodes) == 0:
             raise GraphValidationError("The graph must contain nodes")
-        if len(self.edges) != len(set(self.edges)):
-            raise GraphValidationError("Edge IDs must be unique")
         for node in self.nodes.values():
             if node.kind == "fact" and "value" in node.attributes:
                 raise GraphValidationError(

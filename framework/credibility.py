@@ -44,6 +44,8 @@ class GraphCredibilityFramework:
         duplicate_counts: dict[str, int] = {}
         corroboration_counts: dict[tuple[str, str], set[str]] = {}
         for edge in attestations:
+            if not self._applicable(edge):
+                continue
             document = self.graph.document(edge.source)
             group = str(document.attributes.get("duplicate_group") or document.node_id)
             duplicate_counts[group] = duplicate_counts.get(group, 0) + 1
@@ -102,9 +104,7 @@ class GraphCredibilityFramework:
         edge_attributes = edge.attributes
         status = str(attributes.get("status", "unknown"))
         source_class = str(attributes.get("source_class", "unknown"))
-        applicable = bool(edge_attributes.get("applicable", True)) and bool(
-            edge_attributes.get("scope_match", True)
-        )
+        applicable = self._applicable(edge)
         limitations: list[str] = []
         trace: list[str] = []
         if not applicable:
@@ -200,6 +200,17 @@ class GraphCredibilityFramework:
             dimensions=dimensions,
             limitations=tuple(limitations),
             trace=tuple(trace),
+        )
+
+    def _applicable(self, edge: GraphEdge) -> bool:
+        """Return True if the attestation applies to the Fact (in scope and not excluded).
+
+        Single source of truth for applicability: used both to skip non-applicable
+        edges in the pre-pass tally and to gate scoring in ``_evaluate_edge``.
+        """
+        attributes = edge.attributes
+        return bool(attributes.get("applicable", True)) and bool(
+            attributes.get("scope_match", True)
         )
 
     def _recency(self, document: GraphNode, as_of: date) -> tuple[float, str]:
