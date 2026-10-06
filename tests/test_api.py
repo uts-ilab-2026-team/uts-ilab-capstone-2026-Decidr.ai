@@ -1,5 +1,4 @@
 from collections.abc import Iterator
-
 import json
 
 from fastapi.testclient import TestClient
@@ -110,7 +109,9 @@ def test_out_of_scope_source_is_reported_but_not_scored(tmp_path, monkeypatch) -
     _use_graph(tmp_path, monkeypatch, mark_out_of_scope)
     assessment = client.get("/api/claims/fact:discount-new-business", params={"as_of": AS_OF})
     slack = next(
-        item for item in assessment.json()["evidence"] if item["document_id"] == "document:COMMS-01"
+        item
+        for item in assessment.json()["evidence"]
+        if item["document_id"] == "document:COMMS-01"
     )
     assert slack["applicable"] is False
     assert slack["materiality_score"] is None

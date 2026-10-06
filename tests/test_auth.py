@@ -32,7 +32,9 @@ def test_signup_signs_in_and_rejects_duplicates(client: TestClient) -> None:
 
 def test_signup_validates_email_and_password(client: TestClient) -> None:
     assert client.post("/api/auth/signup", json={**ACCOUNT, "email": "nope"}).status_code == 422
-    assert client.post("/api/auth/signup", json={**ACCOUNT, "password": "short"}).status_code == 422
+    assert (
+        client.post("/api/auth/signup", json={**ACCOUNT, "password": "short"}).status_code == 422
+    )
 
 
 def test_login_and_logout(client: TestClient) -> None:
