@@ -24,7 +24,8 @@ outcomes remain separate from reviewed references.
 - Explanation renders only structured records and citations.
 - Evaluation uses adjudicated references when available and otherwise reports descriptive
   counts with an explicit limitation.
-- Streamlit is a thin interaction layer over tested services.
+- The FastAPI layer (`decidr/api`) and React frontend (`frontend/`) are a thin interaction
+  layer over tested services.
 
 SQLite JSON payloads preserve the complete validated record while indexed columns enforce
 identity, uniqueness, splits, relationships, and outcomes. Schema migrations are explicit

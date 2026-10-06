@@ -15,8 +15,9 @@ The framework is organised into focused modules under `framework/`. The public A
 | Graph facts-register projection and exports | `framework/register.py` |
 | Credibility configuration data | `framework/data/credibility.json` |
 | Synthetic demonstration graph | `framework/data/prototype_graph.json` |
-| Streamlit application | `decidr/graph_app/Home.py` and `decidr/graph_app/pages/` |
-| Automated tests | `tests/test_graph_prototype.py` |
+| HTTP API | `decidr/api/app.py` |
+| Web application | `frontend/` |
+| Automated tests | `tests/test_graph_prototype.py` and `tests/test_api.py` |
 | Additional dependencies | `requirements-graph.txt` |
 | Local launch scripts | `setup_graph_and_run.ps1` and `setup_graph_and_run.sh` |
 | Graph-specific quality checks | `.github/workflows/graph-quality.yml` |

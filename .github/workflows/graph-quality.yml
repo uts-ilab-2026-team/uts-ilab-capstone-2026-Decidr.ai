@@ -26,15 +26,19 @@ jobs:
         run: >-
           python -m ruff format --check
           framework
-          decidr/graph_app
+          decidr/api
           tests/test_graph_prototype.py
+          tests/test_api.py
+          tests/test_auth.py
 
       - name: Lint graph files
         run: >-
           python -m ruff check
           framework
-          decidr/graph_app
+          decidr/api
           tests/test_graph_prototype.py
+          tests/test_api.py
+          tests/test_auth.py
 
       - name: Test graph prototype
-        run: python -m pytest tests/test_graph_prototype.py -q
+        run: python -m pytest tests/test_graph_prototype.py tests/test_api.py tests/test_auth.py -q

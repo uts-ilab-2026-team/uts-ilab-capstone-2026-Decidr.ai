@@ -8,6 +8,7 @@ Project delivery, technical development and assessment evidence for UTS Innovati
     decidr/        Python source code
     docs/          Documentation, decision records, meeting notes
     framework/     Claim definition, credibility criteria, assessment methodology
+    frontend/      React web app (Vite) that calls the API in decidr/api
     notebooks/     Jupyter notebooks for exploration
     references/    Assignment brief, rubric, background reading
     reports/       Written deliverables
@@ -24,6 +25,25 @@ Requires [uv](https://docs.astral.sh/uv/).
     git clone git@github.com:uts-ilab-2026-team/uts-ilab-capstone-2026-Decidr.ai.git
     cd uts-ilab-capstone-2026-Decidr.ai
     uv sync
+
+## Running the app
+
+The web app is a React frontend over a FastAPI backend. Run each in its own terminal:
+
+    # API on http://localhost:8000
+    uv run uvicorn decidr.api.app:app --reload --port 8000
+
+    # frontend on http://localhost:5173 (proxies /api to the API)
+    cd frontend
+    pnpm install
+    pnpm dev
+
+Create an account from the sign-in screen ("Request access"). Accounts are stored locally in
+`data/app/users.db`, which is not committed. There is no email service, so "Forgot password?"
+prints the reset link in the API terminal instead of sending it.
+
+To serve both from one process, run `pnpm build` in `frontend/`; the API then serves the
+built app at http://localhost:8000.
 
 ## Data
 

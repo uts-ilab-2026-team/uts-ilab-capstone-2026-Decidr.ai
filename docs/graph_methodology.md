@@ -12,8 +12,10 @@ second repository inside `framework`.
   `framework/__init__.py` (`from framework import ...`).
 - `framework/data/` holds the credibility configuration (`credibility.json`) and the
   demonstration graph (`prototype_graph.json`).
-- `decidr/graph_app/` contains the Streamlit user interface.
-- `tests/test_graph_prototype.py` contains the graph-specific automated tests.
+- `decidr/api/` contains the FastAPI layer that serves the framework as JSON under `/api`.
+- `frontend/` contains the React user interface (Vite), which calls that API.
+- `tests/test_graph_prototype.py`, `tests/test_api.py` and `tests/test_auth.py` contain the graph-specific
+  automated tests.
 - `requirements-graph.txt` contains the additional runtime and test dependencies.
 - `setup_graph_and_run.ps1` and `setup_graph_and_run.sh` launch the prototype locally.
 - `.github/workflows/graph-quality.yml` checks only the graph files.
@@ -40,20 +42,21 @@ From the repository root, run:
 powershell -ExecutionPolicy Bypass -File .\setup_graph_and_run.ps1
 ```
 
-Then open <http://localhost:8501> if the browser does not open automatically.
+This starts the API on <http://localhost:8000>. Start the user interface in a second
+terminal with `cd frontend`, `pnpm install`, `pnpm dev`, then open <http://localhost:5173>.
 
 ## Manual setup
 
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-graph.txt
-.\.venv\Scripts\python.exe -m streamlit run decidr\graph_app\Home.py
+.\.venv\Scripts\python.exe -m uvicorn decidr.api.app:app --reload --port 8000
 ```
 
 ## Tests
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest tests\test_graph_prototype.py -q
+.\.venv\Scripts\python.exe -m pytest tests\test_graph_prototype.py tests\test_api.py -q
 ```
 
 The bundled graph is synthetic demonstration data. Replace

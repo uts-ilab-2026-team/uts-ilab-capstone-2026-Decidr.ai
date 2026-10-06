@@ -14,4 +14,4 @@ if (-not (Test-Path -LiteralPath ".venv\Scripts\python.exe")) {
 $projectPython = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
 & $projectPython -m pip install --upgrade pip
 & $projectPython -m pip install -r requirements-graph.txt
-& $projectPython -m streamlit run decidr\graph_app\Home.py
+& $projectPython -m uvicorn decidr.api.app:app --reload --port 8000
