@@ -121,7 +121,7 @@ class OrganisationalGraph:
                         raise GraphValidationError(
                             f"{edge.edge_id}: {name} must be true or false"
                         )
-                for name in ("directness", "specificity", "evidence_completeness"):
+                for name in ("directness", "specificity", "completeness"):
                     if name not in edge.attributes:
                         continue
                     score = edge.attributes[name]

@@ -80,7 +80,7 @@ def test_valid_stances_and_boundary_values_are_preserved(payload, agrees):
         scope_match=False,
         directness=0,
         specificity=1,
-        evidence_completeness=0.5,
+        completeness=0.5,
     )
     payload["nodes"][1]["attributes"].update(
         effective_date="2026-07-31",
@@ -124,7 +124,7 @@ def test_invalid_assertions_and_flags_are_rejected(payload, field, value):
 
 
 @pytest.mark.parametrize(
-    "field", ["directness", "specificity", "evidence_completeness"]
+    "field", ["directness", "specificity", "completeness"]
 )
 @pytest.mark.parametrize(
     "value", [-0.1, 1.1, float("nan"), float("inf"), True, "0.5", None]
@@ -200,3 +200,21 @@ def test_json_loading_enforces_evidence_validation(payload, tmp_path):
 
     with pytest.raises(GraphValidationError, match="agrees"):
         OrganisationalGraph.load(path)
+
+
+@pytest.mark.parametrize("completeness", [0.0, 1.0])
+def test_validated_completeness_reaches_assessment(payload, completeness):
+    from datetime import date
+
+    from framework import CONFIG_PATH, GraphCredibilityFramework
+    from framework.config import GraphCredibilityConfig
+
+    payload["edges"][0]["attributes"]["completeness"] = completeness
+    graph = build_graph(payload)
+    engine = GraphCredibilityFramework(
+        graph, GraphCredibilityConfig.load(CONFIG_PATH)
+    )
+    assessment = engine.evaluate_fact("fact:test", as_of=date(2026, 7, 31))
+
+    assert len(assessment.evidence) == 1
+    assert assessment.evidence[0].dimensions["evidence_completeness"] == completeness
