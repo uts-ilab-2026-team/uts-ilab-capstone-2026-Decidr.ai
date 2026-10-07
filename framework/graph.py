@@ -9,6 +9,7 @@ lives in ``framework.credibility``.
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 import networkx as nx
@@ -82,11 +83,17 @@ class OrganisationalGraph:
         if len(self.nodes) == 0:
             raise GraphValidationError("The graph must contain nodes")
         for node in self.nodes.values():
+            if not isinstance(node.attributes, dict):
+                raise GraphValidationError(f"{node.node_id}: attributes must be an object")
+            if node.kind == "document":
+                self._validate_document_dates(node)
             if node.kind == "fact" and "value" in node.attributes:
                 raise GraphValidationError(
                     f"{node.node_id}: Fact nodes are topics and must not store a value"
                 )
         for edge in self.edges.values():
+            if not isinstance(edge.attributes, dict):
+                raise GraphValidationError(f"{edge.edge_id}: attributes must be an object")
             if edge.source not in self.nodes or edge.target not in self.nodes:
                 raise GraphValidationError(f"{edge.edge_id}: edge endpoint does not exist")
             if edge.relationship in {"FORMAL", "OBSERVED"}:
@@ -98,15 +105,55 @@ class OrganisationalGraph:
                     raise GraphValidationError(
                         f"{edge.edge_id}: an attestation must end at a Fact"
                     )
-                if not str(edge.attributes.get("attests_value", "")).strip():
+                value = edge.attributes.get("attests_value")
+                if not isinstance(value, str) or not value.strip():
                     raise GraphValidationError(
                         f"{edge.edge_id}: attestation edges require attests_value"
                     )
                 agrees = edge.attributes.get("agrees")
-                if agrees not in (True, False, None):
+                if agrees is not None and type(agrees) is not bool:
                     raise GraphValidationError(
                         f"{edge.edge_id}: agrees must be true, false or null"
                     )
+
+                for name in ("applicable", "scope_match"):
+                    if name in edge.attributes and type(edge.attributes[name]) is not bool:
+                        raise GraphValidationError(
+                            f"{edge.edge_id}: {name} must be true or false"
+                        )
+                for name in ("directness", "specificity", "evidence_completeness"):
+                    if name not in edge.attributes:
+                        continue
+                    score = edge.attributes[name]
+                    if type(score) not in (int, float) or not 0 <= score <= 1:
+                        raise GraphValidationError(
+                            f"{edge.edge_id}: {name} must be a finite number between 0 and 1"
+                        )
+
+    @staticmethod
+    def _validate_document_dates(document: GraphNode) -> None:
+        parsed = {}
+        for name in ("effective_date", "effective_end_date", "last_updated"):
+            value = document.attributes.get(name)
+            if value is None:
+                continue
+            try:
+                if not isinstance(value, str):
+                    raise ValueError("Date must be a string")
+                parsed_date = date.fromisoformat(value)
+                if parsed_date.isoformat() != value:
+                    raise ValueError("Date must use YYYY-MM-DD")
+            except ValueError as error:
+                raise GraphValidationError(
+                    f"{document.node_id}: {name} must be a valid YYYY-MM-DD date or null"
+                ) from error
+            parsed[name] = parsed_date
+        start = parsed.get("effective_date")
+        end = parsed.get("effective_end_date")
+        if start is not None and end is not None and end < start:
+            raise GraphValidationError(
+                f"{document.node_id}: effective_end_date must not precede effective_date"
+            )
 
     def fact_nodes(self) -> list[GraphNode]:
         return sorted(
