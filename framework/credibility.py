@@ -150,7 +150,13 @@ class GraphCredibilityFramework:
         trace.append(f"Date: {recency_note} value={recency:.2f}.")
 
         group = str(attributes.get("duplicate_group") or document.node_id)
-        independence = 1.0 / duplicate_counts[group]
+        # Score source quality once per origin; repetition must not change it.
+        # _lane_outcome applies the origin cap when combining evidence.
+        independence = 1.0
+        trace.append(
+            f"Independence: origin {group!r} contributes at most once per stance "
+            "in this lane, using its strongest material assessment."
+        )
         stance = self._stance(edge)
         corroborating_origins = len(
             corroboration_counts.get((edge.relationship.lower(), stance), set())
@@ -160,7 +166,7 @@ class GraphCredibilityFramework:
             if corroborating_origins <= 1
             else min(1.0, 0.5 + 0.25 * (corroborating_origins - 1))
         )
-        if independence < 1:
+        if duplicate_counts[group] > 1:
             limitations.append("A duplicate source exists and is not counted as independent.")
         if corroborating_origins <= 1:
             limitations.append("No independent source corroborates this stance in the same lane.")
@@ -260,11 +266,28 @@ class GraphCredibilityFramework:
             return "contradict"
         return "qualify"
 
+    def _origin_id(self, document_id: str) -> str:
+        document = self.graph.document(document_id)
+        return str(document.attributes.get("duplicate_group") or document.node_id)
+
     def _lane_outcome(self, reviewed: tuple[EdgeAssessment, ...], mode: str) -> str:
-        material = [item for item in reviewed if item.mode == mode and item.material]
-        support = sum(item.materiality_score or 0 for item in material if item.stance == "support")
+        # Retain every edge, but count only the strongest material assessment
+        # from each origin for each stance within this lane.
+        contributions: dict[tuple[str, str], float] = {}
+        for item in reviewed:
+            if item.mode != mode or not item.material:
+                continue
+            if item.stance not in {"support", "contradict"}:
+                continue
+            key = (self._origin_id(item.document_id), item.stance)
+            contributions[key] = max(
+                contributions.get(key, 0.0), item.materiality_score or 0.0
+            )
+        support = sum(
+            score for (_, stance), score in contributions.items() if stance == "support"
+        )
         contradict = sum(
-            item.materiality_score or 0 for item in material if item.stance == "contradict"
+            score for (_, stance), score in contributions.items() if stance == "contradict"
         )
         if not support and not contradict:
             return "Insufficient evidence"
@@ -301,8 +324,9 @@ class GraphCredibilityFramework:
                     gaps.append(limitation)
         return list(dict.fromkeys(gaps))
 
-    @staticmethod
-    def _confidence(reviewed: tuple[EdgeAssessment, ...], overall: str, gaps: list[str]) -> str:
+    def _confidence(
+        self, reviewed: tuple[EdgeAssessment, ...], overall: str, gaps: list[str]
+    ) -> str:
         decisive = [
             item for item in reviewed if item.material and item.stance in {"support", "contradict"}
         ]
@@ -314,8 +338,8 @@ class GraphCredibilityFramework:
             return "Lower confidence"
         if overall == "Contested" or non_material_divergence or gaps:
             return "Moderate confidence"
-        independent_documents = {item.document_id for item in decisive}
-        return "Higher confidence" if len(independent_documents) >= 2 else "Moderate confidence"
+        independent_origins = {self._origin_id(item.document_id) for item in decisive}
+        return "Higher confidence" if len(independent_origins) >= 2 else "Moderate confidence"
 
     @staticmethod
     def _summary(
