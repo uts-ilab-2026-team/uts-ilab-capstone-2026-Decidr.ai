@@ -170,3 +170,72 @@ def test_confidence_counts_origins(copies, independent, expected):
     assert record.gaps == ()
     assert record.confidence == expected
     assert len(record.evidence) == copies * 2
+
+
+@pytest.mark.parametrize("mode", ["FORMAL", "OBSERVED"])
+@pytest.mark.parametrize(
+    "status,approval,can_corroborate",
+    [
+        ("current", "approved", True),
+        ("superseded", "superseded", False),
+        ("superseded", "approved", False),
+        ("current", "superseded", False),
+    ],
+    ids=["current-control", "both-superseded", "lifecycle-only", "approval-only"],
+)
+def test_superseded_source_corroboration(mode, status, approval, can_corroborate):
+    register = make_register(mode, True, 1, False, include_opposing=False)
+    baseline = register.get(FACT_ID)
+    graph = register.framework.graph
+    original_edge = next(iter(graph.edges.values()))
+    original_document = graph.document(original_edge.source)
+
+    extra_document = replace(
+        original_document,
+        node_id="document:additional",
+        label="Additional source",
+        attributes={
+            **original_document.attributes,
+            "duplicate_group": "origin:additional",
+            "status": status,
+            "approval_status": approval,
+        },
+    )
+    extra_edge = replace(
+        original_edge,
+        edge_id="edge:additional",
+        source=extra_document.node_id,
+    )
+    graph = OrganisationalGraph(
+        [*graph.nodes.values(), extra_document],
+        [*graph.edges.values(), extra_edge],
+        version="lifecycle-check",
+    )
+    engine = GraphCredibilityFramework(graph, register.framework.config)
+    expanded = GraphFactsRegister(engine, as_of=AS_OF)
+    result = expanded.get(FACT_ID)
+    original = next(
+        item for item in result.evidence if item.edge_id == original_edge.edge_id
+    )
+    extra = next(
+        item for item in result.evidence if item.edge_id == extra_edge.edge_id
+    )
+
+    assert len(result.evidence) == 2
+    exported = json.loads(expanded.to_json())[0]
+    assert {item["edge_id"] for item in exported["evidence"]} == {
+        original_edge.edge_id, extra_edge.edge_id
+    }
+    assert extra.lifecycle_status == status
+
+    before = baseline.evidence[0]
+    if can_corroborate:
+        assert original.dimensions["corroboration"] > before.dimensions["corroboration"]
+        assert extra.material is True
+    else:
+        assert original.dimensions == before.dimensions
+        assert original.materiality_score == pytest.approx(before.materiality_score)
+        assert any(
+            "excluded from corroboration counts" in reason
+            for reason in extra.limitations
+        )

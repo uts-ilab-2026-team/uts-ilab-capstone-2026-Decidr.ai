@@ -49,6 +49,8 @@ class GraphCredibilityFramework:
             document = self.graph.document(edge.source)
             group = str(document.attributes.get("duplicate_group") or document.node_id)
             duplicate_counts[group] = duplicate_counts.get(group, 0) + 1
+            if not self._corroboration_eligible(document):
+                continue
             key = (edge.relationship.lower(), self._stance(edge))
             corroboration_counts.setdefault(key, set()).add(group)
 
@@ -158,6 +160,10 @@ class GraphCredibilityFramework:
             "in this lane, using its strongest material assessment."
         )
         stance = self._stance(edge)
+        if not self._corroboration_eligible(document):
+            limitations.append(
+                "Superseded source retained for context; excluded from corroboration counts."
+            )
         corroborating_origins = len(
             corroboration_counts.get((edge.relationship.lower(), stance), set())
         )
@@ -265,6 +271,15 @@ class GraphCredibilityFramework:
         if agrees is False:
             return "contradict"
         return "qualify"
+
+    @staticmethod
+    def _corroboration_eligible(document: GraphNode) -> bool:
+        """Superseded sources cannot corroborate another assessment."""
+        attributes = document.attributes
+        return "superseded" not in (
+            str(attributes.get("status", "unknown")),
+            str(attributes.get("approval_status", "unknown")),
+        )
 
     def _origin_id(self, document_id: str) -> str:
         document = self.graph.document(document_id)
