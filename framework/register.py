@@ -1,13 +1,14 @@
 """Standalone facts register derived from the organisational graph."""
 
+from copy import deepcopy
 import csv
-import json
 from dataclasses import asdict, dataclass
 from datetime import date
 from io import StringIO
+import json
 
 from framework.credibility import GraphCredibilityFramework
-from framework.models import FactAssessment
+from framework.models import EdgeAssessment, FactAssessment
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,13 +27,21 @@ class GraphFactRecord:
     gaps: tuple[str, ...]
     related_qualifiers: tuple[str, ...]
     derivation_summary: str
+    as_of: str | None = None
+    evidence: tuple[EdgeAssessment, ...] = ()
+    rules_applied: tuple[str, ...] = ()
 
     def model_dump(self) -> dict[str, object]:
         return asdict(self)
 
 
 class GraphFactsRegister:
-    """Create a graph-native register without touching the relational register."""
+    """Expose graph assessments and their evidence without changing decisions.
+
+    Evidence includes applicable and excluded items with their original flags.
+    An attests_value is a graph assertion, not a verified source quotation.
+    Records are generated on request; this class does not store review history.
+    """
 
     def __init__(self, framework: GraphCredibilityFramework, *, as_of: date) -> None:
         self.framework = framework
@@ -49,7 +58,7 @@ class GraphFactsRegister:
         if not assessment.evidence:
             status = "Candidate - no evidence"
         elif assessment.overall_outcome == "Insufficient evidence":
-            status = "Graph reviewed - unresolved evidence gap"
+            status = "Graph-assessed - unresolved evidence gap"
         else:
             status = "Graph-assessed finding"
         return GraphFactRecord(
@@ -71,6 +80,9 @@ class GraphFactsRegister:
             gaps=assessment.gaps,
             related_qualifiers=assessment.related_qualifiers,
             derivation_summary=assessment.summary,
+            as_of=self.as_of.isoformat(),
+            evidence=deepcopy(assessment.evidence),
+            rules_applied=assessment.rules_applied,
         )
 
     def to_json(self) -> str:
@@ -92,6 +104,9 @@ class GraphFactsRegister:
             "gaps",
             "related_qualifiers",
             "derivation_summary",
+            "as_of",
+            "evidence",
+            "rules_applied",
         )
         handle = StringIO(newline="")
         writer = csv.DictWriter(handle, fieldnames=columns)
@@ -104,6 +119,8 @@ class GraphFactsRegister:
                 "documents",
                 "gaps",
                 "related_qualifiers",
+                "evidence",
+                "rules_applied",
             ):
                 row[field_name] = json.dumps(row[field_name])
             writer.writerow(row)
