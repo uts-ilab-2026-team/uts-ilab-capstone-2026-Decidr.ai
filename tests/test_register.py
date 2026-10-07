@@ -196,3 +196,128 @@ def test_empty_graph_exports_empty_register(assessment):
     assert "evidence" in reader.fieldnames
     assert list(reader) == []
     engine.evaluate_fact.assert_not_called()
+
+
+def test_multiple_facts_keep_their_own_evidence_and_explanations(assessment):
+    second = replace(
+        assessment,
+        fact_id="fact:second",
+        statement="A different claim.",
+        overall_outcome="Insufficient evidence",
+        evidence=(
+            replace(
+                assessment.evidence[0],
+                edge_id="edge:second",
+                document_id="document:second",
+                attests_value="Evidence for the second claim only.",
+            ),
+        ),
+        gaps=("A separate evidence gap.",),
+        rules_applied=("rule:second",),
+        related_qualifiers=(),
+        summary="Explanation for the second claim.",
+    )
+    supplied = {
+        assessment.fact_id: assessment,
+        second.fact_id: second,
+    }
+    register, engine = make_register(assessment)
+    engine.graph.fact_nodes.return_value = [
+        SimpleNamespace(node_id=fact_id) for fact_id in supplied
+    ]
+
+    def evaluate(fact_id, *, as_of):
+        assert as_of == AS_OF
+        return supplied[fact_id]
+
+    engine.evaluate_fact.side_effect = evaluate
+    records = register.list_records()
+
+    assert len(records) == 2
+    for record in records:
+        original = supplied[record.fact_id]
+        assert record.statement == original.statement
+        assert record.evidence == original.evidence
+        assert record.gaps == original.gaps
+        assert record.rules_applied == original.rules_applied
+        assert record.related_qualifiers == original.related_qualifiers
+        assert record.derivation_summary == original.summary
+        assert record.overall_outcome == original.overall_outcome
+
+    exported = json.loads(register.to_json())
+    assert {row["fact_id"] for row in exported} == set(supplied)
+    for row in exported:
+        original = supplied[row["fact_id"]]
+        assert row["evidence"] == json.loads(
+            json.dumps([asdict(item) for item in original.evidence])
+        )
+        assert row["gaps"] == list(original.gaps)
+        assert row["rules_applied"] == list(original.rules_applied)
+
+
+def test_unknown_fact_preserves_upstream_error(assessment):
+    register, engine = make_register(assessment)
+    error = KeyError("fact:missing")
+    engine.evaluate_fact.side_effect = error
+
+    with pytest.raises(KeyError) as caught:
+        register.get("fact:missing")
+
+    assert caught.value is error
+    engine.evaluate_fact.assert_called_once_with("fact:missing", as_of=AS_OF)
+
+
+def test_register_fields_survive_api_listing_and_exports(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from framework import CONFIG_PATH, GRAPH_PATH, GraphCredibilityFramework
+
+    from decidr.api.app import app
+
+    # Use a temporary authentication database, not the user's database.
+    monkeypatch.setenv("DECIDR_AUTH_DB", str(tmp_path / "users.db"))
+    framework = GraphCredibilityFramework.load(GRAPH_PATH, CONFIG_PATH)
+    register = GraphFactsRegister(framework, as_of=AS_OF)
+    expected = json.loads(register.to_json())
+    params = {"as_of": AS_OF.isoformat()}
+
+    with TestClient(app) as client:
+        signup = client.post(
+            "/api/auth/signup",
+            json={
+                "name": "Register Test",
+                "email": "register-test@example.com",
+                "password": "temporary-test-password",
+            },
+        )
+        assert signup.status_code == 201
+
+        listing = client.get("/api/claims", params=params)
+        assert listing.status_code == 200
+        assert listing.json()["claims"] == expected
+
+        json_response = client.get("/api/register.json", params=params)
+        assert json_response.status_code == 200
+        assert json_response.json() == expected
+
+        csv_response = client.get("/api/register.csv", params=params)
+        assert csv_response.status_code == 200
+        assert csv_response.headers["content-type"].startswith("text/csv")
+
+    rows = list(csv.DictReader(StringIO(csv_response.text)))
+    for row in rows:
+        for name in (
+            "formal_values",
+            "observed_values",
+            "documents",
+            "gaps",
+            "related_qualifiers",
+            "evidence",
+            "rules_applied",
+        ):
+            row[name] = json.loads(row[name])
+
+    assert rows == expected
+    assert expected
+    assert all(row["as_of"] == AS_OF.isoformat() for row in expected)
+    assert any(row["rules_applied"] for row in expected)
+    assert any(item["material"] is False for row in expected for item in row["evidence"])

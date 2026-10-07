@@ -44,7 +44,7 @@ class GraphCredibilityFramework:
         duplicate_counts: dict[str, int] = {}
         corroboration_counts: dict[tuple[str, str], set[str]] = {}
         for edge in attestations:
-            if not self._applicable(edge):
+            if not self._applicable(edge, as_of=as_of):
                 continue
             document = self.graph.document(edge.source)
             group = str(document.attributes.get("duplicate_group") or document.node_id)
@@ -104,11 +104,15 @@ class GraphCredibilityFramework:
         edge_attributes = edge.attributes
         status = str(attributes.get("status", "unknown"))
         source_class = str(attributes.get("source_class", "unknown"))
-        applicable = self._applicable(edge)
+        applicable = self._applicable(edge, as_of=as_of)
         limitations: list[str] = []
         trace: list[str] = []
         if not applicable:
-            limitations.append("The attestation does not match the Fact's scope or conditions.")
+            temporal_reason = self._temporal_exclusion(document, as_of)
+            limitations.append(
+                temporal_reason
+                or "The attestation does not match the Fact's scope or conditions."
+            )
             return EdgeAssessment(
                 edge_id=edge.edge_id,
                 document_id=document.node_id,
@@ -123,7 +127,10 @@ class GraphCredibilityFramework:
                 material=False,
                 dimensions={},
                 limitations=tuple(limitations),
-                trace=("Applicability gate failed; evidence retained but not scored.",),
+                trace=(
+                    f"Applicability gate failed: {limitations[0]} "
+                    "Evidence retained but not scored.",
+                ),
             )
 
         backbone_factor, backbone_trace = self.graph.backbone_resolution(edge)
@@ -202,16 +209,28 @@ class GraphCredibilityFramework:
             trace=tuple(trace),
         )
 
-    def _applicable(self, edge: GraphEdge) -> bool:
-        """Return True if the attestation applies to the Fact (in scope and not excluded).
+    def _applicable(self, edge: GraphEdge, *, as_of: date) -> bool:
+        """Return True if the attestation matches scope and its effective period.
 
         Single source of truth for applicability: used both to skip non-applicable
         edges in the pre-pass tally and to gate scoring in ``_evaluate_edge``.
         """
         attributes = edge.attributes
-        return bool(attributes.get("applicable", True)) and bool(
+        scope_matches = bool(attributes.get("applicable", True)) and bool(
             attributes.get("scope_match", True)
         )
+        document = self.graph.document(edge.source)
+        return scope_matches and self._temporal_exclusion(document, as_of) is None
+
+    @staticmethod
+    def _temporal_exclusion(document: GraphNode, as_of: date) -> str | None:
+        start = document.attributes.get("effective_date")
+        end = document.attributes.get("effective_end_date")
+        if start and date.fromisoformat(str(start)) > as_of:
+            return "The document is not yet effective at the assessment date."
+        if end and date.fromisoformat(str(end)) < as_of:
+            return "The document is no longer effective at the assessment date."
+        return None
 
     def _recency(self, document: GraphNode, as_of: date) -> tuple[float, str]:
         start_text = document.attributes.get("effective_date")
