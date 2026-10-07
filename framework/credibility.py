@@ -365,17 +365,24 @@ class GraphCredibilityFramework:
         reviewed: tuple[EdgeAssessment, ...],
         related: tuple[str, ...],
     ) -> str:
-        divergence = [item for item in reviewed if item.stance == "contradict" and item.applicable]
         parts = [
             f"Formal evidence: {formal}.",
             f"Observed evidence: {observed}.",
             f"Combined outcome: {overall}; {confidence.lower()}.",
         ]
-        if divergence:
-            parts.append(
-                "Practice divergence is retained in the trace even where its source weight is "
-                "not decisive."
-            )
+        for mode, label in (("formal", "Formal"), ("observed", "Observed")):
+            counterevidence = [
+                item
+                for item in reviewed
+                if item.mode == mode and item.stance == "contradict" and item.applicable
+            ]
+            if any(item.material for item in counterevidence):
+                parts.append(f"{label} evidence includes material counterevidence.")
+            if any(not item.material for item in counterevidence):
+                parts.append(
+                    f"{label} evidence includes non-material counterevidence "
+                    "retained for context."
+                )
         if related:
-            parts.append("Related Facts narrow the scope and are reported as qualifications.")
+            parts.append("Related Facts are included as contextual qualifications.")
         return " ".join(parts)
