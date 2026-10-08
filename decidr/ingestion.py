@@ -226,6 +226,12 @@ def extract_markdown(source: Source, path: Path) -> list[Evidence]:
         buffer = []
         if not text:
             return
+        # Standalone Markdown separators are layout, not evidence.
+        if all(
+            re.fullmatch(r"[ \t]*([-*_])(?:[ \t]*\1){2,}[ \t]*", line)
+            for line in text.splitlines()
+        ):
+            return
         section = " > ".join(headings) if headings else "document"
         section_counts[section] += 1
         locator = f"heading:{section}#block:{section_counts[section]:03d}"

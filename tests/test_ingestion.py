@@ -126,3 +126,41 @@ def test_storage_failure_rolls_back_all_source_updates(corpus, monkeypatch):
 
     assert calls == 2
     assert snapshot(database) == before
+
+
+@pytest.mark.parametrize("separator", ["---", "***", "___", "- - -", "* * *", "_ _ _"])
+def test_markdown_separators_are_not_evidence(corpus, separator):
+    root, first, _, _ = corpus
+    first.write_text(
+        f"# POL-01\n\nFirst requirement.\n\n{separator}\n\nSecond requirement.\n",
+        encoding="utf-8",
+    )
+
+    result = ingestion.ingest({"phase2": root})
+    passages = [
+        item.text for item in result.evidence
+        if item.source_id == "phase2:POL-01"
+    ]
+
+    assert passages == ["First requirement.", "Second requirement."]
+
+
+def test_separator_filter_preserves_content_and_fenced_code(corpus):
+    root, first, _, _ = corpus
+    blocks = [
+        "A requirement -- with punctuation.",
+        "```\n---\n```",
+        "| Item | Value |\n| --- | --- |\n| Limit | 10 |",
+    ]
+    first.write_text(
+        "# POL-01\n\n" + "\n\n".join(blocks) + "\n",
+        encoding="utf-8",
+    )
+
+    result = ingestion.ingest({"phase2": root})
+    passages = [
+        item.text for item in result.evidence
+        if item.source_id == "phase2:POL-01"
+    ]
+
+    assert passages == blocks
