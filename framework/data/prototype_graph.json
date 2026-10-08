@@ -1,5 +1,5 @@
 {
-  "graph_version": "initial-prototype-1.0",
+  "graph_version": "initial-prototype-1.1",
   "nodes": [
     {
       "id": "person:lior-ben-david",
@@ -14,15 +14,15 @@
       "attributes": {"status": "active", "start_date": "2021-02-01", "remote": "remote"}
     },
     {
-      "id": "person:marcus-lee",
+      "id": "person:diane-okafor",
       "kind": "person",
-      "label": "Marcus Lee",
+      "label": "Diane Okafor",
       "attributes": {"status": "active", "start_date": "2023-01-09", "remote": "in-office"}
     },
     {
-      "id": "person:priya-nair",
+      "id": "person:harriet-doyle",
       "kind": "person",
-      "label": "Priya Nair",
+      "label": "Harriet Doyle",
       "attributes": {"status": "active", "start_date": "2020-08-03", "remote": "in-office"}
     },
     {
@@ -106,7 +106,7 @@
       "kind": "fact",
       "label": "Renewal discount cap",
       "attributes": {
-        "statement": "Renewal discounts are capped at 10 percent unless separately approved",
+        "statement": "Under POL-06, renewal discounts are capped at 10 percent off the current contracted rate, with no exceptions",
         "category": "authority",
         "scope": "renewal discounts"
       }
@@ -130,7 +130,6 @@
         "status": "current",
         "approval_status": "approved",
         "effective_date": "2025-03-01",
-        "last_updated": "2025-03-01",
         "source_class": "approved_policy",
         "duplicate_group": "POL-01-v3"
       }
@@ -138,14 +137,13 @@
     {
       "id": "document:POL-02-SUPERSEDED",
       "kind": "document",
-      "label": "POL-02 Discount Approval Policy v2 — Superseded",
+      "label": "POL-02 Discount Approval Policy v2.1 — Superseded",
       "attributes": {
         "type": "policy",
         "status": "superseded",
-        "approval_status": "superseded",
-        "effective_date": "2023-01-01",
+        "approval_status": "approved",
+        "effective_date": "2021-06-01",
         "effective_end_date": "2025-02-28",
-        "last_updated": "2023-01-01",
         "source_class": "approved_policy",
         "duplicate_group": "POL-02-v2"
       }
@@ -153,13 +151,12 @@
     {
       "id": "document:POL-06",
       "kind": "document",
-      "label": "POL-06 Contract Renewal Discount Policy",
+      "label": "POL-06 Contract Renewal Discount Policy v1.1",
       "attributes": {
         "type": "policy",
         "status": "current",
         "approval_status": "approved",
-        "effective_date": "2025-01-01",
-        "last_updated": "2025-01-01",
+        "effective_date": "2024-06-01",
         "source_class": "approved_policy",
         "duplicate_group": "POL-06-v1"
       }
@@ -220,8 +217,8 @@
   "edges": [
     {"id": "backbone:lior-holds-hoe", "source": "person:lior-ben-david", "target": "role:head-engineering", "relationship": "HOLDS", "attributes": {"formal": true}},
     {"id": "backbone:ana-holds-senior", "source": "person:ana-kowalski", "target": "role:senior-engineer", "relationship": "HOLDS", "attributes": {"formal": true}},
-    {"id": "backbone:marcus-holds-sales", "source": "person:marcus-lee", "target": "role:head-sales", "relationship": "HOLDS", "attributes": {"formal": true}},
-    {"id": "backbone:priya-holds-finance", "source": "person:priya-nair", "target": "role:head-finance", "relationship": "HOLDS", "attributes": {"formal": true}},
+    {"id": "backbone:diane-holds-sales", "source": "person:diane-okafor", "target": "role:head-sales", "relationship": "HOLDS", "attributes": {"formal": true}},
+    {"id": "backbone:harriet-holds-finance", "source": "person:harriet-doyle", "target": "role:head-finance", "relationship": "HOLDS", "attributes": {"formal": true}},
     {"id": "backbone:senior-reports-hoe", "source": "role:senior-engineer", "target": "role:head-engineering", "relationship": "REPORTS_TO", "attributes": {"verified": true}},
     {"id": "backbone:hoe-function", "source": "role:head-engineering", "target": "function:engineering", "relationship": "SITS_IN", "attributes": {}},
     {"id": "backbone:senior-function", "source": "role:senior-engineer", "target": "function:engineering", "relationship": "SITS_IN", "attributes": {}},
@@ -273,13 +270,13 @@
       "target": "fact:discount-new-business",
       "relationship": "OBSERVED",
       "attributes": {
-        "attests_value": "18% approved by Head of Sales over Slack and not recorded",
+        "attests_value": "Diane Okafor, Head of Sales, authorised closing DEAL-014 at 18% over Slack; no corresponding entry was made in the CRM approval_record field",
         "agrees": false,
         "directness": 0.75,
         "specificity": 0.9,
         "completeness": 0.75,
         "scope_match": true,
-        "actor_person_id": "person:marcus-lee",
+        "actor_person_id": "person:diane-okafor",
         "expected_role_id": "role:head-sales"
       }
     },
@@ -295,7 +292,7 @@
         "specificity": 1.0,
         "completeness": 1.0,
         "scope_match": true,
-        "actor_person_id": "person:priya-nair",
+        "actor_person_id": "person:harriet-doyle",
         "expected_role_id": "role:head-finance"
       }
     },
@@ -305,7 +302,7 @@
       "target": "fact:discount-renewal",
       "relationship": "FORMAL",
       "attributes": {
-        "attests_value": "Renewal discounts are capped at 10% unless separately approved",
+        "attests_value": "POL-06 caps renewal discounts at 10% off the current contracted rate, with no exceptions",
         "agrees": true,
         "directness": 1.0,
         "specificity": 1.0,

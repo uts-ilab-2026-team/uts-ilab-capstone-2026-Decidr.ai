@@ -64,3 +64,75 @@ def test_graph_facts_register_exports_without_existing_ledger() -> None:
     assert len(records) == 3
     assert "fact:billing-signoff-2026-02-18" in register.to_json()
     assert "formal_outcome" in register.to_csv()
+
+def test_reconciled_policy_metadata():
+    graph = OrganisationalGraph.load(GRAPH_PATH)
+    expected = (
+        ("document:POL-01", "v3.0", "2025-03-01", "current"),
+        ("document:POL-02-SUPERSEDED", "v2.1", "2021-06-01", "superseded"),
+        ("document:POL-06", "v1.1", "2024-06-01", "current"),
+    )
+    for document_id, version, effective_date, status in expected:
+        document = graph.document(document_id)
+        assert version in document.label, document_id
+        assert document.attributes["effective_date"] == effective_date, document_id
+        assert document.attributes["approval_status"] == "approved", document_id
+        assert document.attributes["status"] == status, document_id
+        assert "last_updated" not in document.attributes, document_id
+
+    historical = graph.document("document:POL-02-SUPERSEDED")
+    assert historical.attributes["effective_end_date"] == "2025-02-28"
+
+
+def test_reconciled_policy_effective_boundaries():
+    engine = framework()
+    cases = (
+        (
+            "fact:discount-new-business", "document:POL-02-SUPERSEDED",
+            date(2021, 5, 31), False,
+        ),
+        (
+            "fact:discount-new-business", "document:POL-02-SUPERSEDED",
+            date(2021, 6, 1), True,
+        ),
+        (
+            "fact:discount-renewal", "document:POL-06",
+            date(2024, 5, 31), False,
+        ),
+        (
+            "fact:discount-renewal", "document:POL-06",
+            date(2024, 6, 1), True,
+        ),
+    )
+    for fact_id, document_id, as_of, applicable in cases:
+        result = engine.evaluate_fact(fact_id, as_of=as_of)
+        evidence = next(
+            item for item in result.evidence
+            if item.document_id == document_id
+        )
+        assert evidence.applicable is applicable, (document_id, as_of)
+        if applicable:
+            assert evidence.materiality_score is not None
+        else:
+            assert evidence.materiality_score is None
+            assert evidence.material is False
+
+
+def test_renewal_policy_basis_and_no_exceptions_survive_assessment_and_register():
+    engine = framework()
+    fact_id = "fact:discount-renewal"
+    assessment = engine.evaluate_fact(fact_id, as_of=AS_OF)
+    record = GraphFactsRegister(engine, as_of=AS_OF).get(fact_id)
+    policy = next(
+        item for item in assessment.evidence
+        if item.document_id == "document:POL-06"
+    )
+
+    assert "10 percent off the current contracted rate" in assessment.statement
+    assert "no exceptions" in assessment.statement
+    assert "10% off the current contracted rate" in policy.attests_value
+    assert "no exceptions" in policy.attests_value
+    assert "unless separately approved" not in assessment.statement
+    assert "unless separately approved" not in policy.attests_value
+    assert record.statement == assessment.statement
+    assert record.evidence == assessment.evidence

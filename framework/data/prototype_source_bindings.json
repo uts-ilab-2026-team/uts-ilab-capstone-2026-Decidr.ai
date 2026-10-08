@@ -1,0 +1,36 @@
+{
+  "binding_version": "1",
+  "dataset_id": "phase2_model_development",
+  "bindings": {
+    "document:AUD-0111": {
+      "source_path": "09_audit_log/system_audit_log.csv",
+      "record_key": "event_id",
+      "record_id": "AUD-0111"
+    },
+    "document:COMMS-01": {
+      "source_path": "06_communications/communications_log.md",
+      "heading": "## COMMS-01 — Slack DM: #deal-approvals"
+    },
+    "document:DEAL-001": {
+      "source_path": "07_crm/crm_deals.csv",
+      "record_key": "deal_id",
+      "record_id": "DEAL-001"
+    },
+    "document:POL-01": {
+      "source_path": "02_policies/POL-01_discount_approval_policy_v3.md",
+      "heading": "# POL-01 — Discount Approval Policy"
+    },
+    "document:POL-02-SUPERSEDED": {
+      "source_path": "02_policies/superseded/POL-02_discount_approval_policy_v2_SUPERSEDED.md",
+      "heading": "# POL-02 — Discount Approval Policy [SUPERSEDED]"
+    },
+    "document:POL-06": {
+      "source_path": "02_policies/POL-06_contract_renewal_discount_policy.md",
+      "heading": "# POL-06 — Contract Renewal Discount Policy"
+    },
+    "document:ROLE-HOE": {
+      "source_path": "00_overview/role_descriptions.md",
+      "heading": "## Head of Engineering — Lior Ben-David"
+    }
+  }
+}
