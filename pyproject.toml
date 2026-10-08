@@ -37,6 +37,11 @@ dependencies = [
 ]
 requires-python = "~=3.11.0"
 
+[project.optional-dependencies]
+semantic = [
+    "sentence-transformers>=3,<6",
+]
+
 
 [tool.ruff]
 line-length = 99
