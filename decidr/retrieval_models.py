@@ -42,6 +42,10 @@ class Source(StrictModel):
     checksum: str = Field(pattern=r"^[0-9a-f]{64}$")
     metadata_notes: str | None = None
     metadata_provenance: dict[str, str] = Field(default_factory=dict)
+    metadata_version: str | None = None
+    header_evidence: list[dict[str, Any]] = Field(default_factory=list)
+    approval_clauses: list[dict[str, Any]] = Field(default_factory=list)
+    metadata_conflicts: list[dict[str, Any]] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_dates(self) -> "Source":

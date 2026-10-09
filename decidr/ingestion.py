@@ -19,6 +19,9 @@ from decidr.retrieval_store import (
     upsert_source,
 )
 from decidr.retrieval_models import Evidence, Source
+from decidr.source_metadata import (
+    METADATA_VERSION, approval_lifecycle, header_date, read_header,
+)
 
 SUPPORTED_SUFFIXES = {".md", ".csv"}
 TECHNICAL_NAMES = {"README.md"}
@@ -40,7 +43,7 @@ class IngestionResult:
     started_at: str = ""
     completed_at: str = ""
     code_version: str = "unknown"
-    configuration_version: str = "ingestion-v2-date-separation"
+    configuration_version: str = "ingestion-v3-document-header"
 
     def summary(self) -> dict[str, object]:
         statuses = Counter(source.ingestion_status for source in self.sources)
@@ -109,17 +112,8 @@ def _parse_date(value: str | None) -> date | None:
 
 
 def _markdown_header(path: Path) -> tuple[str, dict[str, str]]:
-    title = path.stem
-    metadata: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8-sig").splitlines():
-        heading = HEADING_PATTERN.match(line)
-        if heading and heading.group("level") == "#":
-            title = heading.group("title").strip()
-        match = METADATA_PATTERN.match(line)
-        if match:
-            metadata[match.group("key").strip().casefold()] = match.group("value").strip()
-        if metadata and line.startswith("## "):
-            break
+    """Compatibility wrapper for the document-scoped header reader."""
+    title, metadata, _, _ = read_header(path)
     return title, metadata
 
 
@@ -133,8 +127,10 @@ def build_source(path: Path, root: Path, release: str) -> Source:
     relative = path.relative_to(root)
     checksum = sha256_file(path)
     source_type = _source_type(relative)
-    title, metadata = (
-        _markdown_header(path) if path.suffix.casefold() == ".md" else (path.stem, {})
+    title, metadata, header_entries, conflicts = (
+        read_header(path)
+        if path.suffix.casefold() == ".md"
+        else (path.stem, {}, [], [])
     )
     code = _source_code(path, title)
     excluded = path.name in TECHNICAL_NAMES or path.name in ANNOTATION_NAMES
@@ -142,26 +138,54 @@ def build_source(path: Path, root: Path, release: str) -> Source:
     owner = metadata.get("document owner") or metadata.get("owner")
     role_function = metadata.get("role / function")
     author = owner or (role_function.split(",", 1)[0] if role_function else None)
-    effective_raw = metadata.get("effective date")
-    superseded_raw = metadata.get("superseded date")
-    date_raw = metadata.get("date") or metadata.get("interview date")
-    creation_date = _parse_date(date_raw)
-    last_updated_date = _parse_date(metadata.get("last updated"))
-    effective_start = _parse_date(effective_raw)
-    effective_end = _parse_date(metadata.get("effective end date"))
-    superseded_date = _parse_date(superseded_raw)
+    date_key = (
+        "date"
+        if "date" in metadata or any(c["field"] == "date" for c in conflicts)
+        else "interview date"
+    )
+    creation_date = header_date(metadata, date_key, conflicts)
+    last_updated_date = header_date(metadata, "last updated", conflicts)
+    effective_start = header_date(metadata, "effective date", conflicts)
+    effective_end = header_date(metadata, "effective end date", conflicts)
+    superseded_date = header_date(metadata, "superseded date", conflicts)
+    if effective_start and effective_end and effective_start > effective_end:
+        conflicts.append({
+            "field": "effective_end_date",
+            "values": [effective_start.isoformat(), effective_end.isoformat()],
+            "reason": "Effective end precedes start; interval left unresolved.",
+        })
+        effective_end = None
+
     approval = metadata.get("approval status")
-    if is_superseded:
+    own_lifecycle, approval_clauses, approval_conflicts = approval_lifecycle(
+        approval, code
+    )
+    conflicts.extend(approval_conflicts)
+    approval_unresolved = any(
+        item["field"] in {"approval_status", "lifecycle_status"}
+        for item in conflicts
+    )
+    if approval_unresolved:
+        lifecycle = "unknown"
+        lifecycle_provenance = "unresolved:approval_metadata"
+    elif is_superseded:
         lifecycle = "superseded"
-    elif approval and "draft" in approval.casefold():
-        lifecycle = "draft"
+        lifecycle_provenance = "inferred:superseded_directory"
+    elif own_lifecycle:
+        lifecycle = own_lifecycle
+        lifecycle_provenance = "derived:document_scoped_approval_clauses"
     else:
         lifecycle = "current"
+        lifecycle_provenance = "inferred:active_directory_not_proof_of_approval"
+
+    for entry in header_entries:
+        entry["source_id"] = f"{release}:{code}"
     provenance = {
         "title": "direct:markdown_h1" if path.suffix.casefold() == ".md" else "inferred:filename",
         "source_type": "inferred:directory",
         "release": "direct:configured_root",
         "checksum": "calculated:sha256",
+        "lifecycle_status": lifecycle_provenance,
     }
     for key in (
         "version",
@@ -211,6 +235,10 @@ def build_source(path: Path, root: Path, release: str) -> Source:
         checksum=checksum,
         metadata_notes="; ".join(notes),
         metadata_provenance=provenance,
+        metadata_version=METADATA_VERSION,
+        header_evidence=header_entries,
+        approval_clauses=approval_clauses,
+        metadata_conflicts=conflicts,
     )
 
 
