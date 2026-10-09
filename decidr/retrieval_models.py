@@ -25,6 +25,8 @@ class Source(StrictModel):
     responsible_person_or_role: str | None = None
     author_or_system: str | None = None
     creation_date: date | None = None
+    last_updated_date: date | None = None
+    superseded_date: date | None = None
     effective_start_date: date | None = None
     effective_end_date: date | None = None
     version: str | None = None

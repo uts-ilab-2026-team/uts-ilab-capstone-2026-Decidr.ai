@@ -40,7 +40,7 @@ class IngestionResult:
     started_at: str = ""
     completed_at: str = ""
     code_version: str = "unknown"
-    configuration_version: str = "ingestion-v1"
+    configuration_version: str = "ingestion-v2-date-separation"
 
     def summary(self) -> dict[str, object]:
         statuses = Counter(source.ingestion_status for source in self.sources)
@@ -145,9 +145,11 @@ def build_source(path: Path, root: Path, release: str) -> Source:
     effective_raw = metadata.get("effective date")
     superseded_raw = metadata.get("superseded date")
     date_raw = metadata.get("date") or metadata.get("interview date")
-    creation_date = _parse_date(date_raw or metadata.get("last updated"))
+    creation_date = _parse_date(date_raw)
+    last_updated_date = _parse_date(metadata.get("last updated"))
     effective_start = _parse_date(effective_raw)
-    effective_end = _parse_date(superseded_raw)
+    effective_end = _parse_date(metadata.get("effective end date"))
+    superseded_date = _parse_date(superseded_raw)
     approval = metadata.get("approval status")
     if is_superseded:
         lifecycle = "superseded"
@@ -165,6 +167,8 @@ def build_source(path: Path, root: Path, release: str) -> Source:
         "version",
         "approval status",
         "effective date",
+        "effective end date",
+        "last updated",
         "superseded date",
         "document owner",
         "owner",
@@ -188,6 +192,8 @@ def build_source(path: Path, root: Path, release: str) -> Source:
         responsible_person_or_role=owner or role_function,
         author_or_system=author,
         creation_date=creation_date,
+        last_updated_date=last_updated_date,
+        superseded_date=superseded_date,
         effective_start_date=effective_start,
         effective_end_date=effective_end,
         version=metadata.get("version"),
