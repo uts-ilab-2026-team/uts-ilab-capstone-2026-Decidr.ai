@@ -193,3 +193,102 @@ def test_fusion_preserves_union_ranks_and_ignores_repeated_ids():
 
     lexical_only = reciprocal_rank_fusion(lexical, [], limit=10)
     assert [result.evidence_id for result in lexical_only] == ["a", "b"]
+
+def _grouping_passage(identifier, *, source="source:a", section="Topic", row=None):
+    from decidr.retrieval_models import Evidence
+
+    return Evidence(
+        evidence_id=identifier,
+        source_id=source,
+        locator=f"record:{identifier}" if row else f"heading:{section}#{identifier}",
+        text=f"Original text for {identifier}",
+        source_type="audit_log" if row else "policy",
+        section=section,
+        heading=section,
+        paragraph=int(identifier[-1]),
+        row_identifier=row,
+        extraction_method="csv_rows_v1" if row else "markdown_heading_blocks_v1",
+    )
+
+
+def _grouping_result(passage, rank):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        evidence_id=passage.evidence_id,
+        source_id=passage.source_id,
+        locator=passage.locator,
+        text=passage.text,
+        rank=rank,
+    )
+
+
+def test_grouping_preserves_citations_and_ranked_matches():
+    from decidr.hybrid import group_ranked_evidence
+
+    first = _grouping_passage("a1")
+    second = _grouping_passage("a2")
+    context = _grouping_passage("a3")
+    other = _grouping_passage("b1", source="source:b")
+    lead = _grouping_result(second, 1)
+    results = [lead, _grouping_result(first, 2), _grouping_result(other, 3)]
+
+    grouped = group_ranked_evidence(
+        results, [context, other, second, first], limit=2
+    )
+
+    assert len(grouped) == 2
+    assert grouped[0].lead_result is lead
+    assert grouped[0].matched_evidence_ids == ("a2", "a1")
+    assert [item.model_dump() for item in grouped[0].passages] == [
+        item.model_dump() for item in (first, second, context)
+    ]
+    assert grouped[1].matched_evidence_ids == ("b1",)
+    assert [item.rank for item in grouped] == [1, 2]
+    assert grouped[1].lead_result.rank == 3
+
+    repeated = group_ranked_evidence(
+        [lead, *results], [first, second, context, other], limit=2
+    )
+    assert repeated == grouped
+
+    grouped[0].passages[0].structured_metadata["changed"] = True
+    assert first.structured_metadata == {}
+
+
+def test_grouping_keeps_sections_sources_and_csv_records_separate():
+    from decidr.hybrid import group_ranked_evidence
+
+    passages = [
+        _grouping_passage("a1", section="Topic > Formal"),
+        _grouping_passage("a2", section="Topic > Observed"),
+        _grouping_passage("b1", source="source:b", section="Topic > Formal"),
+        _grouping_passage("c1", source="source:csv", row="EVENT-1"),
+        _grouping_passage("c2", source="source:csv", row="EVENT-2"),
+    ]
+    results = [
+        _grouping_result(item, rank)
+        for rank, item in enumerate(passages, start=1)
+    ]
+
+    grouped = group_ranked_evidence(results, passages)
+
+    assert len(grouped) == 5
+    assert all(len(item.passages) == 1 for item in grouped)
+    assert [item.passages[0].evidence_id for item in grouped] == [
+        item.evidence_id for item in passages
+    ]
+
+
+def test_grouping_rejects_missing_or_mismatched_citations():
+    from decidr.hybrid import group_ranked_evidence
+
+    passage = _grouping_passage("a1")
+    result = _grouping_result(passage, 1)
+
+    with pytest.raises(ValueError, match="Missing evidence"):
+        group_ranked_evidence([result], [])
+
+    result.text = "Text belonging to a different record"
+    with pytest.raises(ValueError, match="does not match evidence"):
+        group_ranked_evidence([result], [passage])
