@@ -269,8 +269,11 @@ def register_json(as_of: date | None = None) -> Response:
     )
 
 
+from decidr.api.corpus import router as corpus_router
+
 app.include_router(auth.router)
 app.include_router(router)
+app.include_router(corpus_router)
 
 # Serve the built frontend when it exists, so one process can host the whole app.
 if FRONTEND_DIST.is_dir():
