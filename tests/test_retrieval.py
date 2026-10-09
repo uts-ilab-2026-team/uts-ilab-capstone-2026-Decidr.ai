@@ -292,3 +292,58 @@ def test_grouping_rejects_missing_or_mismatched_citations():
     result.text = "Text belonging to a different record"
     with pytest.raises(ValueError, match="does not match evidence"):
         group_ranked_evidence([result], [passage])
+
+def test_record_references_distinguish_identity_link_and_mention():
+    from decidr.retrieval import find_record_references
+
+    record = _grouping_passage("a1", row="CASE-731")
+    audit = _grouping_passage("b1", source="audit", row="EVENT-812")
+    audit.structured_metadata = {"record": {"related_record": "CASE-731"}}
+    message = _grouping_passage("c1", source="messages")
+    message.text = "No approval record was found for CASE-731."
+    unrelated = _grouping_passage("d1", row="CASE-732")
+    unrelated.text = "CASE-732 received approval."
+
+    evidence = [record, audit, message, unrelated]
+    before = [item.model_dump() for item in evidence]
+    references = find_record_references("Was case-731 approved?", evidence)
+
+    assert [
+        (item.evidence_id, item.relationship) for item in references
+    ] == [
+        ("a1", "record_itself"),
+        ("b1", "structured_reference"),
+        ("c1", "textual_mention"),
+    ]
+    assert all(item.record_id == "CASE-731" for item in references)
+    assert [item.locator for item in references] == [
+        record.locator, audit.locator, message.locator
+    ]
+    assert [item.model_dump() for item in evidence] == before
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["CASE-7310", "CASE-731-02", "OTHER-CASE-731", "CASE-731_extra"],
+)
+def test_record_references_do_not_match_partial_identifiers(text):
+    from decidr.retrieval import find_record_references
+
+    passage = _grouping_passage("a1")
+    passage.text = text
+    assert find_record_references("Check CASE-731", [passage]) == []
+
+
+def test_record_references_preserve_multiple_targets_and_unknowns():
+    from decidr.retrieval import find_record_references
+
+    passage = _grouping_passage("a1")
+    passage.text = "CASE-731 and INCIDENT-2026-02 concern different events."
+
+    references = find_record_references(
+        "Compare CASE-731 with INCIDENT-2026-02 and CASE-999", [passage]
+    )
+    assert {item.record_id for item in references} == {
+        "CASE-731", "INCIDENT-2026-02"
+    }
+    assert find_record_references("Was the billing release approved?", [passage]) == []
