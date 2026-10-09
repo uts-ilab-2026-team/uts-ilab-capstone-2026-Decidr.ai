@@ -6,6 +6,15 @@ from typing import Protocol
 
 from decidr.retrieval_models import Evidence
 
+import sqlite3
+
+from decidr.retrieval import (
+    RecordReference,
+    find_record_references,
+    lexical_search_text,
+)
+from decidr.semantic import Embedder, semantic_search_text
+
 
 class RankedResult(Protocol):
     evidence_id: str
@@ -150,3 +159,131 @@ def group_ranked_evidence(
             )
         )
     return grouped
+
+@dataclass(frozen=True, slots=True)
+class CorpusCandidate:
+    """A candidate with separate retrieval and identifier provenance.
+
+    rank is the candidate ordering used for grouping. Reference-only candidates
+    follow retrieved candidates and have retrieval=None, not a relevance score.
+    """
+
+    evidence_id: str
+    source_id: str
+    locator: str
+    text: str
+    rank: int
+    retrieval: HybridResult | None
+    record_references: tuple[RecordReference, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CorpusSearchResult:
+    """Ranked selection plus linked groups outside that selection."""
+
+    ranked_groups: tuple[EvidenceGroup, ...]
+    additional_linked_groups: tuple[EvidenceGroup, ...]
+    candidates: tuple[CorpusCandidate, ...]
+
+
+def search_corpus(
+    connection: sqlite3.Connection,
+    query: str,
+    *,
+    limit: int = 8,
+    embedder: Embedder | None = None,
+) -> CorpusSearchResult:
+    """Search the indexed corpus and preserve explicit record connections.
+
+    limit controls ranked groups, not the number of additional linked groups.
+    Every explicit connection is retained in one of the two group collections.
+    Full passage rankings are used before grouping for the current small corpus.
+
+    Lexical-only search does not write. Optional semantic search uses the
+    existing embedding cache; the caller controls its transaction. Semantic
+    errors propagate rather than silently changing the retrieval method.
+
+    Results are retrieval candidates, not support/contradiction decisions.
+    """
+    if type(limit) is not int or limit < 0:
+        raise ValueError("limit must be a non-negative integer")
+
+    empty = CorpusSearchResult((), (), ())
+    query = query.strip()
+    if not query or limit == 0:
+        return empty
+
+    evidence = [
+        Evidence.model_validate_json(row[0])
+        for row in connection.execute(
+            "SELECT payload_json FROM evidence ORDER BY evidence_id"
+        )
+    ]
+    if not evidence:
+        return empty
+
+    by_id = {item.evidence_id: item for item in evidence}
+    references = find_record_references(query, evidence)
+    references_by_id: dict[str, list[RecordReference]] = {}
+    for reference in references:
+        references_by_id.setdefault(reference.evidence_id, []).append(reference)
+
+    lexical = lexical_search_text(connection, query, limit=len(evidence))
+    semantic = (
+        semantic_search_text(connection, query, embedder, limit=len(evidence))
+        if embedder is not None
+        else []
+    )
+    fused = reciprocal_rank_fusion(lexical, semantic, limit=len(evidence))
+    retrieval_by_id = {item.evidence_id: item for item in fused}
+
+    # Validate both retrieval channels before fusion can mask a stale citation.
+    for result in [*lexical, *semantic]:
+        original = by_id.get(result.evidence_id)
+        if original is None or (
+            result.source_id, result.locator, result.text
+        ) != (original.source_id, original.locator, original.text):
+            raise ValueError(
+                f"Retrieval result does not match stored evidence: {result.evidence_id}"
+            )
+
+    ordered_ids = [item.evidence_id for item in fused]
+    ordered_ids.extend(sorted(set(references_by_id) - set(retrieval_by_id)))
+
+    candidates = []
+    for rank, identifier in enumerate(ordered_ids, start=1):
+        item = by_id[identifier]
+        candidates.append(
+            CorpusCandidate(
+                evidence_id=identifier,
+                source_id=item.source_id,
+                locator=item.locator,
+                text=item.text,
+                rank=rank,
+                retrieval=retrieval_by_id.get(identifier),
+                record_references=tuple(references_by_id.get(identifier, ())),
+            )
+        )
+
+    groups = group_ranked_evidence(
+        candidates, evidence, limit=len(evidence)
+    )
+    ranked_groups = tuple(
+        group for group in groups
+        if group.lead_result.evidence_id in retrieval_by_id
+    )[:limit]
+    selected_ids = {
+        group.lead_result.evidence_id for group in ranked_groups
+    }
+    additional_linked_groups = tuple(
+        group for group in groups
+        if group.lead_result.evidence_id not in selected_ids
+        and any(
+            identifier in references_by_id
+            for identifier in group.matched_evidence_ids
+        )
+    )
+
+    return CorpusSearchResult(
+        ranked_groups, additional_linked_groups, tuple(candidates)
+    )

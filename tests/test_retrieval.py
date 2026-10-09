@@ -194,7 +194,7 @@ def test_fusion_preserves_union_ranks_and_ignores_repeated_ids():
     lexical_only = reciprocal_rank_fusion(lexical, [], limit=10)
     assert [result.evidence_id for result in lexical_only] == ["a", "b"]
 
-def _grouping_passage(identifier, *, source="source:a", section="Topic", row=None):
+def _grouping_passage(identifier, *, source="source:a", section="Topic", row=None, paragraph=None):
     from decidr.retrieval_models import Evidence
 
     return Evidence(
@@ -205,7 +205,7 @@ def _grouping_passage(identifier, *, source="source:a", section="Topic", row=Non
         source_type="audit_log" if row else "policy",
         section=section,
         heading=section,
-        paragraph=int(identifier[-1]),
+        paragraph=paragraph if paragraph is not None else int(identifier[-1]),
         row_identifier=row,
         extraction_method="csv_rows_v1" if row else "markdown_heading_blocks_v1",
     )
@@ -347,3 +347,113 @@ def test_record_references_preserve_multiple_targets_and_unknowns():
         "CASE-731", "INCIDENT-2026-02"
     }
     assert find_record_references("Was the billing release approved?", [passage]) == []
+
+def test_corpus_search_preserves_links_without_displacing_ranked_policy(corpus_store):
+    from decidr.hybrid import search_corpus
+    from decidr.retrieval_store import replace_source_evidence
+
+    audit_source = corpus_store.execute(
+        "SELECT source_id FROM evidence WHERE locator LIKE '%AUD-9001%'"
+    ).fetchone()[0]
+
+    own = _grouping_passage("own1", source=audit_source, row="CASE-731")
+    own.text = "Archived record."
+    linked = _grouping_passage("linked2", source=audit_source, row="EVENT-812")
+    linked.text = "Review completed."
+    linked.structured_metadata = {"record": {"related_record": "CASE-731"}}
+    unrelated = _grouping_passage("other3", source=audit_source, row="CASE-732")
+    unrelated.text = "Separate record."
+
+    replace_source_evidence(corpus_store, audit_source, [own, linked, unrelated])
+    before = corpus_store.total_changes
+    result = search_corpus(corpus_store, "CASE-731 travel approval", limit=1)
+
+    assert len(result.ranked_groups) == 1
+    assert result.ranked_groups[0].lead_result.source_id.startswith("test:POL-")
+    assert len(result.additional_linked_groups) == 2
+
+    candidates = {item.evidence_id: item for item in result.candidates}
+    assert candidates["own1"].retrieval is None
+    assert candidates["linked2"].retrieval is None
+    assert candidates["own1"].record_references[0].relationship == "record_itself"
+    assert candidates["linked2"].record_references[0].relationship == "structured_reference"
+    assert "other3" not in candidates
+
+    all_groups = (*result.ranked_groups, *result.additional_linked_groups)
+    passages = [item for group in all_groups for item in group.passages]
+    assert len(passages) == len({item.evidence_id for item in passages})
+    assert next(item for item in passages if item.evidence_id == "linked2") == linked
+    assert corpus_store.total_changes == before
+
+
+def test_corpus_search_groups_before_limit_and_retains_context(corpus_store):
+    from decidr.hybrid import search_corpus
+    from decidr.retrieval_store import replace_source_evidence
+
+    source_id = "test:POL-91"
+    passages = [
+        _grouping_passage(f"passage{i}", source=source_id, paragraph=i + 1)
+        for i in range(25)
+    ]
+    for passage in passages:
+        passage.text = "Travel approval."
+
+    context = _grouping_passage("context9", source=source_id)
+    context.text = "Background only."
+    replace_source_evidence(corpus_store, source_id, [*passages, context])
+
+    result = search_corpus(corpus_store, "travel approval", limit=2)
+
+    assert len(result.ranked_groups) == 2
+    assert {
+        group.lead_result.source_id for group in result.ranked_groups
+    } == {"test:POL-91", "test:POL-92"}
+    group = next(
+        group for group in result.ranked_groups
+        if group.lead_result.source_id == source_id
+    )
+    assert len(group.passages) == 26
+    assert "context9" not in group.matched_evidence_ids
+    assert any(item.evidence_id == "context9" for item in group.passages)
+    assert result.additional_linked_groups == ()
+
+
+def test_corpus_search_semantic_union_and_reference_deduplication(corpus_store):
+    from decidr.hybrid import reciprocal_rank_fusion, search_corpus
+    from decidr.semantic import semantic_search_text
+
+    query = "AUD-9001 travel"
+    embedder = RecordingEmbedder()
+    result = search_corpus(corpus_store, query, limit=10, embedder=embedder)
+
+    expected = reciprocal_rank_fusion(
+        lexical_search_text(corpus_store, query, limit=10),
+        semantic_search_text(corpus_store, query, embedder, limit=10),
+        limit=10,
+    )
+    assert [item.retrieval for item in result.candidates] == expected
+    assert len(result.candidates) == len({
+        item.evidence_id for item in result.candidates
+    })
+    assert result.additional_linked_groups == ()
+
+    linked = [
+        item for item in result.candidates if item.record_references
+    ]
+    assert len(linked) == 1
+    assert linked[0].record_references[0].record_id == "AUD-9001"
+
+
+@pytest.mark.parametrize("query,limit", [("", 8), ("   ", 8), ("travel", 0)])
+def test_corpus_search_noop_does_not_encode_or_write(corpus_store, query, limit):
+    from decidr.hybrid import search_corpus
+
+    embedder = RecordingEmbedder()
+    before = corpus_store.total_changes
+    result = search_corpus(corpus_store, query, limit=limit, embedder=embedder)
+
+    assert result.ranked_groups == ()
+    assert result.additional_linked_groups == ()
+    assert result.candidates == ()
+    assert embedder.calls == []
+    assert corpus_store.total_changes == before
