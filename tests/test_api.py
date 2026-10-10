@@ -51,8 +51,7 @@ def test_check_claim_assesses_closest_fact() -> None:
     assert "DEAL-014" in slack["attests_value"]
     assert "CRM approval_record field" in slack["attests_value"]
     deal = next(
-        item for item in assessment["evidence"]
-        if item["document_id"] == "document:DEAL-001"
+        item for item in assessment["evidence"] if item["document_id"] == "document:DEAL-001"
     )
     assert deal["actor"]["label"] == "Harriet Doyle"
 

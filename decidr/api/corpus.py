@@ -13,7 +13,6 @@ from decidr.api import auth
 from decidr.hybrid import search_corpus
 from decidr.retrieval_models import Evidence, Source
 
-
 router = APIRouter(
     prefix="/api/corpus",
     dependencies=[Depends(auth.current_user)],
@@ -67,9 +66,7 @@ def corpus_search(request: CorpusSearchRequest) -> dict:
                     "SELECT source_id, payload_json FROM sources ORDER BY source_id"
                 )
             }
-            evidence_count = connection.execute(
-                "SELECT COUNT(*) FROM evidence"
-            ).fetchone()[0]
+            evidence_count = connection.execute("SELECT COUNT(*) FROM evidence").fetchone()[0]
 
             if not sources or not evidence_count:
                 raise HTTPException(
@@ -77,30 +74,30 @@ def corpus_search(request: CorpusSearchRequest) -> dict:
                     detail="The corpus index contains no searchable evidence.",
                 )
 
-            result = search_corpus(
-                connection, request.claim, limit=request.limit
-            )
-            candidates = {
-                item.evidence_id: item for item in result.candidates
-            }
+            result = search_corpus(connection, request.claim, limit=request.limit)
+            candidates = {item.evidence_id: item for item in result.candidates}
 
             def group_payload(group, position):
                 passages = []
                 for passage in group.passages:
                     candidate = candidates.get(passage.evidence_id)
-                    passages.append({
-                        "evidence": passage.model_dump(mode="json"),
-                        "interpretation_status": "unassessed",
-                        "relationship": None,
-                        "retrieval": (
-                            asdict(candidate.retrieval)
-                            if candidate and candidate.retrieval else None
-                        ),
-                        "record_references": (
-                            [asdict(item) for item in candidate.record_references]
-                            if candidate else []
-                        ),
-                    })
+                    passages.append(
+                        {
+                            "evidence": passage.model_dump(mode="json"),
+                            "interpretation_status": "unassessed",
+                            "relationship": None,
+                            "retrieval": (
+                                asdict(candidate.retrieval)
+                                if candidate and candidate.retrieval
+                                else None
+                            ),
+                            "record_references": (
+                                [asdict(item) for item in candidate.record_references]
+                                if candidate
+                                else []
+                            ),
+                        }
+                    )
                 return {
                     "position": position,
                     "source_id": group.lead_result.source_id,
@@ -117,9 +114,7 @@ def corpus_search(request: CorpusSearchRequest) -> dict:
                 group_payload(group, position)
                 for position, group in enumerate(result.additional_linked_groups, 1)
             ]
-            displayed_source_ids = {
-                group["source_id"] for group in [*ranked, *linked]
-            }
+            displayed_source_ids = {group["source_id"] for group in [*ranked, *linked]}
             source_payloads = [
                 sources[source_id].model_dump(mode="json")
                 for source_id in sorted(displayed_source_ids)
