@@ -16,6 +16,12 @@ def serialize_facet_assessment(result: FacetAssessmentResult) -> dict:
     payload = {
         "schema_version": "facet-assessment-response-v1",
         "assessment_scope": "facet",
+        "assessment_target": result.assessment_target,
+        "target_validation": (
+            "not_performed_legacy"
+            if result.assessment_target == "unspecified"
+            else "supplied_declarations_checked"
+        ),
         "interpretation_basis": "supplied_judgements",
         "claim_text": result.claim_text,
         "facet": result.facet,

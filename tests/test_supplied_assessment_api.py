@@ -234,3 +234,72 @@ def test_legacy_request_defaults_to_unverified(client, packet):
     assert any(
         "unverified" in reason for reason in result["assessment"]["evidence"][0]["limitations"]
     )
+
+
+@pytest.mark.parametrize(
+    "target,mode",
+    [
+        ("recorded_statement", "observed"),
+        ("underlying_event", "observed"),
+        ("formal_rule", "formal"),
+    ],
+)
+def test_targeted_assessment_roundtrip(client, packet, target, mode):
+    path, body = packet
+    before = path.read_bytes()
+    body["assessment_target"] = target
+    body["inputs"][0].update(
+        mode=mode,
+        evidence_target=target,
+        target_basis="Synthetic supplied target; no semantic verification.",
+    )
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["assessment_target"] == target
+    assert result["target_validation"] == "supplied_declarations_checked"
+    assert result["inputs"][0]["admitted_to_framework"] is True
+    assert result["inputs"][0]["supplied_judgements"]["evidence_target"] == target
+    assert path.read_bytes() == before
+
+
+def test_statement_is_not_admitted_as_event(client, packet):
+    _, body = packet
+    body["assessment_target"] = "underlying_event"
+    body["inputs"][0].update(
+        mode="observed",
+        evidence_target="recorded_statement",
+        target_basis="The record establishes only the statement.",
+    )
+    result = client.post(URL, json=body).json()
+    assert result["assessment"]["overall_outcome"] == "Insufficient evidence"
+    assert result["inputs"][0]["admitted_to_framework"] is False
+    assert result["inputs"][0]["interpretation"]["citations"] == body["inputs"][0]["citations"]
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("evidence_target", "invented"),
+        ("evidence_target", None),
+        ("target_basis", 12),
+    ],
+)
+def test_invalid_target_fields(client, packet, field, value):
+    _, body = packet
+    body["inputs"][0][field] = value
+    assert client.post(URL, json=body).status_code == 422
+
+
+def test_explicit_evidence_target_requires_basis(client, packet):
+    _, body = packet
+    body["assessment_target"] = "formal_rule"
+    body["inputs"][0]["evidence_target"] = "formal_rule"
+    assert client.post(URL, json=body).status_code == 422
+
+
+def test_legacy_api_target_is_disclosed(client, packet):
+    _, body = packet
+    result = client.post(URL, json=body).json()
+    assert result["assessment_target"] == "unspecified"
+    assert result["target_validation"] == "not_performed_legacy"

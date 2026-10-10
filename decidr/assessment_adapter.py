@@ -14,6 +14,7 @@ from framework.credibility import GraphCredibilityFramework
 from framework.graph import OrganisationalGraph
 from framework.models import FactAssessment, GraphEdge, GraphNode
 
+from decidr.assessment_targets import AssessmentTarget, target_exclusion, validate_target
 from decidr.interpretation_models import EvidenceInterpretation, validate_interpretation
 from decidr.retrieval_models import Evidence, Source
 
@@ -35,6 +36,8 @@ class PreparedAttestation:
     origin_basis: str
     independence_verified: bool = False
     independence_basis: str = ""
+    evidence_target: AssessmentTarget = "unspecified"
+    target_basis: str = ""
 
 
 @dataclass(frozen=True)
@@ -55,6 +58,7 @@ class FacetAssessmentResult:
     assessment: FactAssessment
     inputs: tuple[InputDisposition, ...]
     limitations: tuple[str, ...]
+    assessment_target: AssessmentTarget = "unspecified"
 
 
 def assess_prepared_facet(
@@ -65,6 +69,7 @@ def assess_prepared_facet(
     prepared: Iterable[PreparedAttestation],
     evidence: Iterable[Evidence],
     config: GraphCredibilityConfig,
+    assessment_target: AssessmentTarget = "unspecified",
 ) -> FacetAssessmentResult:
     """Assess one facet; never aggregate it into a whole-claim verdict.
 
@@ -79,6 +84,7 @@ def assess_prepared_facet(
     if type(as_of) is not date:
         raise ValueError("as_of must be an explicit date")
 
+    validate_target(assessment_target)
     passages = tuple(evidence)
     if len({p.evidence_id for p in passages}) != len(passages):
         raise ValueError("Duplicate evidence IDs")
@@ -88,7 +94,12 @@ def assess_prepared_facet(
             "fact:facet",
             "fact",
             facet,
-            {"statement": facet, "claim_text": claim_text, "category": "corpus-facet"},
+            {
+                "statement": facet,
+                "claim_text": claim_text,
+                "category": "corpus-facet",
+                "assessment_target": assessment_target,
+            },
         )
     ]
     edges = []
@@ -99,6 +110,11 @@ def assess_prepared_facet(
 
     # Check all source/origin declarations, including non-scoring inputs.
     for item in items:
+        validate_target(item.evidence_target)
+        if not isinstance(item.target_basis, str):
+            raise TypeError("target_basis must be a string")
+        if item.evidence_target != "unspecified" and not item.target_basis.strip():
+            raise ValueError("Explicit evidence target requires a target_basis")
         if type(item.independence_verified) is not bool or not isinstance(
             item.independence_basis, str
         ):
@@ -160,6 +176,11 @@ def assess_prepared_facet(
 
         source = item.source
         reasons = []
+        target_reason = target_exclusion(
+            assessment_target, item.evidence_target, interpretation.mode
+        )
+        if target_reason:
+            reasons.append(target_reason)
         if interpretation.stance not in {"support", "contradict"}:
             reasons.append(f"Non-decisive interpretation: {interpretation.stance}.")
         if interpretation.mode == "unresolved":
@@ -209,6 +230,8 @@ def assess_prepared_facet(
                 "origin_basis",
                 "independence_verified",
                 "independence_basis",
+                "evidence_target",
+                "target_basis",
             )
         }
         edge_id = None
@@ -261,6 +284,8 @@ def assess_prepared_facet(
                         "completeness": item.completeness,
                         "independence_verified": item.independence_verified,
                         "independence_basis": item.independence_basis,
+                        "evidence_target": item.evidence_target,
+                        "target_basis": item.target_basis,
                         "input_id": input_id,
                         "judgement_basis": item.judgement_basis,
                     },
@@ -288,6 +313,11 @@ def assess_prepared_facet(
         (
             "This is a facet assessment, not a whole-claim verdict.",
             (
+                "Legacy target unspecified; no statement/event/rule target check performed."
+                if assessment_target == "unspecified"
+                else "Target declarations were compared; their semantic correctness is not verified."
+            ),
+            (
                 "Relationship, authority and quality judgements are supplied inputs, "
                 "not established by citation validation."
             ),
@@ -302,4 +332,5 @@ def assess_prepared_facet(
             "Framework gaps describe admitted attestations, not exhaustive corpus coverage.",
             "Existing framework lifecycle and historical corroboration rules are unchanged.",
         ),
+        assessment_target=assessment_target,
     )

@@ -16,6 +16,7 @@ from decidr.api import auth
 from decidr.api.corpus import corpus_database_path
 from decidr.assessment_adapter import PreparedAttestation, assess_prepared_facet
 from decidr.assessment_response import serialize_facet_assessment
+from decidr.assessment_targets import AssessmentTarget
 from decidr.interpretation_models import EvidenceInterpretation, InterpretationCitation
 from decidr.retrieval_models import Evidence, Source
 
@@ -50,6 +51,8 @@ class SuppliedInput(BaseModel):
     origin_basis: Text
     independence_verified: bool = False
     independence_basis: str = Field(default="", max_length=10000)
+    evidence_target: AssessmentTarget = "unspecified"
+    target_basis: str = Field(default="", max_length=10000)
 
 
 class SuppliedAssessmentRequest(BaseModel):
@@ -57,6 +60,7 @@ class SuppliedAssessmentRequest(BaseModel):
 
     claim_text: Text
     facet: Text
+    assessment_target: AssessmentTarget = "unspecified"
     as_of: date
     inputs: list[SuppliedInput] = Field(min_length=1, max_length=50)
 
@@ -156,6 +160,8 @@ def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
                 origin_basis=item.origin_basis,
                 independence_verified=item.independence_verified,
                 independence_basis=item.independence_basis,
+                evidence_target=item.evidence_target,
+                target_basis=item.target_basis,
             )
         )
 
@@ -163,12 +169,13 @@ def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
         result = assess_prepared_facet(
             claim_text=request.claim_text,
             facet=request.facet,
+            assessment_target=request.assessment_target,
             as_of=request.as_of,
             prepared=prepared,
             evidence=list(evidence.values()),
             config=config,
         )
-    except ValueError as error:
+    except (ValueError, TypeError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
     response = serialize_facet_assessment(result)
