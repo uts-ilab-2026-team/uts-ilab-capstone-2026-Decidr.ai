@@ -22,8 +22,8 @@ The prototype now supports both the original prebuilt graph flow and an exact-cl
 ```text
 Exact claim
   -> Saif FTS5/BM25 retrieval and optional local semantic RRF
-  -> temporal, duplicate and provenance handling
-  -> unresolved evidence packet with exact provenance
+  -> temporal, duplicate, section-grouping and explicit-record-ID handling
+  -> unresolved evidence packet with exact passages and provenance
   -> numeric threshold comparison as a diagnostic only
   -> explicitly judged formal and observed evidence relationships
   -> source, status, date and materiality checks
@@ -48,6 +48,8 @@ decidr/semantic.py                Optional local semantic retrieval
 decidr/hybrid.py                  Reciprocal-rank fusion
 decidr/ingestion.py               Structured Markdown and CSV ingestion
 decidr/corpus_assessment.py       Interpretation, graph assessment and review
+decidr/interpretation_models.py   Exact quotation and citation validation
+decidr/assessment_adapter.py      Supplied-judgement facet assessment contract
 framework/graph_prototype/        Graph model and credibility logic
 tests/                            Automated tests
 ```
@@ -90,7 +92,11 @@ The application has four working pages:
 Copy `.env.example` to `.env` and set the local Phase 2 corpus directory.
 The End-to-End Claim Assessment page can ingest or refresh that configured directory into
 `data/processed/evidence.sqlite3`. The database is ignored by Git and evidence is not sent to
-an external service.
+an external service. Refreshes are published as complete source snapshots: an extraction
+failure leaves the previous searchable snapshot unchanged. Markdown search hits from one
+section are shown together as context but count as one provenance origin. Exact record IDs
+can add linked records outside the ranking cutoff without automatically treating those links
+as supporting or contradicting evidence.
 
 ### Windows PowerShell
 

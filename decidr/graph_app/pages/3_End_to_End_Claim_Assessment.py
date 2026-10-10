@@ -44,16 +44,17 @@ with st.expander("Configured corpus", expanded=not counts["evidence"]):
         "Ingest or refresh configured corpus",
         type="primary" if not counts["evidence"] else "secondary",
     ):
-        with st.spinner("Reading the configured corpus and refreshing the evidence ledger..."):
-            ingestion = database.ingest_configured_corpus()
-        st.success(
-            f"Ingested {len(ingestion.sources)} sources and "
-            f"{len(ingestion.evidence)} evidence units."
-        )
-        if ingestion.warnings:
-            for warning in ingestion.warnings:
-                st.warning(warning)
-        st.rerun()
+        try:
+            with st.spinner("Reading the configured corpus and refreshing the evidence ledger..."):
+                ingestion = database.ingest_configured_corpus()
+        except (OSError, ValueError) as error:
+            st.error(f"Corpus refresh was not published: {error}")
+        else:
+            st.success(
+                f"Ingested {len(ingestion.sources)} sources and "
+                f"{len(ingestion.evidence)} evidence units."
+            )
+            st.rerun()
 
 if not counts["evidence"]:
     st.info("Ingest the configured corpus before running a claim assessment.")
@@ -103,7 +104,7 @@ if result:
     st.caption(f"Assessment ID: {result['assessment_id']}")
 
     retrieval = result["retrieval"]
-    retrieval_metrics = st.columns(4)
+    retrieval_metrics = st.columns(5)
     retrieval_metrics[0].metric("Candidates searched", retrieval["candidate_count"])
     retrieval_metrics[1].metric("Unique sources", retrieval["unique_sources"])
     retrieval_metrics[2].metric(
@@ -113,6 +114,10 @@ if result:
     retrieval_metrics[3].metric(
         "Duplicates collapsed",
         retrieval["duplicate_results_collapsed"],
+    )
+    retrieval_metrics[4].metric(
+        "Explicit linked records",
+        len(retrieval.get("additional_linked_results", [])),
     )
     if retrieval["gap_signals"]:
         st.warning("Retrieval diagnostics: " + ", ".join(retrieval["gap_signals"]))
@@ -181,7 +186,14 @@ if result:
                     f"{candidate['source_id']} | {candidate['locator']} | "
                     f"{candidate['row_identifier'] or 'no row identifier'}"
                 )
-                st.write(candidate["text"])
+                passages = candidate.get("passages") or [candidate]
+                st.caption(
+                    f"Grouped result: {len(passages)} passage(s). Passages from one section "
+                    "provide context, not independent corroboration."
+                )
+                for passage in passages:
+                    st.markdown(f"**{passage['locator']}**")
+                    st.write(passage["text"])
                 st.caption(
                     f"Lexical rank: {candidate['lexical_rank']} | "
                     f"Semantic rank: {candidate['semantic_rank']} | "
@@ -192,6 +204,29 @@ if result:
                     st.warning(
                         "Missing structured fields: " + ", ".join(candidate["missing_fields"])
                     )
+                for reference in candidate.get("record_references", []):
+                    st.info(
+                        f"Explicit ID link: {reference['record_id']} ({reference['relationship']})"
+                    )
+
+        linked = retrieval.get("additional_linked_results", [])
+        if linked:
+            st.markdown("### Additional explicitly linked records")
+            st.caption(
+                "These records were added because the claim named an exact identifier. "
+                "They are context links and are not automatically credibility evidence."
+            )
+            for candidate in linked:
+                with st.expander(
+                    f"{candidate['source_title']} — {candidate['locator']}",
+                    expanded=False,
+                ):
+                    st.write(candidate["text"])
+                    for reference in candidate.get("record_references", []):
+                        st.code(
+                            f"{reference['record_id']} | {reference['relationship']} | "
+                            f"{reference['evidence_id']}"
+                        )
 
     with audit_tab:
         st.json(result)

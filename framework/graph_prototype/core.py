@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import date
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -117,22 +118,72 @@ class GraphCredibilityConfig:
 
     @classmethod
     def load(cls, path: Path) -> GraphCredibilityConfig:
-        payload = json.loads(path.read_text(encoding="utf-8"))
         try:
-            config = cls(**payload)
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            raise GraphValidationError(
+                f"Invalid graph credibility configuration JSON: {error}"
+            ) from error
+        if not isinstance(payload, dict):
+            raise GraphValidationError("Graph credibility configuration must be an object")
+        try:
+            return cls(**payload)
         except TypeError as error:
             raise GraphValidationError(
                 f"Invalid graph credibility configuration: {error}"
             ) from error
-        if set(config.dimension_weights) != set(CREDIBILITY_DIMENSIONS):
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.config_version, str) or not self.config_version.strip():
+            raise GraphValidationError("config_version must be a non-empty string")
+        for name in (
+            "materiality_threshold",
+            "conflict_ratio",
+            "undated_weight",
+            "stale_weight",
+        ):
+            self._validate_weight(name, getattr(self, name), bounded=True)
+        for name in (
+            "dimension_weights",
+            "source_class_weights",
+            "approval_weights",
+            "lifecycle_multipliers",
+        ):
+            weights = getattr(self, name)
+            if not isinstance(weights, dict):
+                raise GraphValidationError(f"{name} must be an object of numeric weights")
+            for key, value in weights.items():
+                if not isinstance(key, str) or not key.strip():
+                    raise GraphValidationError(f"{name} keys must be non-empty strings")
+                self._validate_weight(
+                    f"{name}.{key}",
+                    value,
+                    bounded=name != "dimension_weights",
+                )
+        if set(self.dimension_weights) != set(CREDIBILITY_DIMENSIONS):
             raise GraphValidationError(
-                "Graph credibility weights must cover exactly the eight declared dimensions"
+                "Graph credibility weights must cover exactly the same declared dimensions"
             )
-        if not 0 <= config.materiality_threshold <= 1:
-            raise GraphValidationError("materiality_threshold must be between 0 and 1")
-        if sum(config.dimension_weights.values()) <= 0:
-            raise GraphValidationError("dimension weights must total above zero")
-        return config
+        total = sum(self.dimension_weights.values())
+        self._validate_weight("dimension_weights total", total, bounded=False)
+        if total <= 0:
+            raise GraphValidationError("Dimension weights must total above zero")
+        if type(self.recency_years) is not int or self.recency_years < 0:
+            raise GraphValidationError("recency_years must be a non-negative integer")
+
+    @staticmethod
+    def _validate_weight(name: str, value: object, *, bounded: bool) -> None:
+        if type(value) not in (int, float):
+            raise GraphValidationError(f"{name} must be a number, not a boolean or string")
+        try:
+            finite = math.isfinite(value)
+        except OverflowError:
+            finite = False
+        if not finite:
+            raise GraphValidationError(f"{name} must be finite")
+        if value < 0 or (bounded and value > 1):
+            permitted = "between 0 and 1" if bounded else "non-negative"
+            raise GraphValidationError(f"{name} must be {permitted}")
 
 
 class OrganisationalGraph:
@@ -198,11 +249,17 @@ class OrganisationalGraph:
         if len(self.nodes) == 0:
             raise GraphValidationError("The graph must contain nodes")
         for node in self.nodes.values():
+            if not isinstance(node.attributes, dict):
+                raise GraphValidationError(f"{node.node_id}: attributes must be an object")
+            if node.kind == "document":
+                self._validate_document_dates(node)
             if node.kind == "fact" and "value" in node.attributes:
                 raise GraphValidationError(
                     f"{node.node_id}: Fact nodes are topics and must not store a value"
                 )
         for edge in self.edges.values():
+            if not isinstance(edge.attributes, dict):
+                raise GraphValidationError(f"{edge.edge_id}: attributes must be an object")
             if edge.source not in self.nodes or edge.target not in self.nodes:
                 raise GraphValidationError(f"{edge.edge_id}: edge endpoint does not exist")
             if edge.relationship in {"FORMAL", "OBSERVED"}:
@@ -214,15 +271,56 @@ class OrganisationalGraph:
                     raise GraphValidationError(
                         f"{edge.edge_id}: an attestation must end at a Fact"
                     )
-                if not str(edge.attributes.get("attests_value", "")).strip():
+                value = edge.attributes.get("attests_value")
+                if not isinstance(value, str) or not value.strip():
                     raise GraphValidationError(
                         f"{edge.edge_id}: attestation edges require attests_value"
                     )
                 agrees = edge.attributes.get("agrees")
-                if agrees not in (True, False, None):
+                if agrees is not None and type(agrees) is not bool:
                     raise GraphValidationError(
                         f"{edge.edge_id}: agrees must be true, false or null"
                     )
+                for name in ("applicable", "scope_match"):
+                    if name in edge.attributes and type(edge.attributes[name]) is not bool:
+                        raise GraphValidationError(f"{edge.edge_id}: {name} must be true or false")
+                for name in ("directness", "specificity", "completeness"):
+                    if name not in edge.attributes:
+                        continue
+                    score = edge.attributes[name]
+                    if (
+                        type(score) not in (int, float)
+                        or not math.isfinite(score)
+                        or not 0 <= score <= 1
+                    ):
+                        raise GraphValidationError(
+                            f"{edge.edge_id}: {name} must be a finite number between 0 and 1"
+                        )
+
+    @staticmethod
+    def _validate_document_dates(document: GraphNode) -> None:
+        parsed = {}
+        for name in ("effective_date", "effective_end_date", "last_updated"):
+            value = document.attributes.get(name)
+            if value is None:
+                continue
+            try:
+                if not isinstance(value, str):
+                    raise TypeError("Date must be a string")
+                parsed_date = date.fromisoformat(value)
+                if parsed_date.isoformat() != value:
+                    raise ValueError("Date must use YYYY-MM-DD")
+            except (TypeError, ValueError) as error:
+                raise GraphValidationError(
+                    f"{document.node_id}: {name} must be a valid YYYY-MM-DD date or null"
+                ) from error
+            parsed[name] = parsed_date
+        start = parsed.get("effective_date")
+        end = parsed.get("effective_end_date")
+        if start is not None and end is not None and end < start:
+            raise GraphValidationError(
+                f"{document.node_id}: effective_end_date must not precede effective_date"
+            )
 
     def fact_nodes(self) -> list[GraphNode]:
         return sorted(
@@ -390,11 +488,13 @@ class GraphCredibilityFramework:
         duplicate_counts: dict[str, int] = {}
         corroboration_counts: dict[tuple[str, str], set[str]] = {}
         for edge in attestations:
-            if not self._applicable(edge):
+            if not self._applicable(edge, as_of=as_of):
                 continue
             document = self.graph.document(edge.source)
             group = str(document.attributes.get("duplicate_group") or document.node_id)
             duplicate_counts[group] = duplicate_counts.get(group, 0) + 1
+            if not self._corroboration_eligible(document):
+                continue
             key = (edge.relationship.lower(), self._stance(edge))
             corroboration_counts.setdefault(key, set()).add(group)
 
@@ -450,11 +550,14 @@ class GraphCredibilityFramework:
         edge_attributes = edge.attributes
         status = str(attributes.get("status", "unknown"))
         source_class = str(attributes.get("source_class", "unknown"))
-        applicable = self._applicable(edge)
+        applicable = self._applicable(edge, as_of=as_of)
         limitations: list[str] = []
         trace: list[str] = []
         if not applicable:
-            limitations.append("The attestation does not match the Fact's scope or conditions.")
+            temporal_reason = self._temporal_exclusion(document, as_of)
+            limitations.append(
+                temporal_reason or "The attestation does not match the Fact's scope or conditions."
+            )
             return EdgeAssessment(
                 edge_id=edge.edge_id,
                 document_id=document.node_id,
@@ -469,7 +572,12 @@ class GraphCredibilityFramework:
                 material=False,
                 dimensions={},
                 limitations=tuple(limitations),
-                trace=("Applicability gate failed; evidence retained but not scored.",),
+                trace=(
+                    (
+                        f"Applicability gate failed: {limitations[0]} "
+                        "Evidence retained but not scored."
+                    ),
+                ),
             )
 
         backbone_factor, backbone_trace = self.graph.backbone_resolution(edge)
@@ -489,8 +597,16 @@ class GraphCredibilityFramework:
         trace.append(f"Date: {recency_note} value={recency:.2f}.")
 
         group = str(attributes.get("duplicate_group") or document.node_id)
-        independence = 1.0 / duplicate_counts[group]
+        independence = 1.0
+        trace.append(
+            f"Independence: origin {group!r} contributes at most once per stance "
+            "in this lane, using its strongest material assessment."
+        )
         stance = self._stance(edge)
+        if not self._corroboration_eligible(document):
+            limitations.append(
+                "Superseded source retained for context; excluded from corroboration counts."
+            )
         corroborating_origins = len(
             corroboration_counts.get((edge.relationship.lower(), stance), set())
         )
@@ -499,7 +615,7 @@ class GraphCredibilityFramework:
             if corroborating_origins <= 1
             else min(1.0, 0.5 + 0.25 * (corroborating_origins - 1))
         )
-        if independence < 1:
+        if duplicate_counts[group] > 1:
             limitations.append("A duplicate source exists and is not counted as independent.")
         if corroborating_origins <= 1:
             limitations.append("No independent source corroborates this stance in the same lane.")
@@ -548,13 +664,24 @@ class GraphCredibilityFramework:
             trace=tuple(trace),
         )
 
-    @staticmethod
-    def _applicable(edge: GraphEdge) -> bool:
-        """Use one applicability gate for both tallying and edge scoring."""
+    def _applicable(self, edge: GraphEdge, *, as_of: date) -> bool:
+        """Apply the same scope and effective-period gate everywhere."""
         attributes = edge.attributes
-        return bool(attributes.get("applicable", True)) and bool(
+        scope_matches = bool(attributes.get("applicable", True)) and bool(
             attributes.get("scope_match", True)
         )
+        document = self.graph.document(edge.source)
+        return scope_matches and self._temporal_exclusion(document, as_of) is None
+
+    @staticmethod
+    def _temporal_exclusion(document: GraphNode, as_of: date) -> str | None:
+        start = document.attributes.get("effective_date")
+        end = document.attributes.get("effective_end_date")
+        if start and date.fromisoformat(str(start)) > as_of:
+            return "The document is not yet effective at the assessment date."
+        if end and date.fromisoformat(str(end)) < as_of:
+            return "The document is no longer effective at the assessment date."
+        return None
 
     def _recency(self, document: GraphNode, as_of: date) -> tuple[float, str]:
         start_text = document.attributes.get("effective_date")
@@ -584,11 +711,31 @@ class GraphCredibilityFramework:
             return "contradict"
         return "qualify"
 
+    @staticmethod
+    def _corroboration_eligible(document: GraphNode) -> bool:
+        """Superseded sources remain visible but cannot corroborate another source."""
+        attributes = document.attributes
+        return "superseded" not in (
+            str(attributes.get("status", "unknown")),
+            str(attributes.get("approval_status", "unknown")),
+        )
+
+    def _origin_id(self, document_id: str) -> str:
+        document = self.graph.document(document_id)
+        return str(document.attributes.get("duplicate_group") or document.node_id)
+
     def _lane_outcome(self, reviewed: tuple[EdgeAssessment, ...], mode: str) -> str:
-        material = [item for item in reviewed if item.mode == mode and item.material]
-        support = sum(item.materiality_score or 0 for item in material if item.stance == "support")
+        contributions: dict[tuple[str, str], float] = {}
+        for item in reviewed:
+            if item.mode != mode or not item.material:
+                continue
+            if item.stance not in {"support", "contradict"}:
+                continue
+            key = (self._origin_id(item.document_id), item.stance)
+            contributions[key] = max(contributions.get(key, 0.0), item.materiality_score or 0.0)
+        support = sum(score for (_, stance), score in contributions.items() if stance == "support")
         contradict = sum(
-            item.materiality_score or 0 for item in material if item.stance == "contradict"
+            score for (_, stance), score in contributions.items() if stance == "contradict"
         )
         if not support and not contradict:
             return "Insufficient evidence"
@@ -625,8 +772,12 @@ class GraphCredibilityFramework:
                     gaps.append(limitation)
         return list(dict.fromkeys(gaps))
 
-    @staticmethod
-    def _confidence(reviewed: tuple[EdgeAssessment, ...], overall: str, gaps: list[str]) -> str:
+    def _confidence(
+        self,
+        reviewed: tuple[EdgeAssessment, ...],
+        overall: str,
+        gaps: list[str],
+    ) -> str:
         decisive = [
             item for item in reviewed if item.material and item.stance in {"support", "contradict"}
         ]
@@ -638,8 +789,8 @@ class GraphCredibilityFramework:
             return "Lower confidence"
         if overall == "Contested" or non_material_divergence or gaps:
             return "Moderate confidence"
-        independent_documents = {item.document_id for item in decisive}
-        return "Higher confidence" if len(independent_documents) >= 2 else "Moderate confidence"
+        independent_origins = {self._origin_id(item.document_id) for item in decisive}
+        return "Higher confidence" if len(independent_origins) >= 2 else "Moderate confidence"
 
     @staticmethod
     def _summary(

@@ -588,6 +588,9 @@ def assess_claim(
             "query_period_end": package.query_period_end,
             "gap_signals": package.gap_signals,
             "results": [asdict(item) for item in package.results],
+            "additional_linked_results": [
+                asdict(item) for item in package.additional_linked_results
+            ],
         },
         "interpretations": [asdict(item) for item in interpretations],
         "credibility": graph_result.model_dump(),
@@ -600,6 +603,10 @@ def assess_claim(
             ),
             "Business scope remains unresolved until explicitly judged.",
             "Semantic retrieval falls back safely when the local model is unavailable.",
+            (
+                "Explicit record identifiers add linked context but do not create support or "
+                "contradiction relationships."
+            ),
         ],
         "rules_applied": [
             "R1_SAIF_FTS5_BM25_RETRIEVAL",
@@ -611,6 +618,8 @@ def assess_claim(
             "R7_FORMAL_OBSERVED_SEPARATION",
             "R8_NO_AUTOMATIC_RELATIONSHIP_ASSIGNMENT",
             "R9_HUMAN_REVIEW_REQUIRED_FOR_FINAL_FACT",
+            "R10_EXACT_RECORD_IDENTIFIER_LINKING",
+            "R11_SECTION_CONTEXT_IS_GROUPED_NOT_INDEPENDENT",
         ],
     }
     payload["assessment_id"] = store.save_assessment(payload) if persist else None

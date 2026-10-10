@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import re
 import sqlite3
 
-from decidr.models import AtomicClaim
+from decidr.models import AtomicClaim, Evidence
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.%-]*")
 STOPWORDS = {
@@ -145,3 +145,53 @@ def lexical_search_text(
         query_terms(query, synonyms),
         limit,
     )
+
+
+@dataclass(frozen=True, slots=True)
+class RecordReference:
+    """An explicit record-identifier connection, not a credibility judgement."""
+
+    evidence_id: str
+    locator: str
+    record_id: str
+    relationship: str
+
+
+def find_record_references(query: str, evidence: list[Evidence]) -> list[RecordReference]:
+    """Find exact hyphenated IDs throughout the corpus without guessing links."""
+    identifiers = sorted(
+        {
+            match.group().upper()
+            for match in re.finditer(
+                r"(?<![\w-])[A-Z][A-Z0-9]*(?:-[0-9]+)+(?![\w-])",
+                query,
+                flags=re.IGNORECASE,
+            )
+        }
+    )
+    references: list[RecordReference] = []
+    for identifier in identifiers:
+        pattern = re.compile(
+            rf"(?<![\w-]){re.escape(identifier)}(?![\w-])",
+            flags=re.IGNORECASE,
+        )
+        for item in evidence:
+            record = item.structured_metadata.get("record", {})
+            related = record.get("related_record") if isinstance(record, dict) else None
+            if (item.row_identifier or "").upper() == identifier:
+                relationship = "record_itself"
+            elif isinstance(related, str) and related.strip().upper() == identifier:
+                relationship = "structured_reference"
+            elif pattern.search(item.text):
+                relationship = "textual_mention"
+            else:
+                continue
+            references.append(
+                RecordReference(
+                    evidence_id=item.evidence_id,
+                    locator=item.locator,
+                    record_id=identifier,
+                    relationship=relationship,
+                )
+            )
+    return references

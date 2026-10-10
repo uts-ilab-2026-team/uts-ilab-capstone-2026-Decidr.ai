@@ -236,6 +236,56 @@ def upsert_source_evidence(
     )
 
 
+def replace_source_evidence(
+    connection: sqlite3.Connection,
+    source_id: str,
+    evidence: list[Evidence],
+) -> None:
+    """Atomically replace a source's complete passage snapshot."""
+    if any(item.source_id != source_id for item in evidence):
+        raise ValueError("Every passage must belong to the supplied source")
+    if (
+        connection.execute("SELECT 1 FROM sources WHERE source_id = ?", (source_id,)).fetchone()
+        is None
+    ):
+        raise ValueError(f"Unknown source: {source_id}")
+
+    connection.execute("SAVEPOINT replace_source_passages")
+    try:
+        connection.execute(
+            """DELETE FROM evidence_fts WHERE evidence_id IN (
+                SELECT evidence_id FROM evidence WHERE source_id = ?
+            )""",
+            (source_id,),
+        )
+        connection.execute("DELETE FROM evidence WHERE source_id = ?", (source_id,))
+        connection.executemany(
+            """INSERT INTO evidence(
+                evidence_id, source_id, locator, text_content, payload_json
+            ) VALUES (?, ?, ?, ?, ?)""",
+            [
+                (
+                    item.evidence_id,
+                    item.source_id,
+                    item.locator,
+                    item.text,
+                    item.model_dump_json(),
+                )
+                for item in evidence
+            ],
+        )
+        connection.executemany(
+            "INSERT INTO evidence_fts(evidence_id, text_content) VALUES (?, ?)",
+            [(item.evidence_id, item.text) for item in evidence],
+        )
+    except BaseException:
+        connection.execute("ROLLBACK TO SAVEPOINT replace_source_passages")
+        connection.execute("RELEASE SAVEPOINT replace_source_passages")
+        raise
+    else:
+        connection.execute("RELEASE SAVEPOINT replace_source_passages")
+
+
 def save_claim(connection: sqlite3.Connection, claim: AtomicClaim) -> None:
     """Create or update a validated claim."""
     existing_row = connection.execute(

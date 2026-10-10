@@ -8,14 +8,27 @@ import re
 import sqlite3
 
 from decidr.hybrid import reciprocal_rank_fusion
-from decidr.models import AtomicClaim
-from decidr.retrieval import lexical_search_text
+from decidr.models import AtomicClaim, Evidence
+from decidr.retrieval import RecordReference, find_record_references, lexical_search_text
 from decidr.semantic import (
     SemanticUnavailableError,
     SentenceTransformerEmbedder,
     claim_text,
     semantic_search_text,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class CorpusPassage:
+    """One original passage retained inside a grouped retrieval result."""
+
+    evidence_id: str
+    source_id: str
+    locator: str
+    text: str
+    row_identifier: str | None
+    section: str | None
+    heading: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +61,9 @@ class CorpusResult:
     provenance_sources: tuple[str, ...]
     possible_duplicate_of: tuple[str, ...]
     missing_fields: tuple[str, ...]
+    matched_evidence_ids: tuple[str, ...] = ()
+    passages: tuple[CorpusPassage, ...] = ()
+    record_references: tuple[RecordReference, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +79,7 @@ class CorpusSearchPackage:
     query_period_start: str | None
     query_period_end: str | None
     gap_signals: tuple[str, ...]
+    additional_linked_results: tuple[CorpusResult, ...] = ()
 
 
 def parse_query_period(query: str) -> tuple[date | None, date | None]:
@@ -195,11 +212,26 @@ def _possible_duplicate_references(evidence: dict) -> tuple[str, ...]:
     )
 
 
-def _evidence_group_key(item, source: dict) -> str:
-    duplicate_group = source.get("duplicate_group")
-    if duplicate_group:
-        return f"{duplicate_group}|{item.locator}"
-    return item.evidence_id
+def _evidence_group_key(item, source: dict, evidence: dict) -> str:
+    """Group Markdown hits by section while keeping structured records discrete."""
+    origin = source.get("duplicate_group") or item.source_id
+    section = evidence.get("section")
+    extraction = str(evidence.get("extraction_method", ""))
+    if section and extraction.startswith("markdown_"):
+        return f"{origin}|section:{section}"
+    return f"{origin}|record:{item.evidence_id}"
+
+
+def _passage(payload: dict) -> CorpusPassage:
+    return CorpusPassage(
+        evidence_id=payload["evidence_id"],
+        source_id=payload["source_id"],
+        locator=payload["locator"],
+        text=payload["text"],
+        row_identifier=payload.get("row_identifier"),
+        section=payload.get("section"),
+        heading=payload.get("heading"),
+    )
 
 
 def _temporal_factor(status: str, has_query_period: bool) -> float:
@@ -339,6 +371,15 @@ def _search_corpus(
 
     sources = _source_metadata(connection)
     evidence_metadata = _evidence_metadata(connection)
+    eligible_evidence = [
+        Evidence.model_validate(payload)
+        for payload in evidence_metadata.values()
+        if not release or payload["source_id"].casefold().startswith(release.casefold() + ":")
+    ]
+    explicit_references = find_record_references(cleaned, eligible_evidence)
+    references_by_evidence: dict[str, list[RecordReference]] = {}
+    for reference in explicit_references:
+        references_by_evidence.setdefault(reference.evidence_id, []).append(reference)
     query_start, query_end = query_period or parse_query_period(cleaned)
 
     grouped: dict[str, list] = {}
@@ -346,7 +387,7 @@ def _search_corpus(
 
     for item in fused:
         source = sources[item.source_id]
-        key = _evidence_group_key(item, source)
+        key = _evidence_group_key(item, source, evidence_metadata[item.evidence_id])
         if key not in grouped:
             grouped[key] = []
             group_order.append(key)
@@ -381,6 +422,7 @@ def _search_corpus(
     ordered_groups = sorted(
         group_order,
         key=lambda key: (
+            not any(item.evidence_id in references_by_evidence for item in grouped[key]),
             -ranking_scores[key],
             -grouped[key][0].combined_score,
         ),
@@ -399,6 +441,30 @@ def _search_corpus(
             continue
 
         provenance_sources = tuple(dict.fromkeys(item.source_id for item in items))
+        matched_evidence_ids = tuple(dict.fromkeys(item.evidence_id for item in items))
+        representative_section = evidence.get("section")
+        if representative_section and str(evidence.get("extraction_method", "")).startswith(
+            "markdown_"
+        ):
+            passage_payloads = [
+                payload
+                for payload in evidence_metadata.values()
+                if payload["source_id"] == representative.source_id
+                and payload.get("section") == representative_section
+            ]
+        else:
+            passage_payloads = [
+                evidence_metadata[evidence_id] for evidence_id in matched_evidence_ids
+            ]
+        passages = tuple(
+            _passage(payload)
+            for payload in sorted(passage_payloads, key=lambda payload: payload["locator"])
+        )
+        group_references = tuple(
+            reference
+            for passage in passages
+            for reference in references_by_evidence.get(passage.evidence_id, ())
+        )
 
         results.append(
             CorpusResult(
@@ -434,6 +500,9 @@ def _search_corpus(
                 provenance_sources=provenance_sources,
                 possible_duplicate_of=_possible_duplicate_references(evidence),
                 missing_fields=_missing_fields(evidence),
+                matched_evidence_ids=matched_evidence_ids,
+                passages=passages,
+                record_references=group_references,
             )
         )
 
@@ -445,6 +514,53 @@ def _search_corpus(
     all_sources = {source_id for result in results for source_id in result.provenance_sources}
 
     source_types = Counter(result.source_type for result in results)
+
+    represented_ids = {
+        evidence_id for result in results for evidence_id in result.matched_evidence_ids
+    }
+    additional_linked_results = []
+    for reference in explicit_references:
+        if reference.evidence_id in represented_ids:
+            continue
+        evidence = evidence_metadata[reference.evidence_id]
+        source = sources[evidence["source_id"]]
+        source_group = source.get("duplicate_group") or evidence["source_id"]
+        additional_linked_results.append(
+            CorpusResult(
+                evidence_id=evidence["evidence_id"],
+                source_id=evidence["source_id"],
+                source_title=source.get("title", evidence["source_id"]),
+                locator=evidence["locator"],
+                text=evidence["text"],
+                row_identifier=evidence.get("row_identifier"),
+                process=evidence.get("process"),
+                actor=evidence.get("actor"),
+                role=evidence.get("role"),
+                system=evidence.get("system"),
+                rank=0,
+                hybrid_score=0.0,
+                ranking_score=0.0,
+                lexical_rank=None,
+                semantic_rank=None,
+                source_type=source.get("source_type", "unknown"),
+                lifecycle_status=source.get("lifecycle_status", "unknown"),
+                version=source.get("version"),
+                approval_status=source.get("approval_status"),
+                effective_start_date=source.get("effective_start_date"),
+                effective_end_date=source.get("effective_end_date"),
+                creation_date=source.get("creation_date"),
+                temporal_status=_temporal_status(source, query_start, query_end),
+                duplicate_group=source.get("duplicate_group"),
+                provenance_group=source_group,
+                provenance_sources=(evidence["source_id"],),
+                possible_duplicate_of=_possible_duplicate_references(evidence),
+                missing_fields=_missing_fields(evidence),
+                matched_evidence_ids=(evidence["evidence_id"],),
+                passages=(_passage(evidence),),
+                record_references=tuple(references_by_evidence[reference.evidence_id]),
+            )
+        )
+        represented_ids.add(reference.evidence_id)
 
     gaps = _gap_signals(
         results,
@@ -466,6 +582,7 @@ def _search_corpus(
         query_period_start=query_start.isoformat() if query_start else None,
         query_period_end=query_end.isoformat() if query_end else None,
         gap_signals=gaps,
+        additional_linked_results=tuple(additional_linked_results),
     )
 
 
