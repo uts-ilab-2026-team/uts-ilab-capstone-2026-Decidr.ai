@@ -89,10 +89,7 @@ def evaluate(references, predictions):
     cohorts = {}
     details = []
     for review_status in sorted(REVIEW_STATES):
-        selected = [
-            row for row in refs.values()
-            if row["review_status"] == review_status
-        ]
+        selected = [row for row in refs.values() if row["review_status"] == review_status]
         counts = {
             "cases": len(selected),
             "classified": 0,
@@ -110,12 +107,14 @@ def evaluate(references, predictions):
             status = output["status"] if output else "missing"
             actual = output.get("relationship") if output else None
             expected = ref.get("expected_relationship")
-            counts[{
-                "classified": "classified",
-                "abstained": "abstained",
-                "error": "errors",
-                "missing": "missing_outputs",
-            }[status]] += 1
+            counts[
+                {
+                    "classified": "classified",
+                    "abstained": "abstained",
+                    "error": "errors",
+                    "missing": "missing_outputs",
+                }[status]
+            ] += 1
 
             if review_status == "unresolved":
                 category = "unscored"
@@ -139,25 +138,29 @@ def evaluate(references, predictions):
                 category = "other_disagreement"
                 counts["other_disagreements"] += 1
 
-            details.append({
-                "case_id": ref["case_id"],
-                "review_status": review_status,
-                "expected": expected,
-                "actual": actual,
-                "output_status": status,
-                "category": category,
-            })
+            details.append(
+                {
+                    "case_id": ref["case_id"],
+                    "review_status": review_status,
+                    "expected": expected,
+                    "actual": actual,
+                    "output_status": status,
+                    "category": category,
+                }
+            )
 
         total = counts["cases"]
         counts["coverage"] = counts["classified"] / total if total else None
         counts["matches_per_case"] = (
-            counts["matches"] / total
-            if total and review_status != "unresolved" else None
+            counts["matches"] / total if total and review_status != "unresolved" else None
         )
         if review_status == "unresolved":
             for key in (
-                "matches", "support_contradiction_reversals", "false_decisive",
-                "missed_decisive", "other_disagreements",
+                "matches",
+                "support_contradiction_reversals",
+                "false_decisive",
+                "missed_decisive",
+                "other_disagreements",
             ):
                 counts[key] = None
         cohorts[review_status] = counts

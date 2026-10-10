@@ -8,7 +8,6 @@ import sqlite3
 
 from decidr.retrieval_models import Evidence
 
-
 TOKEN_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.%-]*")
 STOPWORDS = {
     "a",
@@ -61,8 +60,6 @@ def _normalise_terms(
     return terms
 
 
-
-
 def query_terms(query: str, synonyms: dict[str, list[str]] | None = None) -> list[str]:
     """Build a lexical representation directly from a free-text corpus query."""
     return _normalise_terms([query], synonyms)
@@ -109,8 +106,6 @@ def _lexical_search_terms(
     return results
 
 
-
-
 def lexical_search_text(
     connection: sqlite3.Connection,
     query: str,
@@ -123,6 +118,7 @@ def lexical_search_text(
         query_terms(query, synonyms),
         limit,
     )
+
 
 @dataclass(frozen=True, slots=True)
 class RecordReference:
@@ -145,14 +141,16 @@ def find_record_references(
     corpus so an early ranking cutoff cannot remove explicitly linked records.
     Textual mentions remain weaker connections than structured references.
     """
-    identifiers = sorted({
-        match.group().upper()
-        for match in re.finditer(
-            r"(?<![\w-])[A-Z][A-Z0-9]*(?:-[0-9]+)+(?![\w-])",
-            query,
-            flags=re.IGNORECASE,
-        )
-    })
+    identifiers = sorted(
+        {
+            match.group().upper()
+            for match in re.finditer(
+                r"(?<![\w-])[A-Z][A-Z0-9]*(?:-[0-9]+)+(?![\w-])",
+                query,
+                flags=re.IGNORECASE,
+            )
+        }
+    )
     references = []
     for identifier in identifiers:
         pattern = re.compile(

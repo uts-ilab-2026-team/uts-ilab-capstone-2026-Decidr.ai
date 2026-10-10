@@ -2,17 +2,15 @@
 """Documented reciprocal-rank fusion over common retrieval candidates."""
 
 from dataclasses import dataclass, replace
-from typing import Protocol
-
-from decidr.retrieval_models import Evidence
-
 import sqlite3
+from typing import Protocol
 
 from decidr.retrieval import (
     RecordReference,
     find_record_references,
     lexical_search_text,
 )
+from decidr.retrieval_models import Evidence
 from decidr.semantic import Embedder, semantic_search_text
 
 
@@ -75,6 +73,7 @@ def reciprocal_rank_fusion(
         for rank, (evidence_id, record) in enumerate(ordered[:limit], start=1)
     ]
 
+
 @dataclass(frozen=True, slots=True)
 class EvidenceGroup:
     """One ranked section or record, with individually traceable passages."""
@@ -130,7 +129,9 @@ def group_ranked_evidence(
         if item is None:
             raise ValueError(f"Missing evidence: {result.evidence_id}")
         if (result.source_id, result.locator, result.text) != (
-            item.source_id, item.locator, item.text
+            item.source_id,
+            item.locator,
+            item.text,
         ):
             raise ValueError(f"Result does not match evidence: {result.evidence_id}")
         if item.evidence_id in seen:
@@ -159,6 +160,7 @@ def group_ranked_evidence(
             )
         )
     return grouped
+
 
 @dataclass(frozen=True, slots=True)
 class CorpusCandidate:
@@ -218,9 +220,7 @@ def search_corpus(
 
     evidence = [
         Evidence.model_validate_json(row[0])
-        for row in connection.execute(
-            "SELECT payload_json FROM evidence ORDER BY evidence_id"
-        )
+        for row in connection.execute("SELECT payload_json FROM evidence ORDER BY evidence_id")
     ]
     if not evidence:
         return empty
@@ -243,9 +243,11 @@ def search_corpus(
     # Validate both retrieval channels before fusion can mask a stale citation.
     for result in [*lexical, *semantic]:
         original = by_id.get(result.evidence_id)
-        if original is None or (
-            result.source_id, result.locator, result.text
-        ) != (original.source_id, original.locator, original.text):
+        if original is None or (result.source_id, result.locator, result.text) != (
+            original.source_id,
+            original.locator,
+            original.text,
+        ):
             raise ValueError(
                 f"Retrieval result does not match stored evidence: {result.evidence_id}"
             )
@@ -268,38 +270,28 @@ def search_corpus(
             )
         )
 
-    groups = group_ranked_evidence(
-        candidates, evidence, limit=len(evidence)
-    )
+    groups = group_ranked_evidence(candidates, evidence, limit=len(evidence))
     retrieved_groups = [
-        group for group in groups
-        if group.lead_result.evidence_id in retrieval_by_id
+        group for group in groups if group.lead_result.evidence_id in retrieval_by_id
     ]
     # Explicit record connections affect display priority, not relevance scores
     # or credibility. Stable sorting preserves retrieval order within each tier.
     # Check all section members, including context passages.
     retrieved_groups.sort(
-        key=lambda group: not any(
-            passage.evidence_id in references_by_id
-            for passage in group.passages
+        key=lambda group: (
+            not any(passage.evidence_id in references_by_id for passage in group.passages)
         )
     )
     ranked_groups = tuple(
         replace(group, rank=position)
         for position, group in enumerate(retrieved_groups[:limit], start=1)
     )
-    selected_ids = {
-        group.lead_result.evidence_id for group in ranked_groups
-    }
+    selected_ids = {group.lead_result.evidence_id for group in ranked_groups}
     additional_linked_groups = tuple(
-        group for group in groups
+        group
+        for group in groups
         if group.lead_result.evidence_id not in selected_ids
-        and any(
-            identifier in references_by_id
-            for identifier in group.matched_evidence_ids
-        )
+        and any(identifier in references_by_id for identifier in group.matched_evidence_ids)
     )
 
-    return CorpusSearchResult(
-        ranked_groups, additional_linked_groups, tuple(candidates)
-    )
+    return CorpusSearchResult(ranked_groups, additional_linked_groups, tuple(candidates))

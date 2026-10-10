@@ -9,7 +9,6 @@ import sqlite3
 from typing import Protocol
 
 
-
 class SemanticUnavailableError(RuntimeError):
     """Raised when the optional local embedding dependency/model is unavailable."""
 
@@ -56,8 +55,6 @@ class SemanticResult:
     score: float
     model_name: str
     model_version: str
-
-
 
 
 def _cosine(left: list[float], right: list[float]) -> float:
@@ -128,7 +125,6 @@ def _semantic_search_text(
         )
         for rank, (score, row) in enumerate(scored[:limit], start=1)
     ]
-
 
 
 def semantic_search_text(

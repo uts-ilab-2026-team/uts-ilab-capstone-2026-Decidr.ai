@@ -5,7 +5,8 @@ Validation checks provenance and quotation accuracy, not semantic correctness.
 Retrieval scores and graph credibility scores are deliberately separate.
 """
 
-from typing import Iterable, Literal
+from collections.abc import Iterable
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -98,7 +99,7 @@ def validate_interpretation(
             raise ValueError("Citation locator does not match stored evidence")
         if citation.end > len(passage.text):
             raise ValueError("Citation span exceeds stored passage")
-        if passage.text[citation.start:citation.end] != citation.quotation:
+        if passage.text[citation.start : citation.end] != citation.quotation:
             raise ValueError("Quotation does not match the original passage")
 
     return interpretation

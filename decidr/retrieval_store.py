@@ -12,6 +12,7 @@ from decidr.retrieval_models import Evidence, Source
 
 SCHEMA = "CREATE TABLE IF NOT EXISTS sources (\n                source_id TEXT PRIMARY KEY,\n                payload_json TEXT NOT NULL,\n                checksum TEXT NOT NULL,\n                original_file_path TEXT NOT NULL UNIQUE,\n                ingestion_status TEXT NOT NULL,\n                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n            );\nCREATE TABLE IF NOT EXISTS evidence (\n                evidence_id TEXT PRIMARY KEY,\n                source_id TEXT NOT NULL REFERENCES sources(source_id) ON DELETE CASCADE,\n                locator TEXT NOT NULL,\n                text_content TEXT NOT NULL,\n                payload_json TEXT NOT NULL,\n                UNIQUE(source_id, locator)\n            );\nCREATE VIRTUAL TABLE IF NOT EXISTS evidence_fts USING fts5(\n                evidence_id UNINDEXED,\n                text_content,\n                tokenize='porter unicode61'\n            );\nCREATE TABLE IF NOT EXISTS embedding_cache (\n                evidence_id TEXT NOT NULL REFERENCES evidence(evidence_id) ON DELETE CASCADE,\n                model_name TEXT NOT NULL,\n                model_version TEXT NOT NULL,\n                content_checksum TEXT NOT NULL,\n                vector_json TEXT NOT NULL,\n                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n                PRIMARY KEY(evidence_id, model_name, model_version)\n            );"
 
+
 def connect(path: Path) -> sqlite3.Connection:
     """Open a retrieval connection with referential integrity enabled."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -20,11 +21,12 @@ def connect(path: Path) -> sqlite3.Connection:
     connection.execute("PRAGMA foreign_keys = ON")
     return connection
 
+
 def initialise_database(path: Path) -> None:
     """Create the retrieval tables and close the setup connection."""
-    with closing(connect(path)) as connection:
-        with connection:
-            connection.executescript(SCHEMA)
+    with closing(connect(path)) as connection, connection:
+        connection.executescript(SCHEMA)
+
 
 def upsert_source(connection: sqlite3.Connection, source: Source) -> None:
     """Insert or refresh a source record without creating duplicates."""
@@ -49,6 +51,7 @@ def upsert_source(connection: sqlite3.Connection, source: Source) -> None:
         ),
     )
 
+
 def replace_source_evidence(
     connection: sqlite3.Connection,
     source_id: str,
@@ -64,9 +67,10 @@ def replace_source_evidence(
     if any(item.source_id != source_id for item in evidence):
         raise ValueError("Every passage must belong to the supplied source")
 
-    if connection.execute(
-        "SELECT 1 FROM sources WHERE source_id = ?", (source_id,)
-    ).fetchone() is None:
+    if (
+        connection.execute("SELECT 1 FROM sources WHERE source_id = ?", (source_id,)).fetchone()
+        is None
+    ):
         raise ValueError(f"Unknown source: {source_id}")
 
     connection.execute("SAVEPOINT replace_source_passages")
@@ -77,9 +81,7 @@ def replace_source_evidence(
             )""",
             (source_id,),
         )
-        connection.execute(
-            "DELETE FROM evidence WHERE source_id = ?", (source_id,)
-        )
+        connection.execute("DELETE FROM evidence WHERE source_id = ?", (source_id,))
         connection.executemany(
             """INSERT INTO evidence(
                 evidence_id, source_id, locator, text_content, payload_json

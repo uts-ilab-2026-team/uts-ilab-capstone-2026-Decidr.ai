@@ -12,15 +12,18 @@ from pathlib import Path
 import re
 import subprocess
 
+from decidr.retrieval_models import Evidence, Source
 from decidr.retrieval_store import (
     connect,
     initialise_database,
     replace_source_evidence,
     upsert_source,
 )
-from decidr.retrieval_models import Evidence, Source
 from decidr.source_metadata import (
-    METADATA_VERSION, approval_lifecycle, header_date, read_header,
+    METADATA_VERSION,
+    approval_lifecycle,
+    header_date,
+    read_header,
 )
 
 SUPPORTED_SUFFIXES = {".md", ".csv"}
@@ -128,9 +131,7 @@ def build_source(path: Path, root: Path, release: str) -> Source:
     checksum = sha256_file(path)
     source_type = _source_type(relative)
     title, metadata, header_entries, conflicts = (
-        read_header(path)
-        if path.suffix.casefold() == ".md"
-        else (path.stem, {}, [], [])
+        read_header(path) if path.suffix.casefold() == ".md" else (path.stem, {}, [], [])
     )
     code = _source_code(path, title)
     excluded = path.name in TECHNICAL_NAMES or path.name in ANNOTATION_NAMES
@@ -149,21 +150,20 @@ def build_source(path: Path, root: Path, release: str) -> Source:
     effective_end = header_date(metadata, "effective end date", conflicts)
     superseded_date = header_date(metadata, "superseded date", conflicts)
     if effective_start and effective_end and effective_start > effective_end:
-        conflicts.append({
-            "field": "effective_end_date",
-            "values": [effective_start.isoformat(), effective_end.isoformat()],
-            "reason": "Effective end precedes start; interval left unresolved.",
-        })
+        conflicts.append(
+            {
+                "field": "effective_end_date",
+                "values": [effective_start.isoformat(), effective_end.isoformat()],
+                "reason": "Effective end precedes start; interval left unresolved.",
+            }
+        )
         effective_end = None
 
     approval = metadata.get("approval status")
-    own_lifecycle, approval_clauses, approval_conflicts = approval_lifecycle(
-        approval, code
-    )
+    own_lifecycle, approval_clauses, approval_conflicts = approval_lifecycle(approval, code)
     conflicts.extend(approval_conflicts)
     approval_unresolved = any(
-        item["field"] in {"approval_status", "lifecycle_status"}
-        for item in conflicts
+        item["field"] in {"approval_status", "lifecycle_status"} for item in conflicts
     )
     if approval_unresolved:
         lifecycle = "unknown"
@@ -494,8 +494,7 @@ def ingest(releases: dict[str, Path], database_path: Path | None = None) -> Inge
         for path in sorted(
             item
             for item in root.rglob("*")
-            if item.is_file()
-            and not item.name.casefold().endswith(":zone.identifier")
+            if item.is_file() and not item.name.casefold().endswith(":zone.identifier")
         ):
             source = build_source(path, root, release)
             if path.suffix.casefold() not in SUPPORTED_SUFFIXES:
@@ -533,22 +532,19 @@ def ingest(releases: dict[str, Path], database_path: Path | None = None) -> Inge
             )
         source_ids = [source.source_id for source in result.sources]
         if len(source_ids) != len(set(source_ids)):
-            raise ValueError(
-                "Duplicate source IDs; retrieval index was not updated"
-            )
+            raise ValueError("Duplicate source IDs; retrieval index was not updated")
         initialise_database(database_path)
         evidence_by_source: dict[str, list[Evidence]] = defaultdict(list)
         for item in result.evidence:
             evidence_by_source[item.source_id].append(item)
-        with closing(connect(database_path)) as connection:
-            with connection:
-                for source in result.sources:
-                    upsert_source(connection, source)
-                    replace_source_evidence(
-                        connection,
-                        source.source_id,
-                        evidence_by_source[source.source_id],
-                    )
+        with closing(connect(database_path)) as connection, connection:
+            for source in result.sources:
+                upsert_source(connection, source)
+                replace_source_evidence(
+                    connection,
+                    source.source_id,
+                    evidence_by_source[source.source_id],
+                )
     return result
 
 

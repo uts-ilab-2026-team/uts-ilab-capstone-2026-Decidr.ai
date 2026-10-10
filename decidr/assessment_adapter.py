@@ -5,16 +5,17 @@ not semantic correctness. Caller-supplied judgements require their own evaluatio
 Version 1 uses source-level origins and accepts one source per interpretation.
 """
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
-from typing import Iterable
 
-from decidr.interpretation_models import EvidenceInterpretation, validate_interpretation
-from decidr.retrieval_models import Evidence, Source
 from framework.config import GraphCredibilityConfig
 from framework.credibility import GraphCredibilityFramework
 from framework.graph import OrganisationalGraph
 from framework.models import FactAssessment, GraphEdge, GraphNode
+
+from decidr.interpretation_models import EvidenceInterpretation, validate_interpretation
+from decidr.retrieval_models import Evidence, Source
 
 
 @dataclass(frozen=True)
@@ -82,7 +83,9 @@ def assess_prepared_facet(
     items = tuple(prepared)
     nodes = [
         GraphNode(
-            "fact:facet", "fact", facet,
+            "fact:facet",
+            "fact",
+            facet,
             {"statement": facet, "claim_text": claim_text, "category": "corpus-facet"},
         )
     ]
@@ -96,8 +99,13 @@ def assess_prepared_facet(
     for item in items:
         source = item.source
         source_json = source.model_dump(mode="json")
-        for name in ("origin_id", "source_class", "approval_key",
-                     "judgement_basis", "origin_basis"):
+        for name in (
+            "origin_id",
+            "source_class",
+            "approval_key",
+            "judgement_basis",
+            "origin_basis",
+        ):
             value = getattr(item, name)
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(f"{name} must be explicitly supplied")
@@ -108,9 +116,7 @@ def assess_prepared_facet(
         if previous_origin != item.origin_id:
             raise ValueError("One source cannot have multiple origins in version 1")
         if source.duplicate_group:
-            origin = duplicate_origins.setdefault(
-                source.duplicate_group, item.origin_id
-            )
+            origin = duplicate_origins.setdefault(source.duplicate_group, item.origin_id)
             if origin != item.origin_id:
                 raise ValueError("Documented duplicates must share an origin")
 
@@ -166,11 +172,13 @@ def assess_prepared_facet(
         if superseded and as_of >= superseded:
             reasons.append(
                 "Superseded-date boundary reached; boundary inclusion is unspecified."
-                if as_of == superseded else
-                "Assessment date follows the documented superseded date."
+                if as_of == superseded
+                else "Assessment date follows the documented superseded date."
             )
         if interpretation.mode == "formal" and source.lifecycle_status in {
-            "draft", "withdrawn", "unknown"
+            "draft",
+            "withdrawn",
+            "unknown",
         }:
             reasons.append("Source lifecycle does not establish an effective formal rule.")
         if source.lifecycle_status not in config.lifecycle_multipliers:
@@ -180,9 +188,17 @@ def assess_prepared_facet(
         judgements = {
             name: getattr(item, name)
             for name in (
-                "origin_id", "source_class", "approval_key", "scope_matches",
-                "temporal_matches", "authority_verified", "directness",
-                "specificity", "completeness", "judgement_basis", "origin_basis",
+                "origin_id",
+                "source_class",
+                "approval_key",
+                "scope_matches",
+                "temporal_matches",
+                "authority_verified",
+                "directness",
+                "specificity",
+                "completeness",
+                "judgement_basis",
+                "origin_basis",
             )
         }
         edge_id = None
@@ -190,61 +206,86 @@ def assess_prepared_facet(
             document_id = f"document:{index}"
             edge_id = f"edge:{index}"
             updated = getattr(source, "last_updated_date", None)
-            nodes.append(GraphNode(
-                document_id, "document", source.title,
-                {
-                    "source_id": source.source_id,
-                    "source_class": item.source_class,
-                    "approval_status": item.approval_key,
-                    "status": source.lifecycle_status,
-                    "duplicate_group": item.origin_id,
-                    "effective_date": (
-                        source.effective_start_date.isoformat()
-                        if source.effective_start_date else None
-                    ),
-                    "effective_end_date": (
-                        source.effective_end_date.isoformat()
-                        if source.effective_end_date else None
-                    ),
-                    "last_updated": updated.isoformat() if updated else None,
-                },
-            ))
-            edges.append(GraphEdge(
-                edge_id, document_id, "fact:facet", interpretation.mode.upper(),
-                {
-                    # A quoted assertion, not the interpretation rationale.
-                    "attests_value": "\n\n".join(
-                        c.quotation for c in interpretation.citations
-                    ),
-                    "agrees": interpretation.stance == "support",
-                    "applicable": True,
-                    "scope_match": True,
-                    "directness": item.directness,
-                    "specificity": item.specificity,
-                    "completeness": item.completeness,
-                    "input_id": input_id,
-                    "judgement_basis": item.judgement_basis,
-                },
-            ))
-        dispositions.append(InputDisposition(
-            input_id, interpretation.model_copy(deep=True),
-            source.model_copy(deep=True), judgements, edge_id, tuple(reasons),
-        ))
+            nodes.append(
+                GraphNode(
+                    document_id,
+                    "document",
+                    source.title,
+                    {
+                        "source_id": source.source_id,
+                        "source_class": item.source_class,
+                        "approval_status": item.approval_key,
+                        "status": source.lifecycle_status,
+                        "duplicate_group": item.origin_id,
+                        "effective_date": (
+                            source.effective_start_date.isoformat()
+                            if source.effective_start_date
+                            else None
+                        ),
+                        "effective_end_date": (
+                            source.effective_end_date.isoformat()
+                            if source.effective_end_date
+                            else None
+                        ),
+                        "last_updated": updated.isoformat() if updated else None,
+                    },
+                )
+            )
+            edges.append(
+                GraphEdge(
+                    edge_id,
+                    document_id,
+                    "fact:facet",
+                    interpretation.mode.upper(),
+                    {
+                        # A quoted assertion, not the interpretation rationale.
+                        "attests_value": "\n\n".join(
+                            c.quotation for c in interpretation.citations
+                        ),
+                        "agrees": interpretation.stance == "support",
+                        "applicable": True,
+                        "scope_match": True,
+                        "directness": item.directness,
+                        "specificity": item.specificity,
+                        "completeness": item.completeness,
+                        "input_id": input_id,
+                        "judgement_basis": item.judgement_basis,
+                    },
+                )
+            )
+        dispositions.append(
+            InputDisposition(
+                input_id,
+                interpretation.model_copy(deep=True),
+                source.model_copy(deep=True),
+                judgements,
+                edge_id,
+                tuple(reasons),
+            )
+        )
 
     graph = OrganisationalGraph(nodes, edges, version="corpus-facet-adapter-v1")
-    assessment = GraphCredibilityFramework(graph, config).evaluate_fact(
-        "fact:facet", as_of=as_of
-    )
+    assessment = GraphCredibilityFramework(graph, config).evaluate_fact("fact:facet", as_of=as_of)
     return FacetAssessmentResult(
-        claim_text, facet, as_of, assessment, tuple(dispositions),
+        claim_text,
+        facet,
+        as_of,
+        assessment,
+        tuple(dispositions),
         (
             "This is a facet assessment, not a whole-claim verdict.",
-            "Relationship, authority and quality judgements are supplied inputs, "
-            "not established by citation validation.",
-            "Authority verification is supplied externally; no person-role graph "
-            "resolution is performed by this adapter.",
-            "Version 1 uses source-level origins; distinct rows in one source "
-            "are conservatively grouped.",
+            (
+                "Relationship, authority and quality judgements are supplied inputs, "
+                "not established by citation validation."
+            ),
+            (
+                "Authority verification is supplied externally; no person-role graph "
+                "resolution is performed by this adapter."
+            ),
+            (
+                "Version 1 uses source-level origins; distinct rows in one source "
+                "are conservatively grouped."
+            ),
             "Framework gaps describe admitted attestations, not exhaustive corpus coverage.",
             "Existing framework lifecycle and historical corroboration rules are unchanged.",
         ),
