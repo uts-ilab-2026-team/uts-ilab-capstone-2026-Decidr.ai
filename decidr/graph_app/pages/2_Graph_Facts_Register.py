@@ -2,14 +2,15 @@
 
 from datetime import date
 
+import pandas as pd
+import streamlit as st
+
 from framework.graph_prototype import (
     CONFIG_PATH,
     GRAPH_PATH,
     GraphCredibilityFramework,
     GraphFactsRegister,
 )
-import pandas as pd
-import streamlit as st
 
 framework = GraphCredibilityFramework.load(
     GRAPH_PATH,

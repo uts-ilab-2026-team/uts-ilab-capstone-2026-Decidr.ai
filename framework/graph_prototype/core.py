@@ -7,9 +7,9 @@ FORMAL or OBSERVED Document -> Fact edges as ``attests_value``.
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass, field
 from datetime import date
+import json
 from pathlib import Path
 from typing import Any
 

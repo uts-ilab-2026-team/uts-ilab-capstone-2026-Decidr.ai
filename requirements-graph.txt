@@ -1,6 +1,0 @@
-networkx>=3.3,<4
-pandas>=2.2,<3
-pytest>=8,<10
-ruff>=0.8,<1
-scikit-learn>=1.5,<2
-streamlit>=1.40,<2

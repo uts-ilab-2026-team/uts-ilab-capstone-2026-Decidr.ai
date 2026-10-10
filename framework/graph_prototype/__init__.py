@@ -16,11 +16,11 @@ GRAPH_PATH = PACKAGE_ROOT / "data" / "prototype_graph.json"
 CONFIG_PATH = PACKAGE_ROOT / "config" / "credibility.json"
 
 __all__ = [
+    "CONFIG_PATH",
     "CREDIBILITY_DIMENSIONS",
     "CREDIBILITY_QUESTIONS",
-    "FactAssessment",
-    "CONFIG_PATH",
     "GRAPH_PATH",
+    "FactAssessment",
     "GraphCredibilityFramework",
     "GraphFactsRegister",
     "OrganisationalGraph",

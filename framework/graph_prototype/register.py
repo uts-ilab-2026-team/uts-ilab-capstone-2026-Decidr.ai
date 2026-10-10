@@ -1,10 +1,10 @@
 """Standalone facts register derived from the organisational graph."""
 
 import csv
-import json
 from dataclasses import asdict, dataclass
 from datetime import date
 from io import StringIO
+import json
 
 from .core import FactAssessment, GraphCredibilityFramework
 

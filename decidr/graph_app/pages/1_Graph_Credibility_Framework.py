@@ -2,6 +2,9 @@
 
 from datetime import date
 
+import pandas as pd
+import streamlit as st
+
 from framework.graph_prototype import (
     CONFIG_PATH,
     CREDIBILITY_DIMENSIONS,
@@ -9,8 +12,6 @@ from framework.graph_prototype import (
     GRAPH_PATH,
     GraphCredibilityFramework,
 )
-import pandas as pd
-import streamlit as st
 
 framework = GraphCredibilityFramework.load(
     GRAPH_PATH,
