@@ -1,7 +1,7 @@
 # Adapted from decidr/hybrid.py at commit 90ffff9.
 """Documented reciprocal-rank fusion over common retrieval candidates."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Protocol
 
 from decidr.retrieval_models import Evidence
@@ -198,6 +198,9 @@ def search_corpus(
     limit controls ranked groups, not the number of additional linked groups.
     Every explicit connection is retained in one of the two group collections.
     Full passage rankings are used before grouping for the current small corpus.
+    Retrieved groups with explicit query-record connections are displayed first,
+    preserving retrieval order within each tier and original candidate scores.
+    Reference-only groups remain additional linked evidence.
 
     Lexical-only search does not write. Optional semantic search uses the
     existing embedding cache; the caller controls its transaction. Semantic
@@ -268,10 +271,23 @@ def search_corpus(
     groups = group_ranked_evidence(
         candidates, evidence, limit=len(evidence)
     )
-    ranked_groups = tuple(
+    retrieved_groups = [
         group for group in groups
         if group.lead_result.evidence_id in retrieval_by_id
-    )[:limit]
+    ]
+    # Explicit record connections affect display priority, not relevance scores
+    # or credibility. Stable sorting preserves retrieval order within each tier.
+    # Check all section members, including context passages.
+    retrieved_groups.sort(
+        key=lambda group: not any(
+            passage.evidence_id in references_by_id
+            for passage in group.passages
+        )
+    )
+    ranked_groups = tuple(
+        replace(group, rank=position)
+        for position, group in enumerate(retrieved_groups[:limit], start=1)
+    )
     selected_ids = {
         group.lead_result.evidence_id for group in ranked_groups
     }

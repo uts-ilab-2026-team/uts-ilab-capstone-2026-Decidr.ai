@@ -457,3 +457,67 @@ def test_corpus_search_noop_does_not_encode_or_write(corpus_store, query, limit)
     assert result.candidates == ()
     assert embedder.calls == []
     assert corpus_store.total_changes == before
+
+
+@pytest.mark.parametrize("query", ["CASE-731 approval", "general approval"])
+@pytest.mark.parametrize("limit", [1, 3])
+def test_corpus_record_priority_preserves_retrieval(corpus_store, monkeypatch, query, limit):
+    import decidr.hybrid as hybrid
+    from decidr.retrieval_store import replace_source_evidence
+
+    source = "test:POL-91"
+    generic = _grouping_passage("generic1", source=source, section="General")
+    lead = _grouping_passage("lead2", source=source, section="Discussion")
+    context = _grouping_passage("context3", source=source, section="Discussion")
+    context.text = "This discussion concerns CASE-731."
+    own = _grouping_passage("own4", source=source, row="CASE-731")
+    passages = [generic, lead, context, own]
+    replace_source_evidence(corpus_store, source, passages)
+
+    # Deliberately rank unrelated evidence first. The explicit mention occurs
+    # in section context, not in the retrieved section lead.
+    lexical = [
+        _grouping_result(generic, 1),
+        _grouping_result(lead, 2),
+        _grouping_result(own, 3),
+    ]
+    monkeypatch.setattr(
+        hybrid, "lexical_search_text",
+        lambda connection, query, limit: lexical,
+    )
+    expected_retrieval = hybrid.reciprocal_rank_fusion(lexical, [], limit=10)
+    before = corpus_store.total_changes
+    result = hybrid.search_corpus(corpus_store, query, limit=limit)
+
+    has_record = "CASE-731" in query
+    expected_order = (
+        ["lead2", "own4", "generic1"]
+        if has_record else ["generic1", "lead2", "own4"]
+    )
+    assert [
+        group.lead_result.evidence_id for group in result.ranked_groups
+    ] == expected_order[:limit]
+    assert [group.rank for group in result.ranked_groups] == list(range(1, limit + 1))
+
+    # Display priority must not rewrite the underlying ranks or scores.
+    assert [
+        candidate.retrieval for candidate in result.candidates
+        if candidate.retrieval is not None
+    ] == expected_retrieval
+
+    expected_additional = ["own4"] if has_record and limit == 1 else []
+    assert [
+        group.lead_result.evidence_id for group in result.additional_linked_groups
+    ] == expected_additional
+
+    displayed = [
+        passage
+        for group in (*result.ranked_groups, *result.additional_linked_groups)
+        for passage in group.passages
+    ]
+    originals = {passage.evidence_id: passage for passage in passages}
+    assert all(passage == originals[passage.evidence_id] for passage in displayed)
+    assert len(displayed) == len({passage.evidence_id for passage in displayed})
+    if has_record:
+        assert any(passage.evidence_id == "context3" for passage in displayed)
+    assert corpus_store.total_changes == before
