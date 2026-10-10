@@ -269,6 +269,7 @@ def register_json(as_of: date | None = None) -> Response:
     )
 
 
+from decidr.api.assessment_history import router as history_router
 from decidr.api.corpus import router as corpus_router
 from decidr.api.interpretation import router as interpretation_router
 
@@ -277,6 +278,7 @@ app.include_router(router)
 from decidr.api.supplied_assessment import router as supplied_assessment_router
 
 app.include_router(corpus_router)
+app.include_router(history_router)
 app.include_router(interpretation_router)
 app.include_router(supplied_assessment_router)
 

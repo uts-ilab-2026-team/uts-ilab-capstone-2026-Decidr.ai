@@ -1,7 +1,9 @@
 """Authenticated facet assessment of explicitly supplied judgements."""
 
 from contextlib import closing
+from dataclasses import asdict
 from datetime import date
+import hashlib
 import json
 import re
 import sqlite3
@@ -77,6 +79,11 @@ class SuppliedAssessmentRequest(BaseModel):
 @router.post("/assess-supplied")
 def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
     """Assess a supplied packet; never infer relationships or save review records."""
+    return build_supplied_assessment(request)["response"]
+
+
+def build_supplied_assessment(request: SuppliedAssessmentRequest, *, freeze: bool = False) -> dict:
+    """Assess and optionally capture the same evidence/configuration used in that run."""
     for item in request.inputs:
         if len({citation.source_id for citation in item.citations}) != 1:
             raise HTTPException(
@@ -91,6 +98,19 @@ def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
         with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as connection:
             connection.execute("PRAGMA query_only = ON")
             connection.execute("BEGIN")
+            corpus_revision = None
+            if freeze:
+                digest = hashlib.sha256()
+                # Hash exact indexed payloads, including parsed metadata. This is
+                # an index revision, not the ingestion raw-corpus fingerprint.
+                for table, key in (("sources", "source_id"), ("evidence", "evidence_id")):
+                    for row in connection.execute(
+                        f"SELECT {key}, payload_json FROM {table} ORDER BY {key}"
+                    ):
+                        encoded = json.dumps([table, *row], ensure_ascii=False).encode("utf-8")
+                        digest.update(len(encoded).to_bytes(8, "big"))
+                        digest.update(encoded)
+                corpus_revision = digest.hexdigest()
             for item in request.inputs:
                 for citation in item.citations:
                     key = (citation.evidence_id, citation.source_id)
@@ -187,4 +207,20 @@ def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
             "config_version": config.config_version,
         }
     )
-    return response
+    bundle = {"response": response}
+    if freeze:
+        bundle.update(
+            {
+                "request": request.model_dump(mode="json"),
+                "evidence": [p.model_dump(mode="json") for p in evidence.values()],
+                "sources": [s.model_dump(mode="json") for s in sources.values()],
+                "configuration": asdict(config),
+                "provenance": {
+                    "corpus_index_sha256": corpus_revision,
+                    "corpus_revision_method": "ordered-index-payloads-v1",
+                    "assessment_method": "supplied-facet-assessment-v1",
+                    "evidence_scope": "cited_passages_only",
+                },
+            }
+        )
+    return bundle
