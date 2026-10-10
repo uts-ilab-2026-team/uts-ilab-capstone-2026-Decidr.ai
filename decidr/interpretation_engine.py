@@ -16,6 +16,7 @@ from decidr.approval_propositions import compare_approval_rules
 from decidr.assessment_targets import AssessmentTarget, validate_target
 from decidr.interpretation_models import InterpretationCitation
 from decidr.retrieval_models import Evidence, Source
+from decidr.source_metadata import approval_signals
 
 Stance = Literal["support", "contradict", "qualify", "context", "unresolved"]
 Mode = Literal["formal", "observed", "unresolved"]
@@ -312,13 +313,14 @@ def classify_source(source: Source, evidence: Evidence) -> SourceJudgement:
         approval = " ".join(
             c.get("quote", "") for c in clauses if c.get("scope") == "own_document"
         ).casefold()
-    if source.metadata_conflicts:
+    negative, positive = approval_signals(approval)
+    if source.metadata_conflicts or (negative and positive):
         approval_key = "unknown"
-    elif re.search(r"\b(unapproved|not (?:formally )?approved)\b", approval):
+    elif negative:
         approval_key = "unapproved"
     elif source.lifecycle_status == "draft":
         approval_key = "draft"
-    elif re.search(r"\bapproved\b", approval):
+    elif positive:
         approval_key = "approved"
     elif approval in {"system record", "system_record"}:
         approval_key = "system_record"
