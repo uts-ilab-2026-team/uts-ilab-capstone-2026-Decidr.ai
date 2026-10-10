@@ -133,6 +133,12 @@ def _temporal_status(
 
     created = _iso_date(source.get("creation_date"))
     if created:
+        if query_start and query_end and query_start == query_end:
+            return (
+                "recorded_outside_query_period"
+                if created > query_end
+                else "recorded_by_assessment_date"
+            )
         if query_end and created > query_end:
             return "recorded_outside_query_period"
         if query_start and created < query_start:
@@ -204,6 +210,7 @@ def _temporal_factor(status: str, has_query_period: bool) -> float:
     return {
         "applicable_to_query_period": 1.25,
         "recorded_in_query_period": 1.0,
+        "recorded_by_assessment_date": 1.0,
         "temporal_scope_unknown": 0.90,
         "recorded_outside_query_period": 0.65,
         "outside_query_period": 0.50,
@@ -250,7 +257,13 @@ def _gap_signals(
     if has_query_period:
         statuses = {result.temporal_status for result in results}
 
-        if "applicable_to_query_period" not in statuses:
+        if statuses.isdisjoint(
+            {
+                "applicable_to_query_period",
+                "recorded_in_query_period",
+                "recorded_by_assessment_date",
+            }
+        ):
             signals.append("no_explicitly_applicable_dated_source")
 
         if "temporal_scope_unknown" in statuses:
@@ -260,6 +273,7 @@ def _gap_signals(
             "outside_query_period",
             "recorded_outside_query_period",
             "temporal_scope_unknown",
+            "historical_or_stale",
         }:
             signals.append("temporal_evidence_gap")
 
@@ -274,6 +288,7 @@ def _search_corpus(
     semantic: bool = True,
     max_per_source: int = 2,
     query_period: tuple[date | None, date | None] | None = None,
+    release: str | None = None,
 ) -> CorpusSearchPackage:
     """Search the complete evidence corpus with an optional explicit period."""
 
@@ -318,6 +333,9 @@ def _search_corpus(
         semantic_results,
         limit=candidate_limit,
     )
+    if release:
+        release_prefix = release.casefold() + ":"
+        fused = [item for item in fused if item.source_id.casefold().startswith(release_prefix)]
 
     sources = _source_metadata(connection)
     evidence_metadata = _evidence_metadata(connection)
@@ -458,8 +476,10 @@ def search_corpus(
     candidate_limit: int = 30,
     semantic: bool = True,
     max_per_source: int = 2,
+    as_of: date | None = None,
+    release: str | None = None,
 ) -> CorpusSearchPackage:
-    """Search the complete evidence corpus from a free-text query."""
+    """Search the corpus using an explicit assessment date when supplied."""
     return _search_corpus(
         connection,
         query,
@@ -467,6 +487,8 @@ def search_corpus(
         candidate_limit=candidate_limit,
         semantic=semantic,
         max_per_source=max_per_source,
+        query_period=(as_of, as_of) if as_of else None,
+        release=release,
     )
 
 

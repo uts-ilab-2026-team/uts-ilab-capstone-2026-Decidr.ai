@@ -5,18 +5,19 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from decidr.config import PHASE1_DATA_DIR, PHASE2_DATA_DIR
+from decidr.config import PHASE2_DATA_DIR
 from decidr.corpus_assessment import AssessmentStore, assess_claim
 
 st.set_page_config(page_title="End-to-End Claim Assessment", layout="wide")
 st.title("End-to-End Claim Assessment")
 st.caption(
-    "Saif's structured retrieval engine proposes relevant evidence. Numeric comparison, "
-    "authority checking and graph credibility assessment run afterwards as separate stages."
+    "Saif's structured retrieval engine proposes relevant evidence. Numeric comparisons are "
+    "shown only as diagnostics; evidence relationships require explicit human judgement."
 )
 st.warning(
-    "Retrieval rank is not credibility. Automated outcomes are candidates and require two "
-    "independent reviews or adjudication before becoming final findings."
+    "Retrieval rank is not credibility. The system does not automatically label retrieved "
+    "evidence as support or contradiction. Two independent reviews or adjudication are "
+    "required before a final finding."
 )
 
 
@@ -34,7 +35,7 @@ metric_columns[2].metric("Saved assessments", counts["assessments"])
 metric_columns[3].metric("Human reviews", counts["reviews"])
 
 with st.expander("Configured corpus", expanded=not counts["evidence"]):
-    st.code(f"Phase 1: {PHASE1_DATA_DIR}\nPhase 2: {PHASE2_DATA_DIR}")
+    st.code(f"Phase 2: {PHASE2_DATA_DIR}")
     st.write(
         "The client corpus remains outside the repository and is read locally. Ingestion "
         "preserves source provenance, structured row metadata and evidence locators."
@@ -75,7 +76,9 @@ semantic = right.checkbox(
     value=False,
     help="If the local sentence-transformer model is unavailable, retrieval safely falls back.",
 )
-run = action.button("Retrieve, interpret and assess", type="primary", use_container_width=True)
+run = action.button(
+    "Retrieve evidence for human assessment", type="primary", use_container_width=True
+)
 
 if run:
     st.session_state["corpus_assessment"] = assess_claim(
@@ -90,9 +93,9 @@ if run:
 result = st.session_state.get("corpus_assessment")
 if result:
     st.divider()
-    st.subheader("Automated candidate result")
+    st.subheader("Provisional framework result")
     outcome, confidence, formal, observed = st.columns(4)
-    outcome.metric("Combined outcome", result["automated_outcome"])
+    outcome.metric("Provisional outcome", result["automated_outcome"])
     confidence.metric("Confidence", result["automated_confidence"])
     formal.metric("Formal lane", result["formal_outcome"])
     observed.metric("Observed lane", result["observed_outcome"])
@@ -116,7 +119,7 @@ if result:
     st.caption(f"Semantic retrieval status: {retrieval['semantic_status']}")
 
     interpretation_tab, credibility_tab, citations_tab, audit_tab = st.tabs(
-        ["Interpretations", "Credibility trace", "Citations", "Audit package"]
+        ["Relationship diagnostics", "Credibility trace", "Citations", "Audit package"]
     )
     with interpretation_tab:
         rows = []

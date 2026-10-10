@@ -118,7 +118,12 @@ class GraphCredibilityConfig:
     @classmethod
     def load(cls, path: Path) -> GraphCredibilityConfig:
         payload = json.loads(path.read_text(encoding="utf-8"))
-        config = cls(**payload)
+        try:
+            config = cls(**payload)
+        except TypeError as error:
+            raise GraphValidationError(
+                f"Invalid graph credibility configuration: {error}"
+            ) from error
         if set(config.dimension_weights) != set(CREDIBILITY_DIMENSIONS):
             raise GraphValidationError(
                 "Graph credibility weights must cover exactly the eight declared dimensions"
@@ -135,6 +140,15 @@ class OrganisationalGraph:
 
     def __init__(self, nodes: list[GraphNode], edges: list[GraphEdge], *, version: str) -> None:
         self.version = version
+
+        node_ids = [node.node_id for node in nodes]
+        if len(node_ids) != len(set(node_ids)):
+            raise GraphValidationError("Node IDs must be unique")
+
+        edge_ids = [edge.edge_id for edge in edges]
+        if len(edge_ids) != len(set(edge_ids)):
+            raise GraphValidationError("Edge IDs must be unique")
+
         self.nodes = {node.node_id: node for node in nodes}
         self.edges = {edge.edge_id: edge for edge in edges}
         self.graph = nx.MultiDiGraph(graph_version=version)
@@ -183,8 +197,6 @@ class OrganisationalGraph:
     def _validate(self) -> None:
         if len(self.nodes) == 0:
             raise GraphValidationError("The graph must contain nodes")
-        if len(self.edges) != len(set(self.edges)):
-            raise GraphValidationError("Edge IDs must be unique")
         for node in self.nodes.values():
             if node.kind == "fact" and "value" in node.attributes:
                 raise GraphValidationError(
@@ -378,6 +390,8 @@ class GraphCredibilityFramework:
         duplicate_counts: dict[str, int] = {}
         corroboration_counts: dict[tuple[str, str], set[str]] = {}
         for edge in attestations:
+            if not self._applicable(edge):
+                continue
             document = self.graph.document(edge.source)
             group = str(document.attributes.get("duplicate_group") or document.node_id)
             duplicate_counts[group] = duplicate_counts.get(group, 0) + 1
@@ -436,9 +450,7 @@ class GraphCredibilityFramework:
         edge_attributes = edge.attributes
         status = str(attributes.get("status", "unknown"))
         source_class = str(attributes.get("source_class", "unknown"))
-        applicable = bool(edge_attributes.get("applicable", True)) and bool(
-            edge_attributes.get("scope_match", True)
-        )
+        applicable = self._applicable(edge)
         limitations: list[str] = []
         trace: list[str] = []
         if not applicable:
@@ -534,6 +546,14 @@ class GraphCredibilityFramework:
             dimensions=dimensions,
             limitations=tuple(limitations),
             trace=tuple(trace),
+        )
+
+    @staticmethod
+    def _applicable(edge: GraphEdge) -> bool:
+        """Use one applicability gate for both tallying and edge scoring."""
+        attributes = edge.attributes
+        return bool(attributes.get("applicable", True)) and bool(
+            attributes.get("scope_match", True)
         )
 
     def _recency(self, document: GraphNode, as_of: date) -> tuple[float, str]:

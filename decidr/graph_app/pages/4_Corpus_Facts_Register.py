@@ -14,7 +14,7 @@ CONFIDENCE = ("Higher confidence", "Moderate confidence", "Lower confidence")
 st.set_page_config(page_title="Corpus Facts Register", layout="wide")
 st.title("Corpus Facts Register")
 st.write(
-    "Automated candidates remain provisional. A row becomes a human-reviewed finding only "
+    "Retrieved candidates remain provisional. A row becomes a human-reviewed finding only "
     "when two distinct reviewers agree, or when a disagreement is adjudicated."
 )
 
@@ -40,7 +40,7 @@ st.table(
                 "Assessment ID": row["assessment_id"],
                 "Claim": row["claim_text"],
                 "Status": row["status"],
-                "Automated": row["automated_outcome"],
+                "Framework provisional": row["automated_outcome"],
                 "Final": row["final_outcome"],
                 "Reviewers": row["human_reviewers"],
                 "As at": row["as_of"],
@@ -64,7 +64,7 @@ if filtered:
     st.subheader(selected["claim_text"])
     first, second, third = st.columns(3)
     first.metric("Register status", selected["status"])
-    second.metric("Automated outcome", selected["automated_outcome"])
+    second.metric("Framework provisional", selected["automated_outcome"])
     third.metric("Final outcome", selected["final_outcome"] or "Not final")
 
     st.markdown("#### Independent reviews")
@@ -115,7 +115,7 @@ evaluation = evaluation_summary(rows)
 left, right = st.columns(2)
 left.metric("Final human findings", evaluation["final_findings"])
 right.metric(
-    "Automated/human agreement",
+    "Automatic relationship accuracy",
     (
         f"{evaluation['automated_human_agreement']:.1%}"
         if evaluation["automated_human_agreement"] is not None

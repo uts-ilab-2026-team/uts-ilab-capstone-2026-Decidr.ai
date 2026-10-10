@@ -23,11 +23,11 @@ The prototype now supports both the original prebuilt graph flow and an exact-cl
 Exact claim
   -> Saif FTS5/BM25 retrieval and optional local semantic RRF
   -> temporal, duplicate and provenance handling
-  -> provisional support / contradict / qualify / context interpretation
-  -> numeric threshold and authority comparison
-  -> formal and observed graph evidence relationships
+  -> unresolved evidence packet with exact provenance
+  -> numeric threshold comparison as a diagnostic only
+  -> explicitly judged formal and observed evidence relationships
   -> source, status, date and materiality checks
-  -> automated candidate assessment
+  -> provisional framework assessment
   -> two independent reviews or adjudication
   -> final facts-register finding
 ```
@@ -81,13 +81,14 @@ The application has four working pages:
 - **Graph Credibility Framework** retrieves a Fact and displays its evidence and credibility
   trace.
 - **Graph Facts Register** derives reviewable and exportable records from the graph's Facts.
-- **End-to-End Claim Assessment** uses Saif's structured retrieval package, then performs
-  transparent interpretation, percentage/authority comparison and graph assessment.
-- **Corpus Facts Register** stores automated candidates, captures independent human reviews,
-  and handles adjudication.
+- **End-to-End Claim Assessment** uses Saif's structured retrieval package and exposes numeric
+  comparisons as diagnostics. It deliberately leaves support/contradiction unresolved for
+  explicit human judgement.
+- **Corpus Facts Register** stores immutable assessment packets and independent human reviews,
+  and promotes a row only after reviewer agreement or immutable adjudication.
 
-Copy `.env.example` to `.env` and set the local Phase 1 and Phase 2 corpus directories.
-The End-to-End Claim Assessment page can ingest or refresh those configured directories into
+Copy `.env.example` to `.env` and set the local Phase 2 corpus directory.
+The End-to-End Claim Assessment page can ingest or refresh that configured directory into
 `data/processed/evidence.sqlite3`. The database is ignored by Git and evidence is not sent to
 an external service.
 

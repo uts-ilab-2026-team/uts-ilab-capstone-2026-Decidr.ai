@@ -13,9 +13,10 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import re
+import sqlite3
 from typing import Any
 
-from decidr.config import DATABASE_PATH, PHASE1_DATA_DIR, PHASE2_DATA_DIR
+from decidr.config import DATABASE_PATH, PHASE2_DATA_DIR
 from decidr.corpus_search import CorpusResult, CorpusSearchPackage, search_corpus
 from decidr.database import connect, initialise_database
 from decidr.ingestion import IngestionResult, ingest
@@ -30,26 +31,6 @@ from framework.graph_prototype.core import (
 
 OUTCOMES = ("Supported", "Contradicted", "Contested", "Insufficient evidence")
 PERCENT_RE = re.compile(r"(?P<value>\d+(?:\.\d+)?)\s*(?:%|percent\b)", re.IGNORECASE)
-TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*", re.IGNORECASE)
-STOPWORDS = {
-    "a",
-    "an",
-    "and",
-    "are",
-    "as",
-    "at",
-    "be",
-    "by",
-    "for",
-    "from",
-    "in",
-    "is",
-    "of",
-    "on",
-    "or",
-    "the",
-    "to",
-}
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,19 +54,13 @@ class EvidenceInterpretation:
     claim_condition: NumericCondition | None
     evidence_condition: NumericCondition | None
     comparison_result: str | None
+    scope_match: bool | None
+    temporal_match: bool | None
 
 
 def _stable_id(prefix: str, *parts: str) -> str:
     digest = sha256("\x1f".join(parts).encode("utf-8")).hexdigest()[:16]
     return f"{prefix}-{digest}"
-
-
-def _tokens(text: str) -> set[str]:
-    return {
-        token.casefold()
-        for token in TOKEN_RE.findall(text)
-        if token.casefold() not in STOPWORDS and len(token) > 1
-    }
 
 
 def _normalise_operator(text: str) -> str | None:
@@ -150,6 +125,7 @@ def _source_mode(source_type: str) -> str:
 
 
 def _source_class(source_type: str) -> str:
+    """Map ingestion source names to actual credibility configuration keys."""
     source_type = source_type.casefold()
     if source_type == "policy":
         return "approved_policy"
@@ -157,10 +133,16 @@ def _source_class(source_type: str) -> str:
         return "approved_process"
     if source_type in {"role-desc", "role_description"}:
         return "role_description"
-    if source_type in {"system-audit-log", "audit", "csv", "crm"}:
+    if source_type in {"system-audit-log", "audit", "audit_events"}:
         return "system_verified"
-    if source_type in {"meeting", "interview"}:
-        return "accepted_record"
+    if source_type in {"crm", "crm_records", "project_tasks"}:
+        return "structured_operational_record"
+    if source_type == "meeting":
+        return "meeting_record"
+    if source_type == "interview":
+        return "interview"
+    if source_type == "internal_communication":
+        return "self_reported_communication"
     return "unknown"
 
 
@@ -212,8 +194,20 @@ class AssessmentStore:
     def counts(self) -> dict[str, int]:
         with connect(self.path) as connection:
             return {
-                "sources": int(connection.execute("SELECT COUNT(*) FROM sources").fetchone()[0]),
-                "evidence": int(connection.execute("SELECT COUNT(*) FROM evidence").fetchone()[0]),
+                "sources": int(
+                    connection.execute(
+                        "SELECT COUNT(*) FROM sources WHERE source_id LIKE 'phase2:%'"
+                    ).fetchone()[0]
+                ),
+                "evidence": int(
+                    connection.execute(
+                        """
+                        SELECT COUNT(*)
+                        FROM evidence e JOIN sources s ON s.source_id=e.source_id
+                        WHERE s.source_id LIKE 'phase2:%'
+                        """
+                    ).fetchone()[0]
+                ),
                 "assessments": int(
                     connection.execute("SELECT COUNT(*) FROM framework_assessments").fetchone()[0]
                 ),
@@ -223,9 +217,9 @@ class AssessmentStore:
             }
 
     def ingest_configured_corpus(self) -> IngestionResult:
-        """Ingest the configured read-only Phase 1 and Phase 2 corpus."""
+        """Ingest only the configured Phase 2 corpus used by this workflow."""
         return ingest(
-            {"phase1": PHASE1_DATA_DIR, "phase2": PHASE2_DATA_DIR},
+            {"phase2": PHASE2_DATA_DIR},
             database_path=self.path,
         )
 
@@ -235,6 +229,7 @@ class AssessmentStore:
         *,
         limit: int,
         semantic: bool = True,
+        as_of: date | None = None,
     ) -> CorpusSearchPackage:
         with connect(self.path) as connection:
             return search_corpus(
@@ -244,25 +239,24 @@ class AssessmentStore:
                 candidate_limit=max(limit * 3, 20),
                 semantic=semantic,
                 max_per_source=2,
+                as_of=as_of,
+                release="phase2",
             )
 
     def save_assessment(self, payload: dict[str, Any]) -> str:
+        created_at = datetime.now(UTC).isoformat()
         assessment_id = _stable_id(
             "ASM",
             payload["claim_text"],
             payload["as_of"],
             "|".join(item["evidence_id"] for item in payload["retrieval"]["results"]),
+            created_at,
         )
         payload["assessment_id"] = assessment_id
         with connect(self.path) as connection:
             connection.execute(
                 """
                 INSERT INTO framework_assessments VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(assessment_id) DO UPDATE SET
-                    automated_outcome=excluded.automated_outcome,
-                    automated_confidence=excluded.automated_confidence,
-                    payload_json=excluded.payload_json,
-                    created_at=excluded.created_at
                 """,
                 (
                     assessment_id,
@@ -271,7 +265,7 @@ class AssessmentStore:
                     payload["automated_outcome"],
                     payload["automated_confidence"],
                     json.dumps(payload, ensure_ascii=False),
-                    datetime.now(UTC).isoformat(),
+                    created_at,
                 ),
             )
         return assessment_id
@@ -290,26 +284,24 @@ class AssessmentStore:
         if not notes.strip():
             raise ValueError("An evidence-based explanation is required")
         review_id = _stable_id("REV", assessment_id, reviewer.casefold())
-        with connect(self.path) as connection:
-            connection.execute(
-                """
-                INSERT INTO framework_reviews VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(assessment_id, lower(reviewer)) DO UPDATE SET
-                    verdict=excluded.verdict,
-                    confidence=excluded.confidence,
-                    notes=excluded.notes,
-                    created_at=excluded.created_at
-                """,
-                (
-                    review_id,
-                    assessment_id,
-                    reviewer,
-                    verdict,
-                    confidence,
-                    notes.strip(),
-                    datetime.now(UTC).isoformat(),
-                ),
-            )
+        try:
+            with connect(self.path) as connection:
+                connection.execute(
+                    "INSERT INTO framework_reviews VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        review_id,
+                        assessment_id,
+                        reviewer,
+                        verdict,
+                        confidence,
+                        notes.strip(),
+                        datetime.now(UTC).isoformat(),
+                    ),
+                )
+        except sqlite3.IntegrityError as error:
+            raise ValueError(
+                "This reviewer has already submitted an immutable review for this assessment."
+            ) from error
 
     def save_adjudication(
         self,
@@ -323,26 +315,23 @@ class AssessmentStore:
             raise ValueError("Adjudicator name is required")
         if not notes.strip():
             raise ValueError("An adjudication rationale is required")
-        with connect(self.path) as connection:
-            connection.execute(
-                """
-                INSERT INTO framework_adjudications VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT(assessment_id) DO UPDATE SET
-                    adjudicator=excluded.adjudicator,
-                    outcome=excluded.outcome,
-                    confidence=excluded.confidence,
-                    notes=excluded.notes,
-                    created_at=excluded.created_at
-                """,
-                (
-                    assessment_id,
-                    adjudicator.strip(),
-                    outcome,
-                    confidence,
-                    notes.strip(),
-                    datetime.now(UTC).isoformat(),
-                ),
-            )
+        try:
+            with connect(self.path) as connection:
+                connection.execute(
+                    "INSERT INTO framework_adjudications VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        assessment_id,
+                        adjudicator.strip(),
+                        outcome,
+                        confidence,
+                        notes.strip(),
+                        datetime.now(UTC).isoformat(),
+                    ),
+                )
+        except sqlite3.IntegrityError as error:
+            raise ValueError(
+                "This assessment already has an immutable adjudication record."
+            ) from error
 
     def register_rows(self) -> list[dict[str, Any]]:
         with connect(self.path) as connection:
@@ -408,11 +397,14 @@ class AssessmentStore:
 
 
 def interpret_evidence(claim: str, result: CorpusResult) -> EvidenceInterpretation:
-    """Interpret a retrieved candidate without changing its retrieval ranking."""
+    """Produce diagnostics without assigning an automatic evidential stance.
+
+    Retrieval relevance, word overlap, a threshold match, or an observed breach cannot
+    establish whether an item supports or contradicts a claim. Missing records may be
+    identified as qualifications, but all other relationships remain unresolved until a
+    reviewer or a separately validated interpreter supplies the judgement.
+    """
     evidence_text = result.text
-    claim_tokens = _tokens(claim)
-    evidence_tokens = _tokens(evidence_text)
-    overlap = len(claim_tokens & evidence_tokens) / max(1, len(claim_tokens))
     claim_condition = extract_numeric_condition(claim)
     evidence_condition = extract_numeric_condition(evidence_text)
     lowered_claim = claim.casefold()
@@ -431,21 +423,32 @@ def interpret_evidence(claim: str, result: CorpusResult) -> EvidenceInterpretati
         "approv" in field.casefold() or "sign" in field.casefold()
         for field in result.missing_fields
     )
-    explicit_negative = any(
-        marker in lowered_evidence
-        for marker in ("did not", "was not", "without approval", "no approval", "not approved")
-    )
-    claim_negative = any(marker in lowered_claim for marker in ("did not", "was not", "without"))
     comparison_result: str | None = None
+    temporal_match = {
+        "applicable_to_query_period": True,
+        "recorded_in_query_period": True,
+        "recorded_by_assessment_date": True,
+        "outside_query_period": False,
+        "recorded_outside_query_period": False,
+    }.get(result.temporal_status)
 
     if missing_record or approval_fields_missing:
         relationship = "qualify"
-        confidence = 0.92
+        confidence = 1.0
         rationale = (
             "The candidate is relevant but the required record or structured approval field is "
             "missing. Missing evidence is recorded as a gap, not proof of non-occurrence."
         )
-    elif claim_condition and evidence_condition and claim_condition.operator:
+    else:
+        relationship = "unresolved"
+        confidence = 0.0
+        rationale = (
+            "No automatic support or contradiction relationship was assigned. Retrieval "
+            "relevance and word overlap do not establish semantic agreement, business scope, "
+            "or whether an observed breach disproves a formal rule."
+        )
+
+    if claim_condition and evidence_condition and claim_condition.operator:
         triggered = _meets(
             evidence_condition.value,
             claim_condition.operator,
@@ -458,58 +461,8 @@ def interpret_evidence(claim: str, result: CorpusResult) -> EvidenceInterpretati
         required_role = _normalise_role(claim_condition.role or _extract_role(claim))
         observed_role = _normalise_role(result.role or evidence_condition.role)
         role_mismatch = bool(required_role and observed_role and required_role != observed_role)
-        approval_required = "approv" in lowered_claim and any(
-            word in lowered_claim for word in ("require", "must", "needed", "received")
-        )
-        says_not_required = (
-            "not required" in lowered_evidence or "no additional approval" in lowered_evidence
-        )
-        if triggered and (explicit_negative or says_not_required or role_mismatch):
-            relationship = "contradict"
-            confidence = 0.9
-            detail = (
-                "the recorded approval authority differs"
-                if role_mismatch
-                else "approval is absent"
-            )
-            rationale = f"The numeric condition is triggered, but {detail}."
-        elif not triggered and says_not_required and approval_required:
-            relationship = "support"
-            confidence = 0.9
-            rationale = (
-                "The recorded value is below the policy trigger and the candidate states that "
-                "additional approval was not required."
-            )
-        elif overlap >= 0.28:
-            relationship = "support"
-            confidence = min(0.95, 0.68 + overlap / 3)
-            rationale = (
-                "The candidate aligns with the claim and the numeric condition was compared "
-                "explicitly."
-            )
-        else:
-            relationship = "qualify"
-            confidence = 0.7
-            rationale = (
-                "The value comparison is relevant, but the candidate does not resolve every "
-                "claim element."
-            )
-    elif explicit_negative != claim_negative and overlap >= 0.25:
-        relationship = "contradict"
-        confidence = min(0.9, 0.62 + overlap / 2)
-        rationale = "The candidate addresses the same subject but states the opposing condition."
-    elif overlap >= 0.48:
-        relationship = "support"
-        confidence = min(0.92, 0.62 + overlap / 2)
-        rationale = "The candidate directly matches the material entities and action in the claim."
-    elif overlap >= 0.22:
-        relationship = "qualify"
-        confidence = 0.62
-        rationale = "The candidate is relevant but does not resolve the complete claim."
-    else:
-        relationship = "context"
-        confidence = 0.55
-        rationale = "The candidate supplies context rather than decisive claim evidence."
+        if role_mismatch:
+            comparison_result += " The named or recorded authority differs from the claim."
 
     return EvidenceInterpretation(
         evidence_id=result.evidence_id,
@@ -523,6 +476,8 @@ def interpret_evidence(claim: str, result: CorpusResult) -> EvidenceInterpretati
         claim_condition=claim_condition,
         evidence_condition=evidence_condition,
         comparison_result=comparison_result,
+        scope_match=None,
+        temporal_match=temporal_match,
     )
 
 
@@ -556,34 +511,31 @@ def _build_graph(
                     "status": candidate.lifecycle_status,
                     "approval_status": candidate.approval_status,
                     "effective_date": candidate.effective_start_date,
+                    "effective_end_date": candidate.effective_end_date,
                     "last_updated": candidate.creation_date,
                     "source_class": _source_class(candidate.source_type),
                     "duplicate_group": candidate.provenance_group,
                 },
             )
         )
-        if interpretation.relationship == "context":
+        if interpretation.relationship not in {"support", "contradict"}:
             continue
         agrees = {"support": True, "contradict": False}.get(interpretation.relationship)
-        applicable = candidate.temporal_status not in {
-            "outside_query_period",
-            "recorded_outside_query_period",
-        }
+        applicable = interpretation.scope_match is True and interpretation.temporal_match is True
         edge_attributes: dict[str, Any] = {
             "attests_value": interpretation.quotation,
             "agrees": agrees,
             "applicable": applicable,
-            "scope_match": True,
+            "scope_match": interpretation.scope_match is True,
             "directness": (
                 1.0
-                if candidate.source_type in {"system-audit-log", "audit", "crm", "csv"}
+                if candidate.source_type
+                in {"system-audit-log", "audit", "audit_events", "crm", "crm_records"}
                 else 0.85
             ),
             "specificity": interpretation.confidence,
             "completeness": max(0.25, 1.0 - 0.08 * len(candidate.missing_fields)),
         }
-        if interpretation.relationship == "qualify":
-            edge_attributes["gap"] = interpretation.rationale
         edges.append(
             GraphEdge(
                 edge_id=f"attest:{index}:{candidate.evidence_id}",
@@ -606,11 +558,11 @@ def assess_claim(
     semantic: bool = True,
     persist: bool = True,
 ) -> dict[str, Any]:
-    """Retrieve with Saif's engine, then interpret and score in separate stages."""
+    """Retrieve candidates and prepare a provisional, human-reviewable assessment."""
     claim = claim.strip()
     if not claim:
         raise ValueError("Claim must not be blank")
-    package = store.retrieve(claim, limit=limit, semantic=semantic)
+    package = store.retrieve(claim, limit=limit, semantic=semantic, as_of=as_of)
     interpretations = [interpret_evidence(claim, item) for item in package.results]
     framework = _build_graph(claim, package.results, interpretations)
     graph_result = framework.evaluate_fact("fact:submitted-claim", as_of=as_of)
@@ -618,7 +570,7 @@ def assess_claim(
         "schema_version": "saif-retrieval-graph-assessment-v1",
         "claim_text": claim,
         "as_of": as_of.isoformat(),
-        "status": "automated_candidate",
+        "status": "retrieval_requires_human_interpretation",
         "automated_outcome": graph_result.overall_outcome,
         "automated_confidence": graph_result.confidence,
         "formal_outcome": graph_result.formal_outcome,
@@ -641,18 +593,23 @@ def assess_claim(
         "credibility": graph_result.model_dump(),
         "limitations": [
             "Saif's retrieval rank measures relevance, not credibility or truth.",
-            "Framework relationships are provisional until independently reviewed.",
+            "No automatic support or contradiction relationship is assigned.",
+            (
+                "Numeric comparison is diagnostic and does not turn noncompliance into evidence "
+                "that a formal rule is false."
+            ),
+            "Business scope remains unresolved until explicitly judged.",
             "Semantic retrieval falls back safely when the local model is unavailable.",
         ],
         "rules_applied": [
             "R1_SAIF_FTS5_BM25_RETRIEVAL",
             "R2_SAIF_RRF_SEMANTIC_WHEN_AVAILABLE",
             "R3_PROVENANCE_DUPLICATE_CONTROL",
-            "R4_TEMPORAL_SCOPE_RERANKING",
+            "R4_ASSESSMENT_DATE_TEMPORAL_RERANKING",
             "R5_MISSINGNESS_IS_A_GAP",
-            "R6_NUMERIC_THRESHOLD_AND_AUTHORITY_COMPARISON",
+            "R6_NUMERIC_COMPARISON_IS_DIAGNOSTIC_ONLY",
             "R7_FORMAL_OBSERVED_SEPARATION",
-            "R8_GRAPH_CREDIBILITY_MATERIALITY",
+            "R8_NO_AUTOMATIC_RELATIONSHIP_ASSIGNMENT",
             "R9_HUMAN_REVIEW_REQUIRED_FOR_FINAL_FACT",
         ],
     }
@@ -662,13 +619,11 @@ def assess_claim(
 
 def evaluation_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     final = [row for row in rows if row["final_outcome"]]
-    agreed = sum(row["automated_outcome"] == row["final_outcome"] for row in final)
     return {
         "final_findings": len(final),
-        "automated_human_agreement": agreed / len(final) if final else None,
+        "automated_human_agreement": None,
         "limitation": (
-            None
-            if final
-            else "No accuracy metric is reported until independently reviewed findings exist."
+            "Automated/human agreement is not reported because retrieval does not assign "
+            "automatic evidential relationships."
         ),
     }
