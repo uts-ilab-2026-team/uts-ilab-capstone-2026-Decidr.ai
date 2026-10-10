@@ -23,6 +23,21 @@ def serialize_facet_assessment(result: FacetAssessmentResult) -> dict:
             else "supplied_declarations_checked"
         ),
         "interpretation_basis": "supplied_judgements",
+        "assurance": {
+            "version": "supplied-assessment-assurance-v1",
+            "outcome_basis": "conditional_on_supplied_judgements",
+            "citation_validation": "exact_spans_and_identities_checked",
+            "semantic_verification": "not_performed",
+            "authority_verification": "caller_declared_not_independently_verified",
+            "independence_verification": "caller_declared_with_consistency_checks",
+            "quality_scores": "caller_supplied_not_calibrated_by_this_endpoint",
+            "source_class_and_approval_key": "caller_supplied_configured_keys",
+            "human_review": "not_established_by_this_request",
+            "notice": (
+                "Verdict and confidence are conditional on supplied interpretations and "
+                "credibility judgements. Exact citation checks do not verify those judgements."
+            ),
+        },
         "claim_text": result.claim_text,
         "facet": result.facet,
         "as_of": result.as_of.isoformat(),

@@ -303,3 +303,77 @@ def test_legacy_api_target_is_disclosed(client, packet):
     result = client.post(URL, json=body).json()
     assert result["assessment_target"] == "unspecified"
     assert result["target_validation"] == "not_performed_legacy"
+
+
+def test_valid_quote_does_not_establish_semantic_or_authority_verification(client, packet):
+    path, body = packet
+    before = path.read_bytes()
+    # Deliberately false supplied relationship: the endpoint is not an interpreter.
+    body["claim_text"] = "Written approval is never required."
+    body["facet"] = body["claim_text"]
+    body["inputs"][0].update(
+        independence_verified=True,
+        independence_basis="Caller assertion only; no independent verification.",
+    )
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["assessment"]["formal_outcome"] == "Supported"
+    assurance = result["assurance"]
+    assert assurance["outcome_basis"] == "conditional_on_supplied_judgements"
+    assert assurance["citation_validation"] == "exact_spans_and_identities_checked"
+    assert assurance["semantic_verification"] == "not_performed"
+    assert assurance["authority_verification"] == "caller_declared_not_independently_verified"
+    assert assurance["independence_verification"] == "caller_declared_with_consistency_checks"
+    assert assurance["human_review"] == "not_established_by_this_request"
+    assert result["status"] == "assessed_supplied_judgements"
+    assert result["inputs"][0]["supplied_judgements"]["independence_verified"] is True
+    assert path.read_bytes() == before
+
+
+def test_supplied_class_and_quality_remain_distinct_from_stored_source(client, packet):
+    _, body = packet
+    body["inputs"][0].update(
+        source_class="interview",
+        approval_key="unknown",
+        directness=0.4,
+        specificity=0.5,
+        completeness=0.6,
+    )
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    item = result["inputs"][0]
+    assert item["source"]["source_type"] == "policy"
+    assert item["source"]["approval_status"] == "Approved"
+    assert item["supplied_judgements"]["source_class"] == "interview"
+    assert item["supplied_judgements"]["approval_key"] == "unknown"
+    assert item["supplied_judgements"]["directness"] == 0.4
+    assert item["supplied_judgements"]["specificity"] == 0.5
+    assert item["supplied_judgements"]["completeness"] == 0.6
+    assert (
+        result["assurance"]["source_class_and_approval_key"] == "caller_supplied_configured_keys"
+    )
+    assert (
+        result["assurance"]["quality_scores"] == "caller_supplied_not_calibrated_by_this_endpoint"
+    )
+
+
+@pytest.mark.parametrize("field", ["assurance", "review_status", "config_version"])
+def test_client_cannot_inject_assurance_or_review_status(client, packet, field):
+    _, body = packet
+    body[field] = "verified"
+    response = client.post(URL, json=body)
+    assert response.status_code == 422
+
+
+def test_assurance_present_when_no_input_is_admitted(client, packet):
+    _, body = packet
+    body["inputs"][0].update(stance="qualify", authority_verified=None)
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["inputs"][0]["admitted_to_framework"] is False
+    assert result["inputs"][0]["supplied_judgements"]["authority_verified"] is None
+    assert result["assurance"]["semantic_verification"] == "not_performed"
+    assert result["assurance"]["outcome_basis"] == "conditional_on_supplied_judgements"
