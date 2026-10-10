@@ -210,3 +210,67 @@ export function useApi<T>(load: () => Promise<T>, deps: unknown[]) {
   }, deps);
   return state;
 }
+
+
+/** Corpus retrieval records are separate from assessed graph evidence. */
+export interface CorpusSource {
+  source_id: string;
+  title: string;
+  source_type: string;
+  original_file_path: string;
+  lifecycle_status: string;
+  approval_status: string | null;
+  version: string | null;
+  creation_date: string | null;
+  last_updated_date: string | null;
+  effective_start_date: string | null;
+  effective_end_date: string | null;
+  superseded_date: string | null;
+  responsible_person_or_role: string | null;
+  metadata_conflicts: Record<string, unknown>[];
+}
+
+export interface CorpusPassage {
+  evidence: {
+    evidence_id: string;
+    source_id: string;
+    locator: string;
+    text: string;
+    source_type: string;
+  };
+  interpretation_status: "unassessed";
+  relationship: null;
+  retrieval: Record<string, unknown> | null;
+  record_references: {
+    evidence_id: string;
+    locator: string;
+    record_id: string;
+    relationship: string;
+  }[];
+}
+
+export interface CorpusGroup {
+  position: number;
+  source_id: string;
+  lead_evidence_id: string;
+  matched_evidence_ids: string[];
+  passages: CorpusPassage[];
+}
+
+export interface CorpusSearchResponse {
+  claim: string;
+  status: "retrieved_unassessed";
+  assessment: null;
+  retrieval_method: string;
+  ranked_group_limit: number;
+  indexed_source_count: number;
+  indexed_evidence_count: number;
+  candidate_count: number;
+  ranked_groups: CorpusGroup[];
+  additional_linked_groups: CorpusGroup[];
+  sources: CorpusSource[];
+  limitations: string[];
+}
+
+export const searchCorpus = (claim: string) =>
+  post<CorpusSearchResponse>("/corpus/search", { claim, limit: 8 });

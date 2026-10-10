@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import CorpusScreen from "./CorpusScreen";
 import {
   changePassword, checkClaim, forgotPassword, getClaim, getClaims, getMe, getSource, getSources, login, logout,
   onUnauthorized, registerCsvUrl, resetPassword, signup, updateProfile, useApi,
@@ -874,41 +875,38 @@ function EmptyDashboardState({ onCheck }: { onCheck: () => void }) {
 
 // ─── Screen 2: Check a claim ──────────────────────────────────────────────────
 
-function CheckScreen({ nav, asOf, setAsOf }: { nav: Nav; asOf: string; setAsOf: (value: string) => void }) {
+function CheckScreen({ nav }: { nav: Nav }) {
   const [text, setText] = useState("");
-  const ready = text.trim().length > 0;
+  const ready = text.trim().length > 0 && text.length <= 10000;
 
   return (
     <PageShell>
       <div style={{ maxWidth: 640 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: TEXT, letterSpacing: "-0.02em", margin: "0 0 8px" }}>Check a claim</h1>
-        <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 28px" }}>Enter a statement about how the organisation operates.</p>
-
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: TEXT }}>Check a claim</h1>
+        <p style={{ color: TEXT2, lineHeight: 1.6 }}>
+          Find corpus evidence for your statement. Results preserve your wording
+          and show original passages. A verdict is not generated at this stage.
+        </p>
+        <label htmlFor="corpus-claim" style={{ display: "block", marginBottom: 8 }}>
+          Your claim
+        </label>
         <textarea
+          id="corpus-claim"
           value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Discounts of 15% or more require approval from the Head of Finance before closing."
+          maxLength={10000}
+          onChange={(event) => setText(event.target.value)}
+          placeholder="Discounts of 15% or more require Finance approval before closing."
           style={{
-            width: "100%", height: 120, padding: "12px 14px",
-            fontSize: 14, fontFamily: "Inter, sans-serif", color: TEXT,
-            background: SURFACE, border: `1px solid ${BORDER}`,
-            borderRadius: 6, resize: "vertical", outline: "none",
-            lineHeight: 1.55, marginBottom: 20,
+            boxSizing: "border-box", width: "100%", minHeight: 140,
+            padding: 14, font: "inherit", lineHeight: 1.6,
+            color: TEXT, background: SURFACE,
+            border: `1px solid ${BORDER}`, borderRadius: 6,
+            resize: "vertical", marginBottom: 16,
           }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = ORANGE)}
-          onBlur={(e) => (e.currentTarget.style.borderColor = BORDER)}
         />
-
-        <div style={{ marginBottom: 24 }}>
-          <label htmlFor="as-of" style={{ display: "block", fontSize: 11.5, color: MUTED, marginBottom: 6 }}>Assess as at</label>
-          <input
-            id="as-of" type="date" value={asOf}
-            onChange={(e) => e.target.value && setAsOf(e.target.value)}
-            style={{ width: 200, padding: "8px 12px", fontSize: 13.5, fontFamily: "Inter, sans-serif", color: TEXT, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 6, outline: "none" }}
-          />
-        </div>
-
-        <Btn disabled={!ready} onClick={() => nav.checkClaim(text.trim())}>Check claim</Btn>
+        <Btn disabled={!ready} onClick={() => nav.checkClaim(text)}>
+          Find evidence
+        </Btn>
       </div>
     </PageShell>
   );
@@ -1919,8 +1917,27 @@ export default function App() {
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {view === "dashboard" && <DashboardScreen nav={nav} asOf={asOf} />}
-          {view === "check" && <CheckScreen nav={nav} asOf={asOf} setAsOf={setAsOf} />}
-          {view === "assessment" && target && <AssessmentScreen nav={nav} target={target} asOf={asOf} />}
+          {view === "check" && <CheckScreen nav={nav} />}
+          {view === "assessment" && target?.kind === "query" && (
+            <CorpusScreen
+              key={target.text}
+              claim={target.text}
+              onBack={() => nav.go("check")}
+            />
+          )}
+          {view === "assessment" && target?.kind === "fact" && (
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <label style={{ padding: "16px 48px 0", fontSize: 13 }}>
+                Graph assessment date{" "}
+                <input
+                  type="date"
+                  value={asOf}
+                  onChange={(event) => event.target.value && setAsOf(event.target.value)}
+                />
+              </label>
+              <AssessmentScreen nav={nav} target={target} asOf={asOf} />
+            </div>
+          )}
           {view === "evidence-detail" && evidence && <EvidenceDetailScreen nav={nav} evidence={evidence} asOf={asOf} />}
           {view === "sources" && <SourcesScreen nav={nav} />}
           {view === "source-detail" && sourceId && <SourceDetailScreen nav={nav} sourceId={sourceId} asOf={asOf} />}
