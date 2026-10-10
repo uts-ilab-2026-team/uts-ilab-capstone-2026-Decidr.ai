@@ -41,9 +41,10 @@ produce `assessment_request: null` plus `draft_blockers`; proposals remain visib
 
 - Ordered wording is compared after limited typography normalisation. Inclusive
   percentage wording "at least X%", "X% or more" and "X% or greater" is canonicalised.
-- Only identical propositions and complete "X is/are required" versus "X is/are
-  not required" pairs can propose decisive relationships. Changed actors, timing,
-  quantifiers, other numerical bounds, paraphrases and other negation abstain.
+- Identical propositions and complete "X is/are required" versus "X is/are
+  not required" pairs can propose decisive relationships. Version 2 also compares
+  the two complete approval-rule forms documented below. Other paraphrases and
+  unsupported negation abstain.
 - A matching identifier cannot override an explicit scope conflict. All requested
   identifiers must match when the citation supplies identifiers.
 - Reported statements take precedence over normative vocabulary. Interviews,
@@ -101,3 +102,40 @@ python -m ruff check .
 
 The next separate integration step is a review UI using the current frontend
 components after reviewers inspect proposal coverage and unresolved cases.
+
+
+## Version 2: approval-rule field comparison
+
+`approval_propositions.py` recognises these two fully specified forms:
+
+- Any discount of [boundary and percentage] off list price on a [scope] deal
+  requires [written] approval from [approver] before/after the deal is marked [event].
+- [Approver] must give/provide [written] approval before/after any/every [scope]
+  deal with a discount of [boundary and percentage] off list price is marked [event].
+
+The approver, scope, percentage, inclusive/exclusive boundary, written requirement,
+timing relation, event and measure must all agree to propose equivalence. Names,
+thresholds and scopes are extracted values, not corpus-specific constants. No
+Finance/person/role aliases are invented. Decimal spellings such as 12.50 and 12.5
+are equivalent; different numeric boundaries do not automatically contradict.
+
+Unknown syntax, omitted measures, conditional clauses, reported speech, modality
+changes and incomplete propositions remain unresolved under this parser. This is
+a deliberately small grammar for discount requirements, not a universal approval
+parser. The earlier looser paraphrase using only "Finance" still needs review.
+
+`field_comparison` in each proposal exposes both extracted field sets and their
+differences; it is null when either form cannot be parsed. Fields are interpretations
+of the accompanying exact quotation, not additional independently verified facts.
+Matching still cannot bypass target, scope, date, authority or review boundaries.
+`comparison_method` identifies `approval_fields_v1` when these fields are compared;
+the endpoint advertises `bounded-proposals-v2`. The submitted assessment schema
+and frontend stay unchanged. Authority stays unresolved and quality stays unassessed.
+
+Version 2 verification: 580 tests and 8 subtests passed in the isolated Python 3.12
+environment, including 27 new field-comparison tests. A temporary Phase 2 HTTP
+check retrieved POL-01's formal requirements for four probes: the fully specified
+paraphrase proposed support; changed approver, changed inclusivity and omitted
+measure remained unresolved. All untouched drafts still assessed as Insufficient
+evidence, with database bytes unchanged. These are development diagnostics and
+regressions, not an independent accuracy evaluation. Rerun in project Python 3.11.

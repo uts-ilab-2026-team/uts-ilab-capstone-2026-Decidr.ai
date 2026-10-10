@@ -179,7 +179,7 @@ def interpret_retrieved_evidence(request: InterpretationProposalRequest) -> dict
     return {
         "status": "interpretation_proposed_review_required",
         "persisted": False,
-        "interpreter_version": "bounded-proposals-v1",
+        "interpreter_version": "bounded-proposals-v2",
         "review_status": "unreviewed",
         "assessment_ready": False,
         "quality_status": "not_assessed",

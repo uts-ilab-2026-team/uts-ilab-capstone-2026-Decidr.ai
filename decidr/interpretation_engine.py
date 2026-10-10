@@ -12,6 +12,7 @@ from datetime import date
 import re
 from typing import Literal
 
+from decidr.approval_propositions import compare_approval_rules
 from decidr.assessment_targets import AssessmentTarget, validate_target
 from decidr.interpretation_models import InterpretationCitation
 from decidr.retrieval_models import Evidence, Source
@@ -130,6 +131,7 @@ class InterpretationProposal:
     review_reasons: tuple[str, ...]
     review_required: bool = True
     comparison_method: str = "bounded-text-v1"
+    field_comparison: dict | None = None
 
     def assessment_input(self) -> dict:
         """Return only fields accepted by ``SuppliedInput``."""
@@ -163,6 +165,7 @@ class InterpretationProposal:
             "proposal_confidence": self.proposal_confidence,
             "review_required": self.review_required,
             "comparison_method": self.comparison_method,
+            "field_comparison": self.field_comparison,
             "quality_status": "not_assessed",
             "review_reasons": list(self.review_reasons),
             "suggested_input": self.assessment_input(),
@@ -351,6 +354,9 @@ def _compare(left: str, right: str) -> Stance:
         return "support"
     if _opposite(left, right):
         return "contradict"
+    comparison = compare_approval_rules(left, right)
+    if comparison is not None and comparison["equivalent"]:
+        return "support"
     return "unresolved"
 
 
@@ -386,6 +392,14 @@ def propose_interpretation(
         stance, start, end = decisive[0]
     else:
         stance, start, end = "unresolved", 0, len(evidence.text)
+        if not conflicting:
+            bounded = [
+                (len(c["differences"]), a, b)
+                for a, b in spans
+                if (c := compare_approval_rules(proposition, evidence.text[a:b])) is not None
+            ]
+            if bounded:
+                _, start, end = min(bounded)
     citation = InterpretationCitation(
         evidence_id=evidence.evidence_id,
         source_id=evidence.source_id,
@@ -418,11 +432,22 @@ def propose_interpretation(
         if stance == "contradict"
         else "unresolved"
     )
+    field_comparison = compare_approval_rules(proposition, text)
+    if field_comparison is not None:
+        method = "approval_fields_v1"
     rationale = {
         "support": "The citation preserves the facet's ordered wording under limited normalisation.",
         "contradict": "The complete proposition explicitly differs on required versus not required.",
         "unresolved": "No supported complete proposition comparison establishes this relationship.",
     }[stance]
+    if field_comparison is not None:
+        rationale = (
+            "All extracted approval-rule fields agree under the bounded grammar."
+            if field_comparison["equivalent"]
+            else "Approval-rule fields differ; no general entailment is inferred: "
+            + ", ".join(field_comparison["differences"])
+            + "."
+        )
     if conflicting:
         rationale = "The passage contains both matching and opposing propositions; review the full passage."
     elif scope is False or temporal is False:
@@ -471,4 +496,5 @@ def propose_interpretation(
         proposal_confidence="low",
         review_reasons=tuple(reasons),
         comparison_method=method,
+        field_comparison=field_comparison,
     )
