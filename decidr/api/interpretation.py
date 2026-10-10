@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from decidr.api import auth
 from decidr.api.corpus import corpus_database_path
 from decidr.assessment_targets import AssessmentTarget
+from decidr.authority_context import authority_context
 from decidr.hybrid import search_corpus
 from decidr.interpretation_engine import infer_target, propose_interpretation
 from decidr.retrieval_models import Evidence, Source
@@ -146,6 +147,14 @@ def interpret_retrieved_evidence(request: InterpretationProposalRequest) -> dict
         passage = evidence[proposal.evidence_id]
         source = sources[proposal.source_id]
         payload["evidence"] = passage.model_dump(mode="json")
+        payload["authority_context"] = authority_context(
+            source=source,
+            focal=passage,
+            citation=proposal.citation,
+            passages=evidence.values(),
+            facet=facet,
+            as_of=request.as_of.isoformat(),
+        )
         payload["source_context"] = source.model_dump(
             mode="json", exclude={"original_file_path", "metadata_notes"}
         )

@@ -84,6 +84,14 @@ def test_unedited_proposal_cannot_decide_credibility(client, corpus):
     proposal = result["proposals"][0]
     assert proposal["suggested_input"]["stance"] == "support"
     assert proposal["review_required"] is True
+    context = proposal["authority_context"]
+    assert context["facet"] == body()["claim"]
+    assert context["as_of"] == body()["as_of"]
+    assert context["source_id"] == "s"
+    assert context["evidence_id"] == "e"
+    assert context["authority_verified"] is None
+    assert context["document_approval"]["status"] == "unresolved"
+    assert proposal["suggested_input"]["authority_verified"] is None
     assert proposal["evidence"]["text"] == "Written approval is required."
     assert "original_file_path" not in proposal["source_context"]
     assessed = client.post("/api/corpus/assess-supplied", json=result["assessment_request"])
