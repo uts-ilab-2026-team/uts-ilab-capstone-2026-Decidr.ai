@@ -21,6 +21,23 @@ api = importlib.import_module("decidr.api.app")
 URL = "/api/corpus/assess-supplied"
 
 
+def test_stored_nonapproval_overrides_positive_supplied_authority(client, packet):
+    path, body = packet
+    with closing(connect(path)) as connection, connection:
+        row = connection.execute("SELECT payload_json FROM sources").fetchone()
+        source = Source.model_validate_json(row[0])
+        source.approval_status = "Never approved"
+        upsert_source(connection, source)
+    before = path.read_bytes()
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["assessment"]["overall_outcome"] == "Insufficient evidence"
+    assert result["inputs"][0]["admitted_to_framework"] is False
+    assert any("Stored own-document approval" in r for r in result["inputs"][0]["reasons"])
+    assert path.read_bytes() == before
+
+
 @pytest.fixture
 def client():
     previous = dict(api.app.dependency_overrides)

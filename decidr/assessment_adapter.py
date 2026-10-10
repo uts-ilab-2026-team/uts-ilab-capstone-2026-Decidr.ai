@@ -17,6 +17,7 @@ from framework.models import FactAssessment, GraphEdge, GraphNode
 from decidr.assessment_targets import AssessmentTarget, target_exclusion, validate_target
 from decidr.interpretation_models import EvidenceInterpretation, validate_interpretation
 from decidr.retrieval_models import Evidence, Source
+from decidr.source_metadata import DOCUMENT_REFERENCE, approval_lifecycle, approval_signals
 
 
 @dataclass(frozen=True)
@@ -176,6 +177,24 @@ def assess_prepared_facet(
 
         source = item.source
         reasons = []
+        if interpretation.mode == "formal":
+            code_match = DOCUMENT_REFERENCE.match(source.title)
+            _, clauses, _ = approval_lifecycle(
+                source.approval_status, code_match[0] if code_match else ""
+            )
+            own_approval = " ".join(
+                clause["quote"] for clause in clauses if clause["scope"] == "own_document"
+            )
+            negative, _ = approval_signals(own_approval)
+            if negative:
+                reasons.append(
+                    "Stored own-document approval explicitly includes non-approval; "
+                    "supplied authority cannot establish an effective formal rule."
+                )
+            if item.approval_key in {"unapproved", "draft"}:
+                reasons.append(
+                    "Supplied approval status does not establish an effective formal rule."
+                )
         target_reason = target_exclusion(
             assessment_target, item.evidence_target, interpretation.mode
         )
