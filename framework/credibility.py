@@ -49,7 +49,7 @@ class GraphCredibilityFramework:
             document = self.graph.document(edge.source)
             group = str(document.attributes.get("duplicate_group") or document.node_id)
             duplicate_counts[group] = duplicate_counts.get(group, 0) + 1
-            if not self._corroboration_eligible(document):
+            if not self._corroboration_eligible(document, as_of):
                 continue
             key = (edge.relationship.lower(), self._stance(edge))
             corroboration_counts.setdefault(key, set()).add(group)
@@ -112,8 +112,7 @@ class GraphCredibilityFramework:
         if not applicable:
             temporal_reason = self._temporal_exclusion(document, as_of)
             limitations.append(
-                temporal_reason
-                or "The attestation does not match the Fact's scope or conditions."
+                temporal_reason or "The attestation does not match the Fact's scope or conditions."
             )
             return EdgeAssessment(
                 edge_id=edge.edge_id,
@@ -130,8 +129,10 @@ class GraphCredibilityFramework:
                 dimensions={},
                 limitations=tuple(limitations),
                 trace=(
-                    f"Applicability gate failed: {limitations[0]} "
-                    "Evidence retained but not scored.",
+                    (
+                        f"Applicability gate failed: {limitations[0]} "
+                        "Evidence retained but not scored."
+                    ),
                 ),
             )
 
@@ -143,7 +144,14 @@ class GraphCredibilityFramework:
         approval = self.config.approval_weights.get(
             str(attributes.get("approval_status", "unknown")), 0.5
         )
-        lifecycle = self.config.lifecycle_multipliers.get(status, 0.5)
+        scoring_status = "current" if self._historically_effective(document, as_of) else status
+        lifecycle = self.config.lifecycle_multipliers.get(scoring_status, 0.5)
+        if scoring_status != status:
+            trace.append(
+                "Historical lifecycle: stored status is superseded; the assessment date "
+                "falls within the documented effective interval. Using the current "
+                "lifecycle multiplier for this date; approval status is unchanged."
+            )
         trace.append(
             f"Status: {status} lifecycle multiplier={lifecycle:.2f}; approval={approval:.2f}."
         )
@@ -160,7 +168,7 @@ class GraphCredibilityFramework:
             "in this lane, using its strongest material assessment."
         )
         stance = self._stance(edge)
-        if not self._corroboration_eligible(document):
+        if not self._corroboration_eligible(document, as_of):
             limitations.append(
                 "Superseded source retained for context; excluded from corroboration counts."
             )
@@ -273,13 +281,26 @@ class GraphCredibilityFramework:
         return "qualify"
 
     @staticmethod
-    def _corroboration_eligible(document: GraphNode) -> bool:
-        """Superseded sources cannot corroborate another assessment."""
+    def _historically_effective(document: GraphNode, as_of: date) -> bool:
+        """Resolve retirement only when both effective boundaries are documented."""
         attributes = document.attributes
-        return "superseded" not in (
-            str(attributes.get("status", "unknown")),
-            str(attributes.get("approval_status", "unknown")),
+        start = attributes.get("effective_date")
+        end = attributes.get("effective_end_date")
+        return bool(
+            attributes.get("status") == "superseded"
+            and start
+            and end
+            and date.fromisoformat(str(start)) <= as_of <= date.fromisoformat(str(end))
         )
+
+    def _corroboration_eligible(self, document: GraphNode, as_of: date) -> bool:
+        """Allow historically effective sources without inferring past approval."""
+        attributes = document.attributes
+        if str(attributes.get("approval_status", "unknown")) == "superseded":
+            return False
+        return str(
+            attributes.get("status", "unknown")
+        ) != "superseded" or self._historically_effective(document, as_of)
 
     def _origin_id(self, document_id: str) -> str:
         document = self.graph.document(document_id)
@@ -295,12 +316,8 @@ class GraphCredibilityFramework:
             if item.stance not in {"support", "contradict"}:
                 continue
             key = (self._origin_id(item.document_id), item.stance)
-            contributions[key] = max(
-                contributions.get(key, 0.0), item.materiality_score or 0.0
-            )
-        support = sum(
-            score for (_, stance), score in contributions.items() if stance == "support"
-        )
+            contributions[key] = max(contributions.get(key, 0.0), item.materiality_score or 0.0)
+        support = sum(score for (_, stance), score in contributions.items() if stance == "support")
         contradict = sum(
             score for (_, stance), score in contributions.items() if stance == "contradict"
         )
@@ -380,8 +397,7 @@ class GraphCredibilityFramework:
                 parts.append(f"{label} evidence includes material counterevidence.")
             if any(not item.material for item in counterevidence):
                 parts.append(
-                    f"{label} evidence includes non-material counterevidence "
-                    "retained for context."
+                    f"{label} evidence includes non-material counterevidence retained for context."
                 )
         if related:
             parts.append("Related Facts are included as contextual qualifications.")
