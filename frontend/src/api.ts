@@ -237,6 +237,8 @@ export interface CorpusPassage {
     locator: string;
     text: string;
     source_type: string;
+    row_identifier?: string | null;
+    structured_metadata?: { record?: Record<string, unknown>; [key: string]: unknown };
   };
   interpretation_status: "unassessed";
   relationship: null;
@@ -288,3 +290,8 @@ export const getCorpusEvidence = (evidenceId: string, sourceId: string) =>
   request<CorpusCitationResponse>(
     `/corpus/evidence/${encodeURIComponent(evidenceId)}?source_id=${encodeURIComponent(sourceId)}`
   );
+
+
+// Supplied assessments stay separate from retrieved candidates and register facts.
+export const assessSupplied = (body: import("./suppliedAssessmentContract").SuppliedRequest) =>
+  post<import("./suppliedAssessmentContract").SuppliedResult>("/corpus/assess-supplied", body);
