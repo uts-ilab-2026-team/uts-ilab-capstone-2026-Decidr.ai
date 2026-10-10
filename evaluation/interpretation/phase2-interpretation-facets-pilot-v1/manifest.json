@@ -1,0 +1,18 @@
+{
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "parent_dataset_version": "phase2-interpretation-development-v1",
+  "dataset_fingerprint": "766ca57488795f6e0d7e587f1bb1db36356112b9938c9e53efbed34510ba116e",
+  "inputs_sha256": "15b7a52f43d4e10a1e65f5fee0d582464306fd2b30e4988c6e151d8b8ce2760c",
+  "claim_count": 1,
+  "focal_passage_count": 6,
+  "facet_count": 3,
+  "case_count": 18,
+  "purpose": "Check whether facet-specific interpretation is representable",
+  "limitations": [
+    "Manual development targets; automatic claim decomposition unimplemented.",
+    "Eighteen comparisons share one claim and six passages.",
+    "No relationship labels assigned and no interpreter run.",
+    "Facet support must not be reported as support for the complete claim.",
+    "This pilot cannot establish generalisation or classification accuracy."
+  ]
+}

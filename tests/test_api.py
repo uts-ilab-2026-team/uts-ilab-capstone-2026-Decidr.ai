@@ -46,8 +46,14 @@ def test_check_claim_assesses_closest_fact() -> None:
         item for item in assessment["evidence"] if item["document_id"] == "document:COMMS-01"
     )
     assert slack["material"] is False
-    assert slack["actor"]["label"] == "Marcus Lee"
+    assert slack["actor"]["label"] == "Diane Okafor"
     assert slack["document"]["short_id"] == "COMMS-01"
+    assert "DEAL-014" in slack["attests_value"]
+    assert "CRM approval_record field" in slack["attests_value"]
+    deal = next(
+        item for item in assessment["evidence"] if item["document_id"] == "document:DEAL-001"
+    )
+    assert deal["actor"]["label"] == "Harriet Doyle"
 
 
 def test_check_claim_without_match_returns_no_assessment() -> None:

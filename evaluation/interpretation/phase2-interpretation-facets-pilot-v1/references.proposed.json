@@ -1,0 +1,200 @@
+[
+  {
+    "case_id": "C01-01--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "370927b6feb2e90f2e4e2fe56c672170bf1c98a28636768bccef9908f166f9d4",
+    "review_status": "provisional",
+    "expected_relationship": "qualify",
+    "reviewer": null,
+    "rationale": "The rule explicitly covers new-business deals and separates renewals. Its >=15% condition includes >15%, but the claim does not specify business scope.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-01--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "94c0250681db92c1677222fb81ae0d8fdf09d778f59fb4e4923ae0fd4199f3a4",
+    "review_status": "provisional",
+    "expected_relationship": "qualify",
+    "reviewer": null,
+    "rationale": "Written approval from the named Finance role is required within explicit new-business scope; broader scope is not established.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-01--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "728eafae45f2c6bbda12a656a46c5164e2dd8cf9e8b921c6f9cea6a1f54d1047",
+    "review_status": "provisional",
+    "expected_relationship": "qualify",
+    "reviewer": null,
+    "rationale": "Approval is required before Closed Won in the CRM, within new-business scope. Preserve that scope and specific closing event.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-02--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "3f57b66d24c0df944b516442e7a303d8505486ab66aff4cb9a5b38bf57a7731a",
+    "review_status": "provisional",
+    "expected_relationship": "context",
+    "reviewer": null,
+    "rationale": "The focal passage says no exceptions are formally documented. Context identifies the policy, but the focal passage does not independently state this facet's condition, approver or timing.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-02--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "b602a19d1d9877047916fa04143f37341aeafe0125fcf19dad4f8fe51474d2dc",
+    "review_status": "provisional",
+    "expected_relationship": "context",
+    "reviewer": null,
+    "rationale": "The focal passage says no exceptions are formally documented. Context identifies the policy, but the focal passage does not independently state this facet's condition, approver or timing.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-02--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "e680dff6478b610e518fcee104925d323479b227f8e79e0a749767a2b7d8509d",
+    "review_status": "provisional",
+    "expected_relationship": "context",
+    "reviewer": null,
+    "rationale": "The focal passage says no exceptions are formally documented. Context identifies the policy, but the focal passage does not independently state this facet's condition, approver or timing.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-03--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "ef4e3e01562b109b389b95de31eba9015ae2d2726e52f8664fe5828951f2c63a",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": "Diane reports an over-15% rule, but the relevant business scope is not resolved. No complete scope-specific relationship assigned.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-03--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "c607333d5c76f5c4bb0d4c5c024bdca16c58eb1314c2fdf45424b0cc2a0576f9",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": "The passage names Harriet; this input's same-document context does not explicitly establish her Finance role. Do not borrow identity evidence from another evaluation case.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-03--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "183c5fed722a8ddea34e5d446954f5a9fe3e2abfb2a205850424c97fd8d636f2",
+    "review_status": "provisional",
+    "expected_relationship": "context",
+    "reviewer": null,
+    "rationale": "The account describes referral and sign-off but does not state when approval must occur relative to closing.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-04--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "b4803e706726b4d7485ee767674eb5e01994bade84f43570a8f446a9d1152b96",
+    "review_status": "provisional",
+    "expected_relationship": "context",
+    "reviewer": null,
+    "rationale": "The urgent-deal account does not identify the discounts' values or establish the claimed numeric condition and business scope.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-04--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "7756574db3b7c207c70d8b1dc7897e5a9db410ce1af2a854ed13b86dfc5bc67c",
+    "review_status": "provisional",
+    "expected_relationship": "qualify",
+    "reviewer": null,
+    "rationale": "Diane reports authorising urgent deals herself and consulting Harriet later. This is a reported approval workaround, not proof that the formal rule changed or that every case exceeded 15%.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-04--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "b27a93517a2ccadf5df8e3fd31a480f7b5b743b84a360b7b19794c9fa1e69536",
+    "review_status": "provisional",
+    "expected_relationship": "qualify",
+    "reviewer": null,
+    "rationale": "The account describes proceeding first and consulting Harriet afterwards. Preserve this as reported practice; it does not document a specific closing timestamp or discount value.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-05--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "24bf113222cf0c88a7e54b68b57ed94a961566af0f80063547301b0b2e07bd70",
+    "review_status": "provisional",
+    "expected_relationship": "context",
+    "reviewer": null,
+    "rationale": "Harriet's account does not give discount values or establish the business scope of the urgent cases.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-05--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "9e14166cbf0816a0da36c19b5b23041789030e2b9f9ac99d25c22b73c2bd91ce",
+    "review_status": "provisional",
+    "expected_relationship": "qualify",
+    "reviewer": null,
+    "rationale": "The identified Finance role acknowledges manager approval outside the policy's described route, with incomplete visibility. This qualifies practice, not the existence of the formal requirement.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-05--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "283a982d9b67f6dc77ac7b3bf30a73eed86d48b23d250da0c7c48c9e184b620e",
+    "review_status": "provisional",
+    "expected_relationship": "qualify",
+    "reviewer": null,
+    "rationale": "Harriet reports being told after Diane approves urgent cases. This raises a practice difference, but supplies no exact closing times or evidence that all affected discounts exceeded 15%.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-06--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "51f1083730aa2c0439354d223a567afe1c167705cc2e43a37399e06e8dde5804",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": "The decision establishes a 15% threshold and effective date, but does not resolve boundary inclusion and business scope for the complete selected facet.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-06--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "3843fbe6b7f07126378580d4386237e3a3659438265c1d8c03d044c8da8dfcb0",
+    "review_status": "provisional",
+    "expected_relationship": "context",
+    "reviewer": null,
+    "rationale": "The decision concerns a Finance approval threshold, and context identifies Harriet's role, but the focal passage does not fully specify the claimed approval route and business scope.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  },
+  {
+    "case_id": "C01-06--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "b17035d4cf0e333aac43e1492dc3e79d7df2eab87d077eb0321ddbb266b63390",
+    "review_status": "provisional",
+    "expected_relationship": "context",
+    "reviewer": null,
+    "rationale": "The effective date concerns the threshold change, not approval timing relative to deal closure.",
+    "proposal_origin": "assistant_proposed_from_inspected_packet",
+    "human_review_status": "not_reviewed"
+  }
+]

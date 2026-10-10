@@ -1,0 +1,22 @@
+{
+  "dataset_version": "phase2-interpretation-development-v1",
+  "purpose": "Development interpretation evaluation; not held-out validation",
+  "selection": "Twenty previously inspected passages from four development claims; selected for retrieval analysis, not representative accuracy estimation",
+  "dataset_fingerprint": "766ca57488795f6e0d7e587f1bb1db36356112b9938c9e53efbed34510ba116e",
+  "code_version": "3d688dc10d5b0bef34e95f784f869349f6988d86",
+  "ingestion_configuration_version": "ingestion-v3-document-header",
+  "source_count": 45,
+  "evidence_count": 796,
+  "case_count": 20,
+  "inputs_sha256": "b504fdc46a65cde460aecae0c2352035497e3fbd636db9da1e55b7cfb2146d3a",
+  "hash_convention": "SHA-256 of UTF-8 JSON with ensure_ascii=False, sort_keys=True, separators=(',', ':'); each input_sha256 hashes its input object",
+  "context_policy": "Other passages from the same policy, procedure, interview or meeting; same-section context only for internal communications; no neighbouring CSV rows",
+  "label_status": "All relationship references await review",
+  "limitations": [
+    "Four claim groups; passage pairs are not independent samples.",
+    "No interpreter has been run.",
+    "Retrieval selection does not establish an evidence relationship.",
+    "Source context is supplied for interpretation, not independent votes.",
+    "Relationship scoring alone does not assess applicability or credibility."
+  ]
+}

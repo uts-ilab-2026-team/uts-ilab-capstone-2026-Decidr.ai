@@ -1,0 +1,182 @@
+[
+  {
+    "case_id": "C01-01",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "a78d711c2cb038b917e31f0641226fbf4a506903e3a0305a702bc4bf94aa53a0",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C01-02",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "6107bce6b0b55aeb2cd4933190bed660807b5c242ff158abcdf3380dc3239e62",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C01-03",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "2cc3dbd59a7c07e131103ffb6e418c87c00b480b97f4e32379e7e1a8ca674ed8",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C01-04",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "bbd8fd4851d9bf0d5e7a5a6c01dfc8249cb3a58add8238debcbb8c4e90b343e6",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C01-05",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "fe2559c51e367cfa291724557102802fe7811a1f8c569c55084355b4edb31778",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C01-06",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "5bc9a6eff91ea8f7e43c716a8cc500b9c5c8eb087cbaef8a05cc87dd430d49e3",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C09-01",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "0416dade8ae5eea88261cd1c27ff135947bad4303f309dcdbd81b8a321eeafcc",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C09-02",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "a33e9d10dd9bac59c2df93960bf2649dabaafb6c24e5df8785442241f8af2902",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C09-03",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "6a21c12e76df4eb924be0c49ce72e55611467d528bf9cda474a5c8b69c9e715a",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C09-04",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "c8bbecdc040e6a0e2b3ed54434b24d35d1417924bea4c967f86d75e343dd15ac",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C09-05",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "a540340a33fcb5cb9f421aea6fee042fc717abec60d5dab156d5a3990e07bc88",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C09-06",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "6cf8b1e0f98c9b1689a9c120e635c5a740805de9dd42efb31aba157fe4d78426",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C27-01",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "28a94dc2e1d4d1279490eaf95a5d970589fc7d5e2c900ce4c697297c7d057901",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C27-02",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "f67b4150045ce34550d21d53107c2faa457391c90e31c0b4631352df51e55ee9",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C27-03",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "0acdd10e17ce539028c2c9e5b6b96802a9dc675db2cef31c1cec4b683c11ac6f",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C27-04",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "1c263febb94b3628e902774bf91374dda616b88ba406e02eb5bdc55bb0b3d311",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C27-05",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "e561b849790689391496931a8f7cb45f976e391a092258051edbbeaf1f6647c3",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C32-01",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "eefb224c94f2497dafc1fc8233f301ae7372411ff035197707b3e6ba41fcf2db",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C32-02",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "ae05b0bcf287df85902abbccaa2486a105532bf219577198907291f08a97064d",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  },
+  {
+    "case_id": "C32-03",
+    "dataset_version": "phase2-interpretation-development-v1",
+    "input_sha256": "54c2429e2a258ce030e2b4ab9c676c2d478277067aded114511d84d8e0843aad",
+    "review_status": "unresolved",
+    "expected_relationship": null,
+    "reviewer": null,
+    "rationale": null
+  }
+]
