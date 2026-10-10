@@ -84,6 +84,8 @@ def test_unedited_proposal_cannot_decide_credibility(client, corpus):
     proposal = result["proposals"][0]
     assert proposal["suggested_input"]["stance"] == "support"
     assert proposal["review_required"] is True
+    assert proposal["authority_links"]["authority_verified"] is None
+    assert proposal["authority_links"]["links"] == []
     context = proposal["authority_context"]
     assert context["facet"] == body()["claim"]
     assert context["as_of"] == body()["as_of"]

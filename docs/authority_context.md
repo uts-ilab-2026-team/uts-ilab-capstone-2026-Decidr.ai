@@ -1,5 +1,26 @@
 # Cited authority context
 
+## Cross-document references
+
+Proposals also return `authority_links`. This searches original indexed passages
+for an exact, unique leading document code within the same release. It retains
+the full referring passage, including negative wording, as an exact citation.
+Same-source references and excluded/failed sources are omitted. Ambiguous codes
+remain unresolved. Results use stable ordering, a 12-passage display cap per
+target source, and explicit total/omitted counts. This cap is separate from the
+retrieval candidate budget: linked passages do not become assessment inputs.
+
+Each reference includes source metadata and whether its recorded creation date
+is after the assessment date, on/before it, or missing. This is not an event-date
+or applicability determination. Later records remain visible with that warning.
+Metadata conflicts are retained for inspection.
+
+A reference, even one saying "approved", does not verify the signatory's rights,
+decision scope, historical role or policy adoption. Those checks remain
+unresolved. References can guide the next review step without contributing votes,
+scores or graph edges. They are returned by the proposal API; the current
+frontend and supplied-assessment history do not consume this additional field.
+
 Interpretation proposals include an `authority_context` object bound to the
 requested facet, assessment date, source and focal evidence. This is an
 inspection aid, not an authority verifier or an additional assessment.

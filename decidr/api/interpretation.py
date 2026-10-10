@@ -13,6 +13,7 @@ from decidr.api import auth
 from decidr.api.corpus import corpus_database_path
 from decidr.assessment_targets import AssessmentTarget
 from decidr.authority_context import authority_context
+from decidr.authority_links import explicit_authority_links
 from decidr.hybrid import search_corpus
 from decidr.interpretation_engine import infer_target, propose_interpretation
 from decidr.retrieval_models import Evidence, Source
@@ -142,11 +143,20 @@ def interpret_retrieved_evidence(request: InterpretationProposalRequest) -> dict
         "inputs": [proposal.assessment_input() for proposal in proposals],
     }
     proposal_payloads = []
+    authority_links_by_source = {}
     for proposal in proposals:
         payload = proposal.review_payload()
         passage = evidence[proposal.evidence_id]
         source = sources[proposal.source_id]
+        if source.source_id not in authority_links_by_source:
+            authority_links_by_source[source.source_id] = explicit_authority_links(
+                source=source,
+                sources=list(sources.values()),
+                passages=list(evidence.values()),
+                as_of=request.as_of,
+            )
         payload["evidence"] = passage.model_dump(mode="json")
+        payload["authority_links"] = authority_links_by_source[source.source_id]
         payload["authority_context"] = authority_context(
             source=source,
             focal=passage,
