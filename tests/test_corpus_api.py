@@ -159,3 +159,76 @@ def test_route_keeps_authentication_dependency(monkeypatch):
     finally:
         api.app.dependency_overrides.clear()
         api.app.dependency_overrides.update(previous)
+
+
+def test_citation_returns_exact_evidence_and_source_without_writes(client, corpus_db):
+    path, passage = corpus_db
+    before = path.read_bytes()
+    response = client.get(
+        f"/api/corpus/evidence/{passage.evidence_id}",
+        params={"source_id": passage.source_id},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["evidence"] == passage.model_dump(mode="json")
+    assert body["source"]["source_id"] == passage.source_id
+    assert body["source"]["approval_status"] == "Approved"
+    assert body["interpretation_status"] == "unassessed"
+    assert body["relationship"] is None
+    assert body["index_scope"] == "current"
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize("evidence_id,source_id", [
+    ("EV-missing", "phase2:test-policy"),
+    ("EV-test-policy", "phase2:wrong-source"),
+    ("EV-test-policy", "' OR 1=1 --"),
+])
+def test_citation_rejects_unknown_or_mismatched_identity(
+    client, corpus_db, evidence_id, source_id
+):
+    response = client.get(
+        f"/api/corpus/evidence/{evidence_id}",
+        params={"source_id": source_id},
+    )
+    assert response.status_code == 404
+
+
+def test_citation_requires_source_identity(client, corpus_db):
+    assert client.get("/api/corpus/evidence/EV-test-policy").status_code == 422
+
+
+def test_citation_missing_database_is_not_created(client, tmp_path, monkeypatch):
+    path = tmp_path / "not-created" / "corpus.sqlite3"
+    monkeypatch.setenv("DECIDR_CORPUS_DB", str(path))
+    response = client.get(
+        "/api/corpus/evidence/EV-test-policy",
+        params={"source_id": "phase2:test-policy"},
+    )
+    assert response.status_code == 503
+    assert not path.parent.exists()
+
+
+def test_citation_keeps_authentication_dependency(monkeypatch):
+    from fastapi import HTTPException
+
+    calls = []
+
+    def reject():
+        calls.append(True)
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    monkeypatch.delenv("DECIDR_CORPUS_DB", raising=False)
+    previous = dict(api.app.dependency_overrides)
+    api.app.dependency_overrides[api.auth.current_user] = reject
+    try:
+        with TestClient(api.app) as instance:
+            response = instance.get(
+                "/api/corpus/evidence/EV-test-policy",
+                params={"source_id": "phase2:test-policy"},
+            )
+        assert response.status_code == 401
+        assert calls == [True]
+    finally:
+        api.app.dependency_overrides.clear()
+        api.app.dependency_overrides.update(previous)

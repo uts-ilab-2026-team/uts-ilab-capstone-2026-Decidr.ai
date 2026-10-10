@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from decidr.api import auth
 from decidr.hybrid import search_corpus
-from decidr.retrieval_models import Source
+from decidr.retrieval_models import Evidence, Source
 
 
 router = APIRouter(
@@ -150,4 +150,51 @@ def corpus_search(request: CorpusSearchRequest) -> dict:
             "Temporal applicability and credibility have not been assessed.",
             "Search results are not exhaustive evidence coverage.",
         ],
+    }
+
+
+@router.get("/evidence/{evidence_id}")
+def corpus_evidence(evidence_id: str, source_id: str) -> dict:
+    """Resolve a citation against the current index without reading local files."""
+    path = corpus_database_path()
+    try:
+        with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as connection:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA query_only = ON")
+            connection.execute("BEGIN")
+            row = connection.execute(
+                """
+                SELECT e.payload_json AS evidence_json,
+                       s.payload_json AS source_json
+                FROM evidence AS e
+                JOIN sources AS s ON s.source_id = e.source_id
+                WHERE e.evidence_id = ? AND e.source_id = ?
+                """,
+                (evidence_id, source_id),
+            ).fetchone()
+            if row is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Citation not found for this source in the current corpus index.",
+                )
+            evidence = Evidence.model_validate_json(row["evidence_json"])
+            source = Source.model_validate_json(row["source_json"])
+            if (
+                evidence.evidence_id != evidence_id
+                or evidence.source_id != source_id
+                or source.source_id != source_id
+            ):
+                raise ValueError("Stored citation identity mismatch")
+    except (sqlite3.Error, ValueError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail="The corpus citation could not be read; check the index.",
+        ) from error
+
+    return {
+        "evidence": evidence.model_dump(mode="json"),
+        "source": source.model_dump(mode="json"),
+        "interpretation_status": "unassessed",
+        "relationship": None,
+        "index_scope": "current",
     }

@@ -274,3 +274,17 @@ export interface CorpusSearchResponse {
 
 export const searchCorpus = (claim: string) =>
   post<CorpusSearchResponse>("/corpus/search", { claim, limit: 8 });
+
+
+export interface CorpusCitationResponse {
+  evidence: CorpusPassage["evidence"];
+  source: CorpusSource;
+  interpretation_status: "unassessed";
+  relationship: null;
+  index_scope: "current";
+}
+
+export const getCorpusEvidence = (evidenceId: string, sourceId: string) =>
+  request<CorpusCitationResponse>(
+    `/corpus/evidence/${encodeURIComponent(evidenceId)}?source_id=${encodeURIComponent(sourceId)}`
+  );

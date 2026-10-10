@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import {
-  searchCorpus, useApi,
+  searchCorpus, getCorpusEvidence, useApi,
   type CorpusGroup, type CorpusSource,
 } from "./api";
 
@@ -82,7 +82,12 @@ function EvidenceGroup({
             {passage.evidence.text}
           </p>
           <div style={small}>
-            Citation: {passage.evidence.evidence_id}<br />
+            <CitationLookup
+              evidenceId={passage.evidence.evidence_id}
+              sourceId={passage.evidence.source_id}
+              expectedText={passage.evidence.text}
+              expectedLocator={passage.evidence.locator}
+            />
             {passage.evidence.locator}
           </div>
           {passage.record_references.length > 0 && (
@@ -175,5 +180,86 @@ export default function CorpusScreen({
         </>
       )}
     </main>
+  );
+}
+
+
+type CitationProps = {
+  evidenceId: string;
+  sourceId: string;
+  expectedText: string;
+  expectedLocator: string;
+};
+
+function CitationLookup(props: CitationProps) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details
+      style={{ margin: "10px 0" }}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary style={{ cursor: "pointer", color: "#b7470b", textDecoration: "underline" }}>
+        Open citation: {props.evidenceId}
+      </summary>
+      {open && <CitationContent {...props} />}
+    </details>
+  );
+}
+
+function CitationContent({
+  evidenceId, sourceId, expectedText, expectedLocator,
+}: CitationProps) {
+  const { data, error } = useApi(
+    () => getCorpusEvidence(evidenceId, sourceId),
+    [evidenceId, sourceId],
+  );
+
+  if (error) return <p role="alert">Citation unavailable: {error}</p>;
+  if (!data) return <p role="status">Loading citation…</p>;
+  if (
+    data.evidence.evidence_id !== evidenceId ||
+    data.evidence.source_id !== sourceId ||
+    data.source.source_id !== sourceId
+  ) {
+    return <p role="alert">Citation identity mismatch. Please run the search again.</p>;
+  }
+
+  const changed = data.evidence.text !== expectedText ||
+    data.evidence.locator !== expectedLocator;
+
+  return (
+    <section style={{
+      marginTop: 12, padding: 16, background: "#f5f4f2",
+      border: "1px solid #e5e3df", borderRadius: 6,
+      color: "#1a1a1a", fontSize: 13,
+    }}>
+      <h4 style={{ margin: "0 0 10px", fontSize: 14 }}>{data.source.title}</h4>
+      {changed && (
+        <p role="alert">
+          The stored passage has changed since this search.
+          Run the search again before using this citation.
+        </p>
+      )}
+      <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", lineHeight: 1.65 }}>
+        {data.evidence.text}
+      </p>
+      <dl style={{ lineHeight: 1.6, overflowWrap: "anywhere" }}>
+        <dt>Evidence ID</dt><dd>{data.evidence.evidence_id}</dd>
+        <dt>Source ID</dt><dd>{data.source.source_id}</dd>
+        <dt>Locator</dt><dd>{data.evidence.locator}</dd>
+        <dt>Source type</dt><dd>{data.source.source_type}</dd>
+        <dt>Lifecycle</dt><dd>{data.source.lifecycle_status}</dd>
+        <dt>Approval status</dt><dd>{data.source.approval_status || "Not recorded"}</dd>
+        <dt>Effective from</dt><dd>{data.source.effective_start_date || "Not recorded"}</dd>
+        <dt>Effective end</dt><dd>{data.source.effective_end_date || "Not recorded"}</dd>
+        <dt>Superseded on</dt><dd>{data.source.superseded_date || "Not recorded"}</dd>
+        <dt>Original file location</dt><dd>{data.source.original_file_path}</dd>
+      </dl>
+      <p>
+        This is the passage stored in the current corpus index.
+        It is not a historical assessment snapshot. Its relationship to your
+        claim remains unassessed.
+      </p>
+    </section>
   );
 }
