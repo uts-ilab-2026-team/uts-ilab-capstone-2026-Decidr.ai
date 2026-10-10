@@ -48,6 +48,8 @@ class SuppliedInput(BaseModel):
     completeness: Score
     judgement_basis: Text
     origin_basis: Text
+    independence_verified: bool = False
+    independence_basis: str = Field(default="", max_length=10000)
 
 
 class SuppliedAssessmentRequest(BaseModel):
@@ -152,6 +154,8 @@ def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
                 completeness=item.completeness,
                 judgement_basis=item.judgement_basis,
                 origin_basis=item.origin_basis,
+                independence_verified=item.independence_verified,
+                independence_basis=item.independence_basis,
             )
         )
 

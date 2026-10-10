@@ -32,6 +32,8 @@ def assess(status="superseded", *, when="2024-06-01", count=1, same_origin=False
                 {
                     "attests_value": "Approval is required",
                     "agrees": True,
+                    "independence_verified": True,
+                    "independence_basis": "Synthetic origins stipulated independent of other groups.",
                     "directness": 1.0,
                     "specificity": 1.0,
                     "completeness": 1.0,

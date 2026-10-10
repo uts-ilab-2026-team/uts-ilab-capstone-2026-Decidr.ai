@@ -192,3 +192,45 @@ def test_authentication_precedes_assessment(packet, monkeypatch):
     finally:
         api.app.dependency_overrides.clear()
         api.app.dependency_overrides.update(previous)
+
+
+@pytest.mark.parametrize("verified", [False, True])
+def test_independence_judgement_roundtrip(client, packet, verified):
+    path, body = packet
+    before = path.read_bytes()
+    body["inputs"][0].update(
+        independence_verified=verified,
+        independence_basis="Synthetic packet-relative independence judgement.",
+    )
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    saved = response.json()["inputs"][0]["supplied_judgements"]
+    assert saved["independence_verified"] is verified
+    assert saved["independence_basis"] == body["inputs"][0]["independence_basis"]
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"independence_verified": "true"},
+        {"independence_verified": True},
+        {"independence_verified": True, "independence_basis": " "},
+        {"independence_basis": 123},
+    ],
+)
+def test_invalid_independence_judgement(client, packet, fields):
+    _, body = packet
+    body["inputs"][0].update(fields)
+    assert client.post(URL, json=body).status_code == 422
+
+
+def test_legacy_request_defaults_to_unverified(client, packet):
+    _, body = packet
+    response = client.post(URL, json=body)
+    assert response.status_code == 200
+    result = response.json()
+    assert result["inputs"][0]["supplied_judgements"]["independence_verified"] is False
+    assert any(
+        "unverified" in reason for reason in result["assessment"]["evidence"][0]["limitations"]
+    )

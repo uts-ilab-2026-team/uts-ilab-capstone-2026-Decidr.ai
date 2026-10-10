@@ -1,6 +1,6 @@
 """Isolated facet assessment using explicitly supplied judgements.
 
-Not connected to production routes. Citation validation establishes provenance,
+Citation validation establishes provenance,
 not semantic correctness. Caller-supplied judgements require their own evaluation.
 Version 1 uses source-level origins and accepts one source per interpretation.
 """
@@ -33,6 +33,8 @@ class PreparedAttestation:
     completeness: float
     judgement_basis: str
     origin_basis: str
+    independence_verified: bool = False
+    independence_basis: str = ""
 
 
 @dataclass(frozen=True)
@@ -97,6 +99,12 @@ def assess_prepared_facet(
 
     # Check all source/origin declarations, including non-scoring inputs.
     for item in items:
+        if type(item.independence_verified) is not bool or not isinstance(
+            item.independence_basis, str
+        ):
+            raise ValueError("Invalid independence judgement types")
+        if item.independence_verified and not item.independence_basis.strip():
+            raise ValueError("Verified independence requires a basis")
         source = item.source
         source_json = source.model_dump(mode="json")
         for name in (
@@ -199,6 +207,8 @@ def assess_prepared_facet(
                 "completeness",
                 "judgement_basis",
                 "origin_basis",
+                "independence_verified",
+                "independence_basis",
             )
         }
         edge_id = None
@@ -249,6 +259,8 @@ def assess_prepared_facet(
                         "directness": item.directness,
                         "specificity": item.specificity,
                         "completeness": item.completeness,
+                        "independence_verified": item.independence_verified,
+                        "independence_basis": item.independence_basis,
                         "input_id": input_id,
                         "judgement_basis": item.judgement_basis,
                     },
