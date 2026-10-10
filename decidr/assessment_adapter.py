@@ -227,6 +227,7 @@ def assess_prepared_facet(
                             if source.effective_end_date
                             else None
                         ),
+                        "superseded_date": superseded.isoformat() if superseded else None,
                         "last_updated": updated.isoformat() if updated else None,
                     },
                 )

@@ -8,8 +8,8 @@ lives in ``framework.credibility``.
 
 from __future__ import annotations
 
-import json
 from datetime import date
+import json
 from pathlib import Path
 
 import networkx as nx
@@ -118,9 +118,7 @@ class OrganisationalGraph:
 
                 for name in ("applicable", "scope_match"):
                     if name in edge.attributes and type(edge.attributes[name]) is not bool:
-                        raise GraphValidationError(
-                            f"{edge.edge_id}: {name} must be true or false"
-                        )
+                        raise GraphValidationError(f"{edge.edge_id}: {name} must be true or false")
                 for name in ("directness", "specificity", "completeness"):
                     if name not in edge.attributes:
                         continue
@@ -133,17 +131,17 @@ class OrganisationalGraph:
     @staticmethod
     def _validate_document_dates(document: GraphNode) -> None:
         parsed = {}
-        for name in ("effective_date", "effective_end_date", "last_updated"):
+        for name in ("effective_date", "effective_end_date", "last_updated", "superseded_date"):
             value = document.attributes.get(name)
             if value is None:
                 continue
             try:
                 if not isinstance(value, str):
-                    raise ValueError("Date must be a string")
+                    raise TypeError("Date must be a string")
                 parsed_date = date.fromisoformat(value)
                 if parsed_date.isoformat() != value:
                     raise ValueError("Date must use YYYY-MM-DD")
-            except ValueError as error:
+            except (TypeError, ValueError) as error:
                 raise GraphValidationError(
                     f"{document.node_id}: {name} must be a valid YYYY-MM-DD date or null"
                 ) from error

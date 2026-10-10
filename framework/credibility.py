@@ -250,6 +250,13 @@ class GraphCredibilityFramework:
             return "The document is not yet effective at the assessment date."
         if end and date.fromisoformat(str(end)) < as_of:
             return "The document is no longer effective at the assessment date."
+        superseded = document.attributes.get("superseded_date")
+        if superseded:
+            boundary = date.fromisoformat(str(superseded))
+            if as_of == boundary:
+                return "Superseded-date boundary reached; boundary inclusion is unspecified."
+            if as_of > boundary:
+                return "Assessment date follows the documented superseded date."
         return None
 
     def _recency(self, document: GraphNode, as_of: date) -> tuple[float, str]:
@@ -282,15 +289,18 @@ class GraphCredibilityFramework:
 
     @staticmethod
     def _historically_effective(document: GraphNode, as_of: date) -> bool:
-        """Resolve retirement only when both effective boundaries are documented."""
+        """Require a start and an end or a strictly later supersession boundary."""
         attributes = document.attributes
         start = attributes.get("effective_date")
         end = attributes.get("effective_end_date")
+        superseded = attributes.get("superseded_date")
         return bool(
             attributes.get("status") == "superseded"
             and start
-            and end
-            and date.fromisoformat(str(start)) <= as_of <= date.fromisoformat(str(end))
+            and (end or superseded)
+            and date.fromisoformat(str(start)) <= as_of
+            and (not end or as_of <= date.fromisoformat(str(end)))
+            and (not superseded or as_of < date.fromisoformat(str(superseded)))
         )
 
     def _corroboration_eligible(self, document: GraphNode, as_of: date) -> bool:
