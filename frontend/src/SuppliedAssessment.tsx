@@ -153,6 +153,7 @@ export function SuppliedResultView({ result, onDetailChange }: { result: Supplie
           preview={input.interpretation.rationale}
           badges={<Badge>{input.interpretation.stance}</Badge>} onOpen={() => open(input.input_id)} />;
       })}</div>
+      {result.deployment_event_findings?.map((finding, i) => <section className="ev-card" key={i}><h3>Deployment sign-off evidence · unresolved</h3><p>{finding.event_id} · {finding.related_record}</p><p>{finding.message}</p><p>{finding.next_step}</p><CitationView citation={finding.citation} /></section>)}
       {assessment.gaps.length > 0 && <section className="ev-card"><h3>Evidence gaps</h3>
         <p className="ev-muted">Gaps refer to admitted evidence, not an exhaustive corpus search.</p>
         <ul>{assessment.gaps.map((gap, i) => <li key={i}>{gap}</li>)}</ul>

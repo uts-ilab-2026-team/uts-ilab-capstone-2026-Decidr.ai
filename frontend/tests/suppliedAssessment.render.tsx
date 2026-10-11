@@ -104,6 +104,7 @@ test("automatic entry uses existing cards, explicit date and no prepared JSON", 
 test("automatic saved result is clearly distinguished from supplied judgements", () => {
   const result = {
     status: "assessed_automatically", persisted: true, claim_text: "Original", facet: "Facet",
+    deployment_event_findings: [{status: "unresolved", event_id: "AUD-X", related_record: "INC-X", message: "Missing record is not proof of no approval.", next_step: "Check linked approval timing.", citation: {evidence_id: "e", source_id: "s", locator: "row:1", quotation: "<audit note>", start: 0, end: 12}}],
     as_of: "2026-06-17", assessment_target: "formal_rule", assurance: { notice: "Human review pending." },
     inputs: [], limitations: [], assessment: { overall_outcome: "Insufficient evidence",
       formal_outcome: "Insufficient evidence", observed_outcome: "Insufficient evidence",
@@ -113,6 +114,10 @@ test("automatic saved result is clearly distinguished from supplied judgements",
   for (const text of ["Automatic result", "Review pending", "Saved snapshot", "Original", "Insufficient evidence"])
     assert.ok(html.includes(text));
   assert.ok(!html.includes("Not saved"));
+  assert.ok(html.includes("Deployment sign-off evidence"));
+  assert.ok(html.includes("Missing record is not proof of no approval."));
+  assert.ok(html.includes("Check linked approval timing."));
+  assert.ok(html.includes("&lt;audit note&gt;"));
 });
 
 test("wording match is shown separately from the credibility outcome", () => {

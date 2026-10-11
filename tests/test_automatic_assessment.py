@@ -334,3 +334,34 @@ def test_renewal_cap_saved_with_exact_context_and_unresolved_authority(setup, cu
         == "unresolved"
     )
     assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
+
+
+def test_deployment_rule_role_context_and_frozen_event_gap(setup):
+    from test_deployment_signoff import RULE as DEPLOY, EVENT, audit
+
+    client, source, passage, store = setup
+    source.source_type = "organisational_information"
+    passage.source_type = "organisational_information"
+    passage.heading = "Head of Engineering — Pat Jones"
+    passage.text = DEPLOY.replace("Head of Engineering", "his")
+    store()
+    r = client.post(URL, json=body(claim=DEPLOY)).json()
+    assert r["inputs"][0]["interpretation"]["stance"] == "support"
+    assert not r["inputs"][0]["admitted_to_framework"]
+    assert r["proposals"][0]["authority_resolution"]["authority_verified"] is None
+    source.source_type = "audit_events"
+    passage.source_type = "audit_events"
+    passage.text = audit().text
+    store()
+    response = client.post(SAVE, json=body(claim=EVENT, request_id="deployment-event"))
+    assert response.status_code == 201, response.text
+    saved = response.json()
+    result = saved["snapshot"]["response"]
+    assert result["assessment"]["overall_outcome"] == "Insufficient evidence"
+    assert result["deployment_event_findings"][0]["status"] == "unresolved"
+    assert all(
+        x["interpretation"]["stance"] not in {"support", "contradict"} for x in result["inputs"]
+    )
+    passage.text = "Changed record."
+    store()
+    assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved

@@ -129,14 +129,21 @@ def _range_covers(evidence: ApprovalRule, claim: ApprovalRule) -> bool:
     return lower and upper
 
 
-def compare_approval_rules(left: str, right: str) -> dict | None:
+def compare_approval_rules(
+    left: str, right: str, evidence_heading: str | None = None
+) -> dict | None:
     """Expose field agreement; differences alone never establish contradiction."""
     claim, evidence = parse_approval_rule(left), parse_approval_rule(right)
     if claim is None or evidence is None:
+        from decidr.deployment_signoff import compare_deployment_rules
         from decidr.expense_approval import compare_expense_rules
         from decidr.renewal_cap import compare_renewal_caps
 
-        return compare_expense_rules(left, right) or compare_renewal_caps(left, right)
+        return (
+            compare_expense_rules(left, right)
+            or compare_renewal_caps(left, right)
+            or compare_deployment_rules(left, right, evidence_heading)
+        )
     a, b = claim.model_dump(), evidence.model_dump()
     differences = [key for key in a if a[key] != b[key]]
     covered = _range_covers(evidence, claim)

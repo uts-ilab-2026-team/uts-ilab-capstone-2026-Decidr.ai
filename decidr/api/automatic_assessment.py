@@ -23,6 +23,7 @@ from decidr.approval_propositions import compare_approval_rules
 from decidr.assessment_adapter import InputDisposition, PreparedAttestation, assess_prepared_facet
 from decidr.assessment_response import serialize_facet_assessment
 from decidr.authority_resolution import resolve_authority
+from decidr.deployment_signoff import deployment_event_findings
 from decidr.interpretation_models import (
     EvidenceInterpretation,
     InterpretationCitation,
@@ -49,9 +50,15 @@ def build_automatic_assessment(request: InterpretationProposalRequest) -> dict:
     for proposal in draft["proposals"]:
         item = dict(proposal["suggested_input"])
         citation = item["citations"][0]
-        comparison = compare_approval_rules(draft["facet"], citation["quotation"])
         passage = snapshot["evidence"][proposal["evidence_id"]]
-        context = check_approval_context(passage.text, citation["start"], citation["end"])
+        heading = (
+            passage.heading
+            if snapshot["sources"][proposal["source_id"]].source_type
+            in {"organisational_information", "role_description"}
+            else None
+        )
+        comparison = compare_approval_rules(draft["facet"], citation["quotation"], heading)
+        context = check_approval_context(passage.text, citation["start"], citation["end"], heading)
         context["citation"] = {
             "evidence_id": passage.evidence_id,
             "source_id": passage.source_id,
@@ -175,7 +182,7 @@ def build_automatic_assessment(request: InterpretationProposalRequest) -> dict:
     }
     response["assurance"].update(
         outcome_basis="conditional_on_automatic_judgements",
-        semantic_verification="bounded_discount_expense_and_renewal_fields",
+        semantic_verification="bounded_rule_fields_v3",
         authority_verification="explicit_dated_adoption_and_person_specific_rights_checked",
         independence_verification="unverified_origins_conservatively_grouped",
         quality_scores="binary_complete_grammar_checks_not_calibrated",
@@ -195,6 +202,9 @@ def build_automatic_assessment(request: InterpretationProposalRequest) -> dict:
         "Quality dimensions describe grammar coverage, not calibrated credibility probabilities.",
         "The assessment concerns the facet; the original claim is retained unchanged.",
     ]
+    response["deployment_event_findings"] = deployment_event_findings(
+        draft["facet"], list(snapshot["evidence"].values()), request.as_of
+    )
     packet = {
         "claim_text": request.claim,
         "facet": draft["facet"],

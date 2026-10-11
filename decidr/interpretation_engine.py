@@ -354,8 +354,8 @@ def _opposite(left: str, right: str) -> bool:
     return a.group(1, 2) == b.group(1, 2) and bool(a[3]) != bool(b[3])
 
 
-def _compare(left: str, right: str) -> Stance:
-    comparison = compare_approval_rules(left, right)
+def _compare(left: str, right: str, heading: str | None = None) -> Stance:
+    comparison = compare_approval_rules(left, right, heading)
     if comparison is not None:
         return "support" if comparison["evidence_entails_claim"] else "unresolved"
     if left == right:
@@ -388,8 +388,15 @@ def propose_interpretation(
         raise ValueError("as_of must be an explicit date")
 
     proposition = _canonical(facet)
+    heading = (
+        evidence.heading
+        if source.source_type in {"organisational_information", "role_description"}
+        else None
+    )
     spans = _sentences(evidence.text)
-    comparisons = [(_compare(proposition, _canonical(evidence.text[a:b])), a, b) for a, b in spans]
+    comparisons = [
+        (_compare(proposition, _canonical(evidence.text[a:b]), heading), a, b) for a, b in spans
+    ]
     decisive = [x for x in comparisons if x[0] in {"support", "contradict"}]
     conflicting = len({x[0] for x in decisive}) > 1
     # Exact sentence matches are proposals only: other sentences can qualify them.
@@ -401,7 +408,8 @@ def propose_interpretation(
             bounded = [
                 (len(c["differences"]), a, b)
                 for a, b in spans
-                if (c := compare_approval_rules(proposition, evidence.text[a:b])) is not None
+                if (c := compare_approval_rules(proposition, evidence.text[a:b], heading))
+                is not None
             ]
             if bounded:
                 _, start, end = min(bounded)
@@ -437,7 +445,7 @@ def propose_interpretation(
         if stance == "contradict"
         else "unresolved"
     )
-    field_comparison = compare_approval_rules(proposition, text)
+    field_comparison = compare_approval_rules(proposition, text, heading)
     if field_comparison is not None:
         method = field_comparison["method"]
     rationale = {

@@ -5,6 +5,7 @@ import re
 
 from decidr.approval_propositions import parse_approval_rule
 from decidr.authority_context import _header_citations, authority_context
+from decidr.deployment_signoff import parse_deployment_rule
 from decidr.expense_approval import parse_expense_rule
 from decidr.interpretation_models import InterpretationCitation
 from decidr.policy_adoption import structured_adoptions
@@ -94,6 +95,19 @@ def resolve_authority(
     def check(name, passed, reason):
         result["checks"].append({"name": name, "passed": bool(passed), "reason": reason})
 
+    if parse_deployment_rule(citation.quotation, focal.heading):
+        check(
+            "deployment_rule_authority",
+            False,
+            "The operational sign-off requirement does not establish the role record's governing authority or applicability at the assessment date.",
+        )
+        result["gaps"] = [
+            {
+                "kind": "interpretation_limit",
+                "message": "Role-governance and historical role authority require review; policy-adoption grammar is not applicable to this role record.",
+            }
+        ]
+        return result
     code_match = re.match(rf"^({CODE})(?=\s|$)", source.title)
     rule = parse_approval_rule(citation.quotation)
     expense = parse_expense_rule(citation.quotation)

@@ -109,7 +109,7 @@ remain visible and do not imply exhaustive coverage.
 ## Verification
 
 The supplied baseline reproduced: 748 Python tests and 8 subtests passed.
-Current verification: 869 Python tests plus 8 subtests, 15 frontend tests, TypeScript checking, production build, lint and formatting passed.
+Current verification: 885 Python tests plus 8 subtests, 15 frontend tests, TypeScript checking, production build, lint and formatting passed.
 
 Added API tests cover bounded support, abstention, exact citations, original claim
 and facet binding, no matches, draft/non-approved/future/superseded/derived sources,
@@ -170,10 +170,10 @@ available. Expense policies use the same explicit, dated adoption-and-rights che
 `evaluation/approval_rules/cases.json` is a small, corpus-shaped development set,
 not an independent benchmark or a human-approved truth set. It includes discount
 and expense matches, boundary/actor/currency differences, and renewal-cap cases plus
-deployment-signoff cases that must remain unsupported. Run it with
+deployment-signoff wording and timing cases. Run it with
 `pytest tests/test_expense_approval.py`. API coverage also verifies saved expense
 results, exact citations, authority abstention, exception handling and immutable
-history. Deployment sign-off remains a future rule family.
+history. Deployment requirements and event-gap review are described below.
 
 ## Expense-policy authority follow-up
 
@@ -225,5 +225,28 @@ pass the same actor, version, dates, source eligibility and conflict checks. The
 local POL-06 replay matches the cap and passes policy version/date checks but
 cannot establish a complete adoption-and-rights chain. Its automatic outcome stays
 insufficient evidence. Synthetic complete-chain tests validate the positive path.
-The development evaluation set now contains 11 cases across four rule families;
+The development evaluation set now contains 12 cases across four rule families;
 it is not a held-out or human-validated benchmark.
+
+## Deployment requirements versus deployment events
+
+The bounded comparator recognises the complete requirement for Head of Engineering
+sign-off before production deployments touching customer billing. Within a named
+Head of Engineering role section, `his`, `her` or `their` sign-off may bind to that
+role for wording comparison. This is restricted to role/organisational source
+classes and supported surrounding clauses; unknown exceptions block support.
+Neither the role heading nor a matching rule establishes historical role authority.
+Role-governance resolution remains explicitly unresolved.
+
+A separate review finding recognises the dated emergency billing deployment claim
+and matching structured audit candidates. It retains the full audit quotation,
+event and incident identifiers and explains that “no linked sign-off record found”
+is an evidence gap, not proof of non-approval. It never creates a scoring edge or
+asserts that sign-off preceded release. Same-day text, deployment success and
+unlinked approval notes cannot establish ordering or authority. A linked approval
+record with appropriate identity, authority and timestamps still requires review.
+
+Local replay: the formal requirement matches the engineering role record; the
+18 February 2026 incident exposes AUD-0111's missing-link note. Both overall
+assessments remain insufficient evidence. This parser supports these bounded
+record structures, not arbitrary deployment logs or general pronoun resolution.

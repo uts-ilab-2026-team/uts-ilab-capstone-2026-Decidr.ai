@@ -52,7 +52,7 @@
     "id": "deployment-signoff",
     "claim": "Production deployments touching customer billing require Head of Engineering sign-off before release.",
     "evidence": "Production deployments touching customer billing require Head of Engineering sign-off before release.",
-    "expected_wording": "unsupported",
+    "expected_wording": "match",
     "authority": "not_established_by_wording"
   },
   {
@@ -73,6 +73,13 @@
     "id": "renewal-exception",
     "claim": "Renewal discounts are capped at 10% off the account's current contracted rate. Except strategic accounts.",
     "evidence": "Renewal discounts are capped at 10% off the account's current contracted rate.",
+    "expected_wording": "unsupported",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "deployment-after-release",
+    "claim": "Production deployments touching customer billing require Head of Engineering sign-off after release.",
+    "evidence": "Production deployments touching customer billing require Head of Engineering sign-off before release.",
     "expected_wording": "unsupported",
     "authority": "not_established_by_wording"
   }
