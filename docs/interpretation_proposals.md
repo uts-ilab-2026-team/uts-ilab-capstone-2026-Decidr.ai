@@ -139,3 +139,23 @@ paraphrase proposed support; changed approver, changed inclusivity and omitted
 measure remained unresolved. All untouched drafts still assessed as Insufficient
 evidence, with database bytes unchanged. These are development diagnostics and
 regressions, not an independent accuracy evaluation. Rerun in project Python 3.11.
+# Approval range containment (approval_fields_v2)
+
+The complete approval-rule comparator now checks directional numeric containment
+using exact decimal arithmetic over valid discount percentages from 0 through 100.
+An evidence rule can support a claim covering a subset of its discount range,
+provided approver, business scope, written requirement, timing, event and measure
+all match. For example, at least 15% covers exactly 15% and above 20%.
+
+Exclusive boundaries remain exclusive: above 15% does not cover exactly 15%.
+Partial overlap, disjoint ranges and empty ranges do not establish support or
+contradiction. A requirement on one range does not imply permission outside it.
+The grammar also accepts "exactly" before a percentage. Conditions, exceptions,
+unsupported wording and other field changes retain their existing safeguards.
+
+Comparison payloads retain `equivalent` and `differences`, and add
+`claim_range_covered` and `evidence_entails_claim`. Range coverage alone does not
+establish entailment when other fields differ. The comparison method is versioned
+as `approval_fields_v2`. Exact original citation text and offsets are preserved.
+This proposes a relationship only; authority, review, credibility placeholders,
+target checks and source applicability remain governed by the existing workflow.

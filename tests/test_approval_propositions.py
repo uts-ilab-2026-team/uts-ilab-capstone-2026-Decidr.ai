@@ -117,7 +117,7 @@ def test_engine_integration_preserves_exact_citation_and_unassessed_gates():
         source=source,
     )
     assert result.stance == "support"
-    assert result.comparison_method == "approval_fields_v1"
+    assert result.comparison_method == "approval_fields_v2"
     assert result.review_payload()["field_comparison"]["equivalent"]
     assert result.authority_verified is None
     assert (result.directness, result.specificity, result.completeness) == (0, 0, 0)

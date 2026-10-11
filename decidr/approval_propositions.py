@@ -1,4 +1,4 @@
-"""Bounded equivalence of complete percentage-discount approval requirements.
+"""Bounded comparison of complete percentage-discount approval requirements.
 
 Two explicit grammatical forms, arbitrary approver/scope/threshold/event values.
 This is field comparison, not general entailment or organisational role resolution.
@@ -25,9 +25,7 @@ class ApprovalRule:
 
 
 NUMBER = r"(?:0|[1-9]\d*)(?:\.\d+)?"
-THRESHOLD = (
-    rf"(?:(?:at least|above|below|at most) )?{NUMBER}\s*%(?: or (?:greater|more|less|fewer))?"
-)
+THRESHOLD = rf"(?:(?:exactly|at least|above|below|at most) )?{NUMBER}\s*%(?: or (?:greater|more|less|fewer))?"
 PATTERNS = (
     re.compile(
         rf"any discount of (?P<threshold>{THRESHOLD}) off list price on a "
@@ -73,6 +71,7 @@ def parse_approval_rule(text: str) -> ApprovalRule | None:
     )
     operators = {
         ("", "%"): "eq",
+        ("exactly", "%"): "eq",
         ("at least", "%"): "ge",
         ("", "% or greater"): "ge",
         ("", "% or more"): "ge",
@@ -96,6 +95,30 @@ def parse_approval_rule(text: str) -> ApprovalRule | None:
     )
 
 
+def _range(rule: ApprovalRule) -> tuple[Decimal, bool, Decimal, bool]:
+    value = Decimal(rule.percentage)
+    zero, maximum = Decimal(0), Decimal(100)
+    return {
+        "eq": (value, True, value, True),
+        "ge": (value, True, maximum, True),
+        "gt": (value, False, maximum, True),
+        "le": (zero, True, value, True),
+        "lt": (zero, True, value, False),
+    }[rule.boundary]
+
+
+def _range_covers(evidence: ApprovalRule, claim: ApprovalRule) -> bool:
+    low, low_closed, high, high_closed = _range(claim)
+    e_low, e_low_closed, e_high, e_high_closed = _range(evidence)
+    if low == high and not (low_closed and high_closed):
+        return False  # Empty discount ranges cannot supply meaningful support.
+    if e_low == e_high and not (e_low_closed and e_high_closed):
+        return False
+    lower = low > e_low or (low == e_low and (not low_closed or e_low_closed))
+    upper = high < e_high or (high == e_high and (not high_closed or e_high_closed))
+    return lower and upper
+
+
 def compare_approval_rules(left: str, right: str) -> dict | None:
     """Expose field agreement; differences alone never establish contradiction."""
     claim, evidence = parse_approval_rule(left), parse_approval_rule(right)
@@ -103,10 +126,14 @@ def compare_approval_rules(left: str, right: str) -> dict | None:
         return None
     a, b = claim.model_dump(), evidence.model_dump()
     differences = [key for key in a if a[key] != b[key]]
+    covered = _range_covers(evidence, claim)
+    other_fields_match = not (set(differences) - {"percentage", "boundary"})
     return {
         "claim_fields": a,
         "evidence_fields": b,
         "differences": differences,
         "equivalent": not differences,
-        "method": "approval_fields_v1",
+        "claim_range_covered": covered,
+        "evidence_entails_claim": covered and other_fields_match,
+        "method": "approval_fields_v2",
     }

@@ -352,13 +352,13 @@ def _opposite(left: str, right: str) -> bool:
 
 
 def _compare(left: str, right: str) -> Stance:
+    comparison = compare_approval_rules(left, right)
+    if comparison is not None:
+        return "support" if comparison["evidence_entails_claim"] else "unresolved"
     if left == right:
         return "support"
     if _opposite(left, right):
         return "contradict"
-    comparison = compare_approval_rules(left, right)
-    if comparison is not None and comparison["equivalent"]:
-        return "support"
     return "unresolved"
 
 
@@ -436,7 +436,7 @@ def propose_interpretation(
     )
     field_comparison = compare_approval_rules(proposition, text)
     if field_comparison is not None:
-        method = "approval_fields_v1"
+        method = field_comparison["method"]
     rationale = {
         "support": "The citation preserves the facet's ordered wording under limited normalisation.",
         "contradict": "The complete proposition explicitly differs on required versus not required.",
@@ -445,7 +445,9 @@ def propose_interpretation(
     if field_comparison is not None:
         rationale = (
             "All extracted approval-rule fields agree under the bounded grammar."
-            if field_comparison["equivalent"]
+            if field_comparison["equivalent"] and field_comparison["evidence_entails_claim"]
+            else "The evidence approval rule covers the claim's discount range; all other extracted rule fields match."
+            if field_comparison["evidence_entails_claim"]
             else "Approval-rule fields differ; no general entailment is inferred: "
             + ", ".join(field_comparison["differences"])
             + "."
