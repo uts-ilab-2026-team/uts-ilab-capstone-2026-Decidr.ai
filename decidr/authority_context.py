@@ -3,6 +3,7 @@
 from collections.abc import Iterable
 
 from decidr.approval_propositions import parse_approval_rule
+from decidr.expense_approval import parse_expense_rule
 from decidr.interpretation_models import InterpretationCitation
 from decidr.retrieval_models import Evidence, Source
 from decidr.source_metadata import HEADER, approval_lifecycle
@@ -134,10 +135,11 @@ def authority_context(
     operational = _finding(
         reason="The focal quotation is outside the supported complete approval-rule grammar."
     )
-    if rule and source.source_type in {"policy", "procedure"}:
+    expense = parse_expense_rule(citation.quotation)
+    if (rule or expense) and source.source_type in {"policy", "procedure"}:
         operational = _finding(
             "documented_assertion",
-            rule.model_dump(),
+            rule.model_dump() if rule else expense,
             [citation],
             "The rule names an operational approver and conditions; it does not establish policy-making authority or historical role occupancy.",
         )

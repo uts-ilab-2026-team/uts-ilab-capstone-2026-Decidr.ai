@@ -133,7 +133,9 @@ def compare_approval_rules(left: str, right: str) -> dict | None:
     """Expose field agreement; differences alone never establish contradiction."""
     claim, evidence = parse_approval_rule(left), parse_approval_rule(right)
     if claim is None or evidence is None:
-        return None
+        from decidr.expense_approval import compare_expense_rules
+
+        return compare_expense_rules(left, right)
     a, b = claim.model_dump(), evidence.model_dump()
     differences = [key for key in a if a[key] != b[key]]
     covered = _range_covers(evidence, claim)

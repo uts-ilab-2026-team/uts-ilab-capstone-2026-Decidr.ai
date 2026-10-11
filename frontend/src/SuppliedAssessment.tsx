@@ -78,7 +78,7 @@ export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResul
       </section>
     </div>
     {proposal && <section className="ev-card"><h3>Approval-rule comparison and authority</h3>
-      <p>{proposal.field_comparison?.evidence_entails_claim ? "The extracted rule covers the claimed discount range." : "No supported field comparison establishes this claim."}</p>
+      <p>{proposal.field_comparison?.evidence_entails_claim ? "The extracted rule covers the claimed approval range." : "No supported field comparison establishes this claim."}</p>
       {!!proposal.field_comparison?.differences.length && <p>Different fields: {proposal.field_comparison.differences.join(", ")}</p>}
       {proposal.passage_context && <details><summary>Surrounding policy conditions</summary>
         <p className="ev-quote">{proposal.passage_context.citation.quotation}</p>

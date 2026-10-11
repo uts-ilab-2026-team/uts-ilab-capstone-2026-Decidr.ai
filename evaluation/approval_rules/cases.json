@@ -1,0 +1,58 @@
+[
+  {
+    "id": "discount-match",
+    "claim": "Any discount of 15% or greater off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+    "evidence": "Any discount of 15% or greater off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+    "expected_wording": "match",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "discount-boundary",
+    "claim": "Any discount of 10% or greater off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+    "evidence": "Any discount of 15% or greater off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+    "expected_wording": "unresolved_difference",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "expense-match",
+    "claim": "Expense claims over $500 require approval from the Head of Finance & People Ops before reimbursement is processed.",
+    "evidence": "Expense claims over $500 require approval from the Head of Finance & People Ops before reimbursement is processed.",
+    "expected_wording": "match",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "expense-boundary",
+    "claim": "Expense claims at least $500 require approval from the Head of Finance & People Ops before reimbursement is processed.",
+    "evidence": "Expense claims over $500 require approval from the Head of Finance & People Ops before reimbursement is processed.",
+    "expected_wording": "unresolved_difference",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "expense-currency",
+    "claim": "Expense claims over \u00a3500 require approval from the Head of Finance & People Ops before reimbursement is processed.",
+    "evidence": "Expense claims over $500 require approval from the Head of Finance & People Ops before reimbursement is processed.",
+    "expected_wording": "unresolved_difference",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "expense-approver",
+    "claim": "Expense claims over $500 require approval from the Head of Sales before reimbursement is processed.",
+    "evidence": "Expense claims over $500 require approval from the Head of Finance & People Ops before reimbursement is processed.",
+    "expected_wording": "unresolved_difference",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "renewal-cap",
+    "claim": "Renewal discounts are capped at 10% off the account's current contracted rate.",
+    "evidence": "Renewal discounts are capped at 10% off the account's current contracted rate.",
+    "expected_wording": "unsupported",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "deployment-signoff",
+    "claim": "Production deployments touching customer billing require Head of Engineering sign-off before release.",
+    "evidence": "Production deployments touching customer billing require Head of Engineering sign-off before release.",
+    "expected_wording": "unsupported",
+    "authority": "not_established_by_wording"
+  }
+]

@@ -5,6 +5,7 @@ import re
 
 from decidr.approval_propositions import parse_approval_rule
 from decidr.authority_context import _header_citations, authority_context
+from decidr.expense_approval import parse_expense_rule
 from decidr.interpretation_models import InterpretationCitation
 from decidr.policy_adoption import structured_adoptions
 from decidr.retrieval_models import Evidence, Source
@@ -80,6 +81,19 @@ def resolve_authority(
     def check(name, passed, reason):
         result["checks"].append({"name": name, "passed": bool(passed), "reason": reason})
 
+    if parse_expense_rule(citation.quotation):
+        check(
+            "expense_adoption_rights",
+            False,
+            "Expense rule wording is supported, but automatic expense-policy adoption and rights resolution is not yet supported.",
+        )
+        result["gaps"] = [
+            {
+                "kind": "interpretation_limit",
+                "message": "Review dated adoption and policy-making rights for this expense policy; matching operational approval wording does not establish them.",
+            }
+        ]
+        return result
     code_match = re.match(rf"^({CODE})(?=\s|$)", source.title)
     rule = parse_approval_rule(citation.quotation)
     release, separator, _ = source.source_id.partition(":")

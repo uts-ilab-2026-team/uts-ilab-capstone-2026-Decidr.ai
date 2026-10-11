@@ -79,7 +79,7 @@ def build_automatic_assessment(request: InterpretationProposalRequest) -> dict:
             specificity=1.0 if supported else 0.0,
             completeness=1.0 if supported else 0.0,
             judgement_basis=(
-                "Deterministic approval_fields_v2 comparison with bounded surrounding-clause checks. "
+                "Deterministic approval-rule field comparison with bounded surrounding-clause checks. "
                 "Quality dimensions are binary grammar checks, not calibrated probabilities. "
                 "Authority and independence remain unverified."
             ),
@@ -175,7 +175,7 @@ def build_automatic_assessment(request: InterpretationProposalRequest) -> dict:
     }
     response["assurance"].update(
         outcome_basis="conditional_on_automatic_judgements",
-        semantic_verification="bounded_approval_fields_v2",
+        semantic_verification="bounded_discount_and_expense_approval_fields",
         authority_verification="explicit_dated_adoption_and_person_specific_rights_checked",
         independence_verification="unverified_origins_conservatively_grouped",
         quality_scores="binary_complete_grammar_checks_not_calibrated",

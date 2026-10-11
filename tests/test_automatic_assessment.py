@@ -248,3 +248,35 @@ def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup, stru
     assert proposal["authority_resolution"]["authority_verified"] is True
     assert proposal["authority_resolution"]["citations"]
     assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
+
+
+def test_expense_api_preserves_citations_and_abstains_on_authority(setup):
+    client, _, passage, store = setup
+    rule = (
+        "Expense claims over $500 require approval from Finance before reimbursement is processed."
+    )
+    passage.text = (
+        "1. "
+        + rule
+        + "\n2. Expense claims of $500 or less may be approved by the employee's direct manager.\n3. All expense claims must include an itemised receipt."
+    )
+    store()
+    response = client.post(SAVE, json=body(claim=rule, request_id="expense"))
+    assert response.status_code == 201, response.text
+    saved = response.json()
+    result = saved["snapshot"]["response"]
+    assert result["claim_text"] == rule
+    item = result["inputs"][0]
+    assert item["interpretation"]["stance"] == "support"
+    assert not item["admitted_to_framework"]
+    assert item["supplied_judgements"]["authority_verified"] is None
+    assert item["supplied_judgements"]["independence_verified"] is False
+    proposal = result["proposals"][0]
+    assert proposal["authority_resolution"]["gaps"][0]["kind"] == "interpretation_limit"
+    for c in item["interpretation"]["citations"]:
+        assert passage.text[c["start"] : c["end"]] == c["quotation"]
+    passage.text += " Except urgent claims."
+    store()
+    assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
+    fresh = client.post(URL, json=body(claim=rule)).json()
+    assert fresh["inputs"][0]["interpretation"]["stance"] == "unresolved"

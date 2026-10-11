@@ -109,7 +109,7 @@ remain visible and do not imply exhaustive coverage.
 ## Verification
 
 The supplied baseline reproduced: 748 Python tests and 8 subtests passed.
-Current verification: 818 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
+Current verification: 839 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
 
 Added API tests cover bounded support, abstention, exact citations, original claim
 and facet binding, no matches, draft/non-approved/future/superseded/derived sources,
@@ -153,3 +153,25 @@ The guidance is derived from evidence fields, not a POL-01 special case. Tests
 also exercise POL-42 with a different actor and release, both with and without
 explicit matching rights. Rule recognition remains limited to the supported
 discount-approval grammar and adoption structures described above.
+
+## Expense approval and cross-family evaluation
+
+Complete expense-approval requirements now compare monetary threshold, strict or
+inclusive boundary, currency symbol, approver, written approval and timing before
+or after reimbursement. Currency symbols are compared literally: `$` does not
+establish AUD or USD and no conversion is performed. Different actors, currencies,
+conditions or boundaries do not automatically establish contradiction.
+
+The context checker retains the itemised-receipt requirement and a non-overlapping
+manager permission at or below a stated amount. Unknown exceptions or overlapping
+permissions block automatic support. Full passage and exact focal quotations remain
+available. Expense-policy adoption/rights resolution is currently an interpretation
+limit, explicitly disclosed; operational wording alone never grants authority.
+
+`evaluation/approval_rules/cases.json` is a small, corpus-shaped development set,
+not an independent benchmark or a human-approved truth set. It includes discount
+and expense matches, boundary/actor/currency differences, and renewal-cap and
+deployment-signoff cases that must remain unsupported. Run it with
+`pytest tests/test_expense_approval.py`. API coverage also verifies saved expense
+results, exact citations, authority abstention, exception handling and immutable
+history. The next rule families remain renewal caps and deployment sign-off.

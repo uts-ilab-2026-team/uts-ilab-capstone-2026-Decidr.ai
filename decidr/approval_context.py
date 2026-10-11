@@ -4,12 +4,14 @@ from decimal import Decimal
 import re
 
 from decidr.approval_propositions import parse_approval_rule
+from decidr.expense_approval import expense_context_reason, parse_expense_rule
 from decidr.interpretation_engine import _sentences
 
 
 def check_approval_context(text: str, start: int, end: int) -> dict:
     """Recognise only explicit compatible clauses; unknown context blocks support."""
     rule = parse_approval_rule(text[start:end])
+    expense = parse_expense_rule(text[start:end])
     findings = []
     for remainder in (text[:start], text[end:]):
         # List markers are formatting, including the marker before the focal quote.
@@ -25,7 +27,7 @@ def check_approval_context(text: str, start: int, end: int) -> dict:
             )
             if not clause:
                 continue
-            reason = None
+            reason = expense_context_reason(clause, expense) if expense else None
             if rule:
                 if (
                     clause
@@ -61,7 +63,8 @@ def check_approval_context(text: str, start: int, end: int) -> dict:
             )
     return {
         "method": "approval-context-v1",
-        "compatible": rule is not None and all(item["compatible"] for item in findings),
+        "compatible": (rule is not None or expense is not None)
+        and all(item["compatible"] for item in findings),
         "clauses": findings,
         "limitation": "Only adjacent statements in this stored passage were checked; this is not a whole-document interpretation.",
     }
