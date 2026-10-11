@@ -6,7 +6,7 @@ Version 1 uses source-level origins and accepts one source per interpretation.
 """
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 
 from framework.config import GraphCredibilityConfig
@@ -60,6 +60,74 @@ class FacetAssessmentResult:
     inputs: tuple[InputDisposition, ...]
     limitations: tuple[str, ...]
     assessment_target: AssessmentTarget = "unspecified"
+
+
+def _apply_policy_precedence(nodes, edges, dispositions, *, as_of, config):
+    """Prefer material applicable policies over contrary role/table summaries.
+
+    All inputs already passed admission. Policy materiality is checked without
+    summaries so a summary cannot bootstrap the policy that displaces it.
+    """
+    policy_ids = set()
+    for item in dispositions:
+        if item.edge_id is None or item.interpretation.mode != "formal":
+            continue
+        source = item.source
+        supplied = item.supplied_judgements
+        code = DOCUMENT_REFERENCE.match(source.title)
+        _, clauses, _ = approval_lifecycle(source.approval_status, code[0] if code else "")
+        negative, positive = approval_signals(
+            " ".join(clause["quote"] for clause in clauses if clause["scope"] == "own_document")
+        )
+        if (
+            source.source_type == "policy"
+            and supplied["source_class"] == "approved_policy"
+            and supplied["approval_key"] == "approved"
+            and source.effective_start_date is not None
+            and positive
+            and not negative
+        ):
+            policy_ids.add(item.edge_id)
+    policy_edges = [edge for edge in edges if edge.edge_id in policy_ids]
+    if not policy_edges:
+        return edges, dispositions, ()
+    policy_graph = OrganisationalGraph(nodes, policy_edges, version="policy-precedence-v1")
+    policy_assessment = GraphCredibilityFramework(policy_graph, config).evaluate_fact(
+        "fact:facet", as_of=as_of
+    )
+    # Competing eligible policies must remain available for conflict reasoning,
+    # even when one is below the materiality threshold.
+    stances = {edge.attributes["agrees"] for edge in policy_edges}
+    material_ids = {item.edge_id for item in policy_assessment.evidence if item.material}
+    if len(stances) != 1 or not material_ids:
+        return edges, dispositions, ()
+    policy_stance = "support" if next(iter(stances)) else "contradict"
+    governing = sorted(
+        item.source.source_id for item in dispositions if item.edge_id in material_ids
+    )
+    excluded = set()
+    updated = []
+    notes = []
+    for item in dispositions:
+        if (
+            item.edge_id is not None
+            and item.interpretation.mode == "formal"
+            and item.interpretation.stance != policy_stance
+            and item.source.source_type == "organisational_information"
+            and item.supplied_judgements["source_class"] in {"role_description", "decision_table"}
+        ):
+            reason = (
+                "Policy precedence: conflicting role/table summary retained as a documentation "
+                "inconsistency; applicable approved policy evidence governs this formal facet: "
+                + ", ".join(governing)
+                + "."
+            )
+            excluded.add(item.edge_id)
+            updated.append(replace(item, edge_id=None, reasons=(*item.reasons, reason)))
+            notes.append(f"{item.source.title}: {reason}")
+        else:
+            updated.append(item)
+    return [edge for edge in edges if edge.edge_id not in excluded], updated, tuple(notes)
 
 
 def assess_prepared_facet(
@@ -321,8 +389,21 @@ def assess_prepared_facet(
             )
         )
 
+    precedence_notes = ()
+    if assessment_target == "formal_rule":
+        edges, dispositions, precedence_notes = _apply_policy_precedence(
+            nodes, edges, dispositions, as_of=as_of, config=config
+        )
     graph = OrganisationalGraph(nodes, edges, version="corpus-facet-adapter-v1")
     assessment = GraphCredibilityFramework(graph, config).evaluate_fact("fact:facet", as_of=as_of)
+    if precedence_notes:
+        assessment = replace(
+            assessment,
+            related_qualifiers=(*assessment.related_qualifiers, *precedence_notes),
+            rules_applied=(*assessment.rules_applied, "CORPUS_POLICY_PRECEDENCE_V1"),
+            summary=assessment.summary
+            + " Conflicting role/table summaries are retained as documentation inconsistencies under policy precedence.",
+        )
     return FacetAssessmentResult(
         claim_text,
         facet,
