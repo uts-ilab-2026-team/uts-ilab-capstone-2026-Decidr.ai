@@ -217,7 +217,7 @@ def test_matching_rule_with_compatible_surroundings_is_explained_and_frozen(setu
     assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
 
 
-@pytest.mark.parametrize("structured", [False, True])
+@pytest.mark.parametrize("structured", [False, True, "expense"])
 def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup, structured):
     from test_authority_resolution import chain
     import os
@@ -225,7 +225,15 @@ def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup, stru
 
     from test_structured_adoption import structured_chain
 
-    sources, passages = structured_chain() if structured else chain()
+    from test_expense_authority import expense_chain
+
+    sources, passages = (
+        expense_chain()
+        if structured == "expense"
+        else structured_chain()
+        if structured
+        else chain()
+    )
     client, _, _, _ = setup
     with closing(connect(Path(os.environ["DECIDR_CORPUS_DB"]))) as connection, connection:
         for source in sources.values():
@@ -235,7 +243,7 @@ def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup, stru
                 source.source_id,
                 [p for p in passages if p.source_id == source.source_id],
             )
-    response = client.post(SAVE, json=body(request_id="authority-chain"))
+    response = client.post(SAVE, json=body(claim=passages[0].text, request_id="authority-chain"))
     assert response.status_code == 201, response.text
     saved = response.json()
     result = saved["snapshot"]["response"]
@@ -272,7 +280,8 @@ def test_expense_api_preserves_citations_and_abstains_on_authority(setup):
     assert item["supplied_judgements"]["authority_verified"] is None
     assert item["supplied_judgements"]["independence_verified"] is False
     proposal = result["proposals"][0]
-    assert proposal["authority_resolution"]["gaps"][0]["kind"] == "interpretation_limit"
+    assert proposal["authority_resolution"]["authority_verified"] is None
+    assert not all(c["passed"] for c in proposal["authority_resolution"]["checks"])
     for c in item["interpretation"]["citations"]:
         assert passage.text[c["start"] : c["end"]] == c["quotation"]
     passage.text += " Except urgent claims."

@@ -109,7 +109,7 @@ remain visible and do not imply exhaustive coverage.
 ## Verification
 
 The supplied baseline reproduced: 748 Python tests and 8 subtests passed.
-Current verification: 839 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
+Current verification: 852 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
 
 Added API tests cover bounded support, abstention, exact citations, original claim
 and facet binding, no matches, draft/non-approved/future/superseded/derived sources,
@@ -165,8 +165,7 @@ conditions or boundaries do not automatically establish contradiction.
 The context checker retains the itemised-receipt requirement and a non-overlapping
 manager permission at or below a stated amount. Unknown exceptions or overlapping
 permissions block automatic support. Full passage and exact focal quotations remain
-available. Expense-policy adoption/rights resolution is currently an interpretation
-limit, explicitly disclosed; operational wording alone never grants authority.
+available. Expense policies use the same explicit, dated adoption-and-rights checks as discount policies, with an explicit expense-claims scope. Operational wording alone never grants authority.
 
 `evaluation/approval_rules/cases.json` is a small, corpus-shaped development set,
 not an independent benchmark or a human-approved truth set. It includes discount
@@ -175,3 +174,17 @@ deployment-signoff cases that must remain unsupported. Run it with
 `pytest tests/test_expense_approval.py`. API coverage also verifies saved expense
 results, exact citations, authority abstention, exception handling and immutable
 history. The next rule families remain renewal caps and deployment sign-off.
+
+## Expense-policy authority follow-up
+
+The explicit authority grammar also accepts `for expense claims` in adoption and
+rights statements. It preserves version, actor, date, lifecycle, provenance and
+conflict gates. The threshold-change/version-history join remains discount-only.
+
+Inspection of local POL-07 found version 2.0 effective 2021-09-01 and operational
+approval rights, but no supported adoption-and-rights chain. MTG-09 deferred changes
+and selected no option; it is retained for review, never treated as adoption.
+New expense assessments now run the shared authority checks and retain linked
+records instead of stopping at a blanket unsupported-family message. Missing or
+unrecognised evidence remains unresolved. Complete expense chains are validated
+with synthetic fixtures, not asserted to exist in the local corpus.

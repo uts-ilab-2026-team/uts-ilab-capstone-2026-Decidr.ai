@@ -25,6 +25,14 @@ RIGHT = re.compile(
     rf"from (?P<start>{DAY}) through (?P<end>{DAY})\."
 )
 
+# The same explicit rights contract with an expense scope, never inferred from a title.
+EXPENSE_ADOPTION = re.compile(
+    ADOPTION.pattern.replace(rf"(?P<scope>{SCOPE}) deals", r"(?P<scope>expense claims)")
+)
+EXPENSE_RIGHT = re.compile(
+    RIGHT.pattern.replace(rf"(?P<scope>{SCOPE}) deals", r"(?P<scope>expense claims)")
+)
+
 
 def _quote(passage: Evidence) -> dict:
     return InterpretationCitation(
@@ -81,23 +89,13 @@ def resolve_authority(
     def check(name, passed, reason):
         result["checks"].append({"name": name, "passed": bool(passed), "reason": reason})
 
-    if parse_expense_rule(citation.quotation):
-        check(
-            "expense_adoption_rights",
-            False,
-            "Expense rule wording is supported, but automatic expense-policy adoption and rights resolution is not yet supported.",
-        )
-        result["gaps"] = [
-            {
-                "kind": "interpretation_limit",
-                "message": "Review dated adoption and policy-making rights for this expense policy; matching operational approval wording does not establish them.",
-            }
-        ]
-        return result
     code_match = re.match(rf"^({CODE})(?=\s|$)", source.title)
     rule = parse_approval_rule(citation.quotation)
+    expense = parse_expense_rule(citation.quotation)
+    scope = rule.deal_scope if rule else "expense claims"
+    scope_label = scope + " deals" if rule else scope
     release, separator, _ = source.source_id.partition(":")
-    if not code_match or not separator or not rule or not source.version:
+    if not code_match or not separator or not (rule or expense) or not source.version:
         check(
             "policy_identity",
             False,
@@ -177,7 +175,7 @@ def resolve_authority(
         ):
             relevant.append(p)
     result["citations"].extend(_quote(p) for p in relevant)
-    structured = structured_adoptions(source, rule, passages, sources)
+    structured = structured_adoptions(source, rule, passages, sources) if rule else {}
     result["adoption_findings"] = list(structured.values())
     extra_ids = {eid for finding in structured.values() for eid in finding["evidence_ids"]}
     quoted = {c["evidence_id"] for c in result["citations"]}
@@ -211,8 +209,10 @@ def resolve_authority(
             "none recorded at the time.",
         }:
             continue
-        adoption = ADOPTION.fullmatch(p.text.strip())
-        right = RIGHT.fullmatch(p.text.strip())
+        adoption_pattern = ADOPTION if rule else EXPENSE_ADOPTION
+        rights_pattern = RIGHT if rule else EXPENSE_RIGHT
+        adoption = adoption_pattern.fullmatch(p.text.strip())
+        right = rights_pattern.fullmatch(p.text.strip())
         try:
             if (adoption or p.evidence_id in structured) and s.source_type == "meeting":
                 values = adoption.groupdict() if adoption else structured[p.evidence_id]
@@ -226,7 +226,7 @@ def resolve_authority(
                     )
                     and values["code"] == code
                     and values["version"] == source.version
-                    and values["scope"].casefold() == rule.deal_scope
+                    and values["scope"].casefold() == scope
                     and effective == source.effective_start_date
                     and decision <= effective <= as_of
                     and _eligible(s, as_of)
@@ -244,7 +244,7 @@ def resolve_authority(
                     )
                     and values["code"] == code
                     and values["version"] == source.version
-                    and values["scope"].casefold() == rule.deal_scope
+                    and values["scope"].casefold() == scope
                     and start <= end
                 ):
                     rights.append((values, p, s, start, end))
@@ -342,11 +342,18 @@ def resolve_authority(
         result.update(status="documented_authority_resolved", authority_verified=True)
     else:
         result["review_guidance"] = []
+        if not adoptions:
+            result["review_guidance"].append(
+                f"Locate the adoption decision for {code} version {source.version} for {scope_label}, "
+                f"effective {source.effective_start_date}. Identify who adopted it, the decision date "
+                "and the dated grant or delegation authorising that person. Approval labels, "
+                "transaction-approval rights and deferred proposals do not establish adoption."
+            )
         quoted = {c["evidence_id"] for c in result["citations"]}
         for adoption, _, _, decision in adoptions:
             result["review_guidance"].append(
                 f"Verify whether {adoption['actor']} held authority to adopt {code} "
-                f"version {source.version} for {rule.deal_scope} deals on {decision.isoformat()}. "
+                f"version {source.version} for {scope_label} on {decision.isoformat()}. "
                 "Locate a dated grant or delegation covering that decision, including its scope, "
                 "effective period and any conditions or revocations. A sign-off records the act; "
                 "it does not by itself establish the right to perform it."
