@@ -98,3 +98,9 @@ def test_free_text_cannot_prove_timing_or_authority(notes):
     r = deployment_event_findings(EVENT, [audit(notes=notes)], date(2026, 10, 11))
     assert r[0]["status"] == "unresolved"
     assert "alone does not establish" in r[0]["message"]
+
+
+@pytest.mark.parametrize("padding", ["\n\n", " ", "\t\r\n"])
+def test_trailing_whitespace_does_not_change_rule(padding):
+    assert compare_approval_rules(RULE + padding, RULE)["evidence_entails_claim"]
+    assert compare_approval_rules(RULE, RULE + padding)["evidence_entails_claim"]

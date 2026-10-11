@@ -6,7 +6,9 @@ import re
 
 
 def parse_deployment_rule(text: str, heading: str | None = None) -> dict | None:
-    text = " ".join(text.casefold().replace("**", "").replace("’", "'").rstrip(".").split())
+    text = " ".join(
+        text.casefold().strip().replace("**", "").replace("’", "'").rstrip(".").split()
+    )
     m = re.fullmatch(
         r"production deployments touching customer billing require (?P<actor>head of engineering|his|her|their) sign-off before release",
         text,

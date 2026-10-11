@@ -336,7 +336,8 @@ def test_renewal_cap_saved_with_exact_context_and_unresolved_authority(setup, cu
     assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
 
 
-def test_deployment_rule_role_context_and_frozen_event_gap(setup):
+@pytest.mark.parametrize("padding", ["", "\n\n"])
+def test_deployment_rule_role_context_and_frozen_event_gap(setup, padding):
     from test_deployment_signoff import RULE as DEPLOY, EVENT, audit
 
     client, source, passage, store = setup
@@ -345,7 +346,8 @@ def test_deployment_rule_role_context_and_frozen_event_gap(setup):
     passage.heading = "Head of Engineering — Pat Jones"
     passage.text = DEPLOY.replace("Head of Engineering", "his")
     store()
-    r = client.post(URL, json=body(claim=DEPLOY)).json()
+    r = client.post(URL, json=body(claim=DEPLOY + padding)).json()
+    assert r["claim_text"] == DEPLOY + padding
     assert r["inputs"][0]["interpretation"]["stance"] == "support"
     assert not r["inputs"][0]["admitted_to_framework"]
     assert r["proposals"][0]["authority_resolution"]["authority_verified"] is None
