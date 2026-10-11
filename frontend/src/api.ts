@@ -311,3 +311,17 @@ export const saveAssessmentRevision = (body: {
   assessment: import("./suppliedAssessmentContract").SuppliedRequest;
   parent_run_id: string; revision_reason: string; request_id: string;
 }) => post<import("./AutomaticAssessment").AssessmentSnapshot>("/assessments", body);
+
+
+export interface SavedAssessmentSummary {
+  run_id: string; parent_run_id: string | null; created_at: string;
+  claim_text: string; facet: string; as_of: string; overall_outcome: string;
+  formal_outcome: string; observed_outcome: string; record_type: string;
+  review_status: string; snapshot_sha256: string;
+}
+export const getSavedAssessments = (offset: number) =>
+  request<{items: SavedAssessmentSummary[]}>(`/assessments?limit=20&offset=${offset}`);
+export const getSavedAssessment = (runId: string) =>
+  request<import("./AutomaticAssessment").AssessmentSnapshot & {
+    snapshot: { parent_run_id: string | null; created_at: string; record_type: string; revision_reason: string | null }
+  }>(`/assessments/${encodeURIComponent(runId)}`);

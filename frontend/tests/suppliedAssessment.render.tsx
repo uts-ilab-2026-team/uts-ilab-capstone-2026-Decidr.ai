@@ -155,3 +155,17 @@ test("documented authority checks distinguish resolved evidence from missing pro
   assert.ok(html.includes("Dated adoption rights match."));
   assert.ok(!html.includes("Authority remains unresolved."));
 });
+
+
+import { savedResultType, SavedRows } from "../src/SavedAssessments";
+import type { SavedAssessmentSummary } from "../src/api";
+test("saved dashboard preserves snapshot verdicts, dates and result origins", () => {
+  const original = { run_id: "original", parent_run_id: null, record_type: "automatic_assessment",
+    claim_text: "Original <claim>", as_of: "2025-03-01", created_at: "2026-10-11T00:00:00Z",
+    formal_outcome: "Insufficient evidence", observed_outcome: "Insufficient evidence" } as SavedAssessmentSummary;
+  const revision = {...original, run_id: "revision", parent_run_id: "original", record_type: "conditional_supplied_assessment", formal_outcome: "Supported", as_of: "2025-04-01"};
+  const html = renderToStaticMarkup(<SavedRows items={[revision, original]} onOpen={() => {}} />);
+  for (const text of ["Automatic result", "Human review revision", "conditional", "Supported", "Insufficient evidence", "2025-03-01", "2025-04-01", "Original &lt;claim&gt;"]) assert.ok(html.includes(text), text);
+  assert.equal(savedResultType({...original, record_type: "conditional_supplied_assessment"}), "Supplied assessment · review not established");
+  assert.ok(!html.includes("<claim>"));
+});

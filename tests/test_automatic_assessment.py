@@ -158,6 +158,16 @@ def test_frozen_history_retry_and_review_revision(setup):
     )
     assert reviewed.status_code == 201, reviewed.text
     assert reviewed.json()["snapshot"]["response"]["assessment"]["overall_outcome"] == "Supported"
+    summaries = {r["run_id"]: r for r in client.get("/api/assessments").json()["items"]}
+    original = summaries[snapshot["run_id"]]
+    revision = summaries[reviewed.json()["snapshot"]["run_id"]]
+    assert original["record_type"] == "automatic_assessment"
+    assert original["formal_outcome"] == snapshot["response"]["assessment"]["formal_outcome"]
+    assert original["observed_outcome"] == snapshot["response"]["assessment"]["observed_outcome"]
+    assert revision["parent_run_id"] == snapshot["run_id"]
+    assert revision["overall_outcome"] == "Supported"
+    assert original["overall_outcome"] == "Insufficient evidence"
+    assert len(client.get("/api/assessments?limit=1&offset=1").json()["items"]) == 1
     passage.text = "Changed after assessment."
     store()
     assert (
@@ -170,9 +180,11 @@ def test_frozen_history_retry_and_review_revision(setup):
         ]["overall_outcome"]
         == "Insufficient evidence"
     )
+    assert {r["run_id"]: r for r in client.get("/api/assessments").json()["items"]} == summaries
     assert client.post(SAVE, json={**request, "claim": "different"}).status_code == 409
     api.app.dependency_overrides[api.auth.current_user] = lambda: {"id": 2}
     assert client.get("/api/assessments/" + snapshot["run_id"]).status_code == 404
+    assert client.get("/api/assessments").json()["items"] == []
 
 
 def test_request_validation_and_authentication(setup):

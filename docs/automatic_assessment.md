@@ -109,7 +109,7 @@ remain visible and do not imply exhaustive coverage.
 ## Verification
 
 The supplied baseline reproduced: 748 Python tests and 8 subtests passed.
-Current verification: 852 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
+Current verification: 852 Python tests plus 8 subtests, 15 frontend tests, TypeScript checking, production build, lint and formatting passed.
 
 Added API tests cover bounded support, abstention, exact citations, original claim
 and facet binding, no matches, draft/non-approved/future/superseded/derived sources,
@@ -188,3 +188,18 @@ New expense assessments now run the shared authority checks and retain linked
 records instead of stopping at a blanket unsupported-family message. Missing or
 unrecognised evidence remains unresolved. Complete expense chains are validated
 with synthetic fixtures, not asserted to exist in the local corpus.
+
+## Dashboard and frozen history
+
+The main dashboard now lists the signed-in user's saved assessment snapshots,
+including original automatic results, conditional human-review revisions and older
+supplied assessments. Each row uses its own frozen formal/practice verdicts and
+assessment date. Revisions do not replace or relabel their parents. Opening a row
+fetches that exact owner-scoped snapshot and displays its saved citations, review
+reason, export link and preceding-snapshot link without running an assessment.
+
+History is paginated in groups of 20. Counts and search/outcome filters explicitly
+apply to the displayed page. The previous graph-register dashboard remains under
+“Register results (recalculated)” with its existing CSV export. Those results are
+recomputed register assessments, not saved automatic verdicts. History loading
+failures are shown rather than silently falling back to register results.
