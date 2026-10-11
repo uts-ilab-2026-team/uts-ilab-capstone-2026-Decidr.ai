@@ -80,12 +80,25 @@ not substitutes for policy-adoption rights. General paraphrases, implicit scope,
 role occupancy, transitive delegation and historical superseded authority sources
 remain unsupported. Do not rewrite corpus records just to fit this grammar.
 
-For the current Phase 2 POL-01 example, header checks pass. MTG-01 contains a
-threshold-change decision and sign-off, but the bounded resolver cannot establish
-an explicit version/scope-bound adoption with dated policy-adoption rights.
-The example therefore still abstains; linked meeting and role records remain
-visible alongside the failed checks. The positive path is validated with synthetic
-complete-chain fixtures, not claimed as validated authority for POL-01.
+The resolver also joins a policy's uniquely matching version-history row to a
+meeting's dated threshold decision, completed policy-update action, document
+owner and named sign-off. These must belong to the same agenda item and agree
+on policy identity, version, dates and thresholds. Rejected alternatives are not
+adopted decisions. Ambiguous histories, incomplete actions and qualifications
+remain unresolved. Exact quotations from every linked record are retained.
+
+For the local Phase 2 POL-01 example, header and documented adoption checks now
+pass: the version 3.0 history links to MTG-01 and Renata Voss's sign-off. Explicit,
+dated policy-adoption rights are still not established, and other relevant context
+requires review. The outcome therefore remains insufficient evidence. The UI
+separately explains the documented adoption and remaining gaps. Synthetic fixtures
+with explicit matching rights validate the positive path; they do not establish
+rights for real corpus actors.
+
+Complete discount-rule claims also accept plural wording and a scope-first form,
+while preserving all required fields and the original claim text. Missing scope,
+timing or approver is never silently supplied. This is a bounded interpreter, not
+a general natural-language authority solver.
 
 One corpus read transaction supplies retrieval, interpretation and scoring inputs.
 Saved runs freeze the full validated index so authority-context quotations are
@@ -96,7 +109,7 @@ remain visible and do not imply exhaustive coverage.
 ## Verification
 
 The supplied baseline reproduced: 748 Python tests and 8 subtests passed.
-Final verification: 797 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
+Current verification: 815 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
 
 Added API tests cover bounded support, abstention, exact citations, original claim
 and facet binding, no matches, draft/non-approved/future/superseded/derived sources,

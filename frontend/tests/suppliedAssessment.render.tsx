@@ -140,10 +140,15 @@ test("documented authority checks distinguish resolved evidence from missing pro
   const result = { status: "assessed_automatically", inputs: [item], assessment: { evidence: [] },
     proposals: [{ evidence_id: "rule", field_comparison: null,
       authority_resolution: { authority_verified: true, checks: [{ name: "rights", passed: true, reason: "Dated adoption rights match." }],
+        adoption_findings: [{method: "version-history-meeting-signoff-v1", decision: "2025-02-24", actor: "Alex Smith", version: "3.0"}],
+        gaps: [{kind: "evidence_gap", message: "Dated adoption rights need review."}],
         citations: [], limitations: ["Not independent authentication."] }, authority_context: {}, authority_links: {} }],
   } as unknown as SuppliedResult;
   const html = renderToStaticMarkup(<SuppliedEvidenceDetail result={result} item={item} />);
   assert.ok(html.includes("Documented authority resolved"));
+  assert.ok(html.includes("Documented adoption: version"));
+  assert.ok(html.includes("Alex Smith"));
+  assert.ok(html.includes("Dated adoption rights need review."));
   assert.ok(html.includes("Dated adoption rights match."));
   assert.ok(!html.includes("Authority remains unresolved."));
 });

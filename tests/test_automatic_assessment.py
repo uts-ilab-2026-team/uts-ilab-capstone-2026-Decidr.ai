@@ -217,12 +217,15 @@ def test_matching_rule_with_compatible_surroundings_is_explained_and_frozen(setu
     assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
 
 
-def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup):
+@pytest.mark.parametrize("structured", [False, True])
+def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup, structured):
     from test_authority_resolution import chain
     import os
     from pathlib import Path
 
-    sources, passages = chain()
+    from test_structured_adoption import structured_chain
+
+    sources, passages = structured_chain() if structured else chain()
     client, _, _, _ = setup
     with closing(connect(Path(os.environ["DECIDR_CORPUS_DB"]))) as connection, connection:
         for source in sources.values():

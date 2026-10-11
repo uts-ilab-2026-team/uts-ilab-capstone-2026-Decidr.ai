@@ -90,6 +90,8 @@ export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResul
         ? "Documented authority resolved from dated adoption and person-specific decision rights. This is not independent authentication."
         : "Authority remains unresolved. Document ownership, approval labels and transaction approval rights do not establish policy adoption rights."}</p>
       {proposal.authority_resolution && <details><summary>Authority checks and citations</summary>
+        {proposal.authority_resolution.adoption_findings?.map((finding, i) => <p key={i}>Documented adoption: version {finding.version}, decision dated {finding.decision}, sign-off by {finding.actor}. Adoption rights are checked separately.</p>)}
+        {proposal.authority_resolution.gaps?.map((gap, i) => <p key={i}>{gap.message}</p>)}
         <ul>{proposal.authority_resolution.checks.map(check => <li key={check.name}>
           <strong>{check.passed ? "Passed" : "Unresolved"}: </strong>{check.reason}
         </li>)}</ul>

@@ -6,6 +6,7 @@ import re
 from decidr.approval_propositions import parse_approval_rule
 from decidr.authority_context import _header_citations, authority_context
 from decidr.interpretation_models import InterpretationCitation
+from decidr.policy_adoption import structured_adoptions
 from decidr.retrieval_models import Evidence, Source
 
 NAME = r"[\w]+(?:[ '-][\w]+)*"
@@ -162,6 +163,11 @@ def resolve_authority(
         ):
             relevant.append(p)
     result["citations"].extend(_quote(p) for p in relevant)
+    structured = structured_adoptions(source, rule, passages, sources)
+    result["adoption_findings"] = list(structured.values())
+    extra_ids = {eid for finding in structured.values() for eid in finding["evidence_ids"]}
+    quoted = {c["evidence_id"] for c in result["citations"]}
+    result["citations"].extend(_quote(p) for p in passages if p.evidence_id in extra_ids - quoted)
     adoptions, rights, blockers = [], [], []
     for p in relevant:
         s = local_sources[p.source_id]
@@ -181,11 +187,21 @@ def resolve_authority(
             ):
                 blockers.append(p.evidence_id)
             continue
+        if (p.heading or "").casefold() in {
+            "conditions or exceptions",
+            "unresolved matters",
+            "exceptions",
+        } and p.text.strip().casefold() in {
+            "none.",
+            "none discussed or agreed.",
+            "none recorded at the time.",
+        }:
+            continue
         adoption = ADOPTION.fullmatch(p.text.strip())
         right = RIGHT.fullmatch(p.text.strip())
         try:
-            if adoption and s.source_type == "meeting":
-                values = adoption.groupdict()
+            if (adoption or p.evidence_id in structured) and s.source_type == "meeting":
+                values = adoption.groupdict() if adoption else structured[p.evidence_id]
                 decision, effective = (
                     date.fromisoformat(values["decision"]),
                     date.fromisoformat(values["effective"]),
@@ -249,7 +265,7 @@ def resolve_authority(
     check(
         "adoption",
         len(adoptions) == 1,
-        "Require one complete dated adoption statement naming the exact policy version and business scope.",
+        "Require one dated adoption linked to the policy version and scope, directly or through matching version history, completed actions and sign-off.",
     )
     chains = []
     for a, ap, adoption_source, decision in adoptions:
@@ -278,7 +294,36 @@ def resolve_authority(
         not blockers,
         "All relevant decision/right passages must be supported and consistent; unresolved records block verification.",
     )
-    result["blocking_evidence_ids"] = blockers
+    result["blocking_evidence_ids"] = list(dict.fromkeys(blockers))
+    result["gaps"] = []
+    if not adoptions:
+        result["gaps"].append(
+            {
+                "kind": "interpretation_limit" if relevant else "evidence_gap",
+                "message": "No dated adoption could be connected to this policy version and scope using the supported document structures.",
+            }
+        )
+    if not rights:
+        result["gaps"].append(
+            {
+                "kind": "evidence_gap",
+                "message": "No supported explicit, dated policy-adoption right was found. Transaction approval rights and titles do not establish this right; unrecognised wording may still require review.",
+            }
+        )
+    elif not chains:
+        result["gaps"].append(
+            {
+                "kind": "chain_mismatch",
+                "message": "The available rights do not form a valid dated chain to the adoption decision.",
+            }
+        )
+    if blockers:
+        result["gaps"].append(
+            {
+                "kind": "unresolved_context",
+                "message": "Other relevant records contain unrecognised or potentially conflicting context; they are retained for review, not treated as proven contradictions.",
+            }
+        )
     if all(c["passed"] for c in result["checks"]):
         result.update(status="documented_authority_resolved", authority_verified=True)
     return result

@@ -164,3 +164,22 @@ def test_engine_reports_changed_approver_as_unresolved():
     )
     assert result.stance == "unresolved"
     assert result.field_comparison["differences"] == ["approver"]
+
+
+@pytest.mark.parametrize(
+    "claim",
+    [
+        "Discounts of at least 15% off list price on new-business deals require written approval from Finance before deals are marked won.",
+        "For new-business deals, discounts of 15% or greater off list price require written approval from Finance before the deal is marked won.",
+    ],
+)
+def test_complete_natural_word_order_variants(claim):
+    rule = "Any discount of 15% or greater off list price on a new-business deal requires written approval from Finance before the deal is marked won."
+    assert compare_approval_rules(claim, rule)["evidence_entails_claim"]
+    assert not compare_approval_rules(claim.replace("Finance", "Sales"), rule)[
+        "evidence_entails_claim"
+    ]
+    assert not compare_approval_rules(
+        claim.replace("at least 15%", "above 15%").replace("15% or greater", "above 15%"),
+        rule.replace("15% or greater", "below 15%"),
+    )["evidence_entails_claim"]

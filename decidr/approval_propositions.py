@@ -1,6 +1,6 @@
 """Bounded comparison of complete percentage-discount approval requirements.
 
-Two explicit grammatical forms, arbitrary approver/scope/threshold/event values.
+Explicit complete grammatical forms, arbitrary approver/scope/threshold/event values.
 This is field comparison, not general entailment or organisational role resolution.
 """
 
@@ -27,6 +27,16 @@ class ApprovalRule:
 NUMBER = r"(?:0|[1-9]\d*)(?:\.\d+)?"
 THRESHOLD = rf"(?:(?:exactly|at least|above|below|at most) )?{NUMBER}\s*%(?: or (?:greater|more|less|fewer))?"
 PATTERNS = (
+    re.compile(
+        rf"discounts of (?P<threshold>{THRESHOLD}) off list price on "
+        r"(?P<scope>.+?) deals require (?P<written>written )?approval from "
+        r"(?P<approver>.+?) (?P<timing>before|after) (?:the deal is|deals are) marked (?P<event>.+)"
+    ),
+    re.compile(
+        r"for (?P<scope>.+?) deals, discounts of "
+        rf"(?P<threshold>{THRESHOLD}) off list price require (?P<written>written )?approval from "
+        r"(?P<approver>.+?) (?P<timing>before|after) (?:the deal is|deals are) marked (?P<event>.+)"
+    ),
     re.compile(
         rf"any discount of (?P<threshold>{THRESHOLD}) off list price on a "
         r"(?P<scope>.+?) deal requires (?P<written>written )?approval from "
