@@ -326,4 +326,45 @@ def resolve_authority(
         )
     if all(c["passed"] for c in result["checks"]):
         result.update(status="documented_authority_resolved", authority_verified=True)
+    else:
+        result["review_guidance"] = []
+        quoted = {c["evidence_id"] for c in result["citations"]}
+        for adoption, _, _, decision in adoptions:
+            result["review_guidance"].append(
+                f"Verify whether {adoption['actor']} held authority to adopt {code} "
+                f"version {source.version} for {rule.deal_scope} deals on {decision.isoformat()}. "
+                "Locate a dated grant or delegation covering that decision, including its scope, "
+                "effective period and any conditions or revocations. A sign-off records the act; "
+                "it does not by itself establish the right to perform it."
+            )
+            # Role records aid review only; heading matches never establish rights.
+            for p in passages:
+                role_source = local_sources.get(p.source_id)
+                heading = (p.heading or "").strip()
+                if (
+                    role_source
+                    and role_source.source_type
+                    in {"organisational_information", "role_description"}
+                    and heading.endswith(" — " + adoption["actor"])
+                ):
+                    if p.evidence_id not in quoted:
+                        result["citations"].append(_quote(p))
+                        quoted.add(p.evidence_id)
+                    result["review_guidance"].append(
+                        f"Role context: {p.evidence_id} ({role_source.source_id}). "
+                        "Retained for review only; role titles and general delegation do not "
+                        "establish policy-adoption rights. "
+                        + (
+                            "The source has no recorded creation date, so its availability at the decision date is not established."
+                            if not role_source.creation_date
+                            else "Check the record's applicability at the decision date."
+                        )
+                    )
+        if result["review_guidance"]:
+            result["review_guidance"].append(
+                "In Review this result, record the supporting source and passage identifiers, "
+                "applicable dates and reasoning in Judgement basis, then explain the change in "
+                "Reason for this review. If the evidence does not establish authority, leave it "
+                "Unresolved. Saving a review creates a separate revision; the automatic result is preserved."
+            )
     return result

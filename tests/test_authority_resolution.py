@@ -191,3 +191,65 @@ def test_revocation_in_another_heading_blocks_resolution(heading):
         )
     )
     assert resolve(sources, passages)["authority_verified"] is None
+
+
+def test_review_guidance_uses_policy_actor_scope_and_date_without_granting_rights():
+    sources, passages = chain()
+    passages = [p for p in passages if p.evidence_id != "rights"]
+    role = sources["test:rights"]
+    role.creation_date = None
+    context = passages[0].model_copy(
+        update={
+            "evidence_id": "actor-role",
+            "source_id": role.source_id,
+            "heading": "CEO — Alex Smith",
+            "text": "General operational authority is delegated to function heads.",
+        }
+    )
+    passages.append(context)
+    result = resolve(sources, passages)
+    assert result["authority_verified"] is None
+    guidance = " ".join(result["review_guidance"])
+    assert (
+        "Alex Smith held authority to adopt POL-01 version 3.0 for new-business deals on 2025-02-24"
+        in guidance
+    )
+    assert "no recorded creation date" in guidance
+    assert "leave it Unresolved" in guidance
+    citation = next(c for c in result["citations"] if c["evidence_id"] == "actor-role")
+    assert citation["quotation"] == context.text[citation["start"] : citation["end"]]
+
+
+@pytest.mark.parametrize("has_rights", [False, True])
+def test_review_guidance_is_not_bound_to_one_policy_or_person(has_rights):
+    sources, passages = chain()
+    # Move the entire fixture to another policy, actor and release.
+    sources = {
+        k.replace("test:", "other:").replace("POL-01", "POL-42"): s.model_copy(
+            update={
+                "source_id": s.source_id.replace("test:", "other:").replace("POL-01", "POL-42"),
+                "title": s.title.replace("POL-01", "POL-42"),
+            }
+        )
+        for k, s in sources.items()
+    }
+    passages = [
+        p.model_copy(
+            update={
+                "source_id": p.source_id.replace("test:", "other:").replace("POL-01", "POL-42"),
+                "text": p.text.replace("POL-01", "POL-42").replace("Alex Smith", "Jamie Lee"),
+            }
+        )
+        for p in passages
+        if has_rights or p.evidence_id != "rights"
+    ]
+    result = resolve(sources, passages)
+    if has_rights:
+        assert result["authority_verified"] is True
+        assert "review_guidance" not in result
+        return
+    assert result["authority_verified"] is None
+    guidance = " ".join(result["review_guidance"])
+    assert "Jamie Lee held authority to adopt POL-42" in guidance
+    assert "POL-01" not in guidance
+    assert "Alex Smith" not in guidance

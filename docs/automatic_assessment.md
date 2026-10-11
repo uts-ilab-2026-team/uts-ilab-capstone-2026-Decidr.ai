@@ -109,7 +109,7 @@ remain visible and do not imply exhaustive coverage.
 ## Verification
 
 The supplied baseline reproduced: 748 Python tests and 8 subtests passed.
-Current verification: 815 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
+Current verification: 818 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
 
 Added API tests cover bounded support, abstention, exact citations, original claim
 and facet binding, no matches, draft/non-approved/future/superseded/derived sources,
@@ -132,3 +132,24 @@ A live browser interaction/visual comparison and evaluation against an external
 production corpus were not performed. No production corpus is in this archive.
 
 The POL-01 regression was also replayed read-only against the local Phase 2 corpus using the exported claim and date: its rule is now support, with authority as its remaining admission blocker. Existing saved runs retain their original results.
+
+## Reviewing missing adoption rights
+
+When adoption is documented but authority remains unresolved, the result now
+states the actual policy code, version, scope, decision-maker and decision date
+that need verification. Matching named role sections from the same release are
+retained as exact review citations, including undated records. These additional
+citations never establish authority or independence automatically.
+
+The local POL-01 replay found a CEO role record describing strategic authority
+and broad operational delegation, and Finance records describing transaction
+approval. These do not establish a dated policy-adoption grant. The CEO role
+source has no recorded creation date. Review guidance asks for the applicable
+grant/delegation, dates, scope and qualifications, and directs reviewers to record
+source/passage identifiers and reasoning in the existing review form. Missing
+proof stays unresolved; a human revision preserves the automatic snapshot.
+
+The guidance is derived from evidence fields, not a POL-01 special case. Tests
+also exercise POL-42 with a different actor and release, both with and without
+explicit matching rights. Rule recognition remains limited to the supported
+discount-approval grammar and adoption structures described above.

@@ -68,7 +68,7 @@ export default function AutomaticAssessment({ claim, expectedFacet, onDetailChan
       <SuppliedResultView key={record.snapshot.run_id} result={record.snapshot.response} onDetailChange={open => { setDetail(open); onDetailChange?.(open); }} />
       <details className="ev-card" hidden={detail}>
         <summary>Review this result</summary>
-        <p>Inspect the exact citations above before changing a judgement. Revisions assess the current corpus; the previous snapshot stays unchanged. Confirm authority only with evidence of adoption or delegation for this scope and date.</p>
+        <p>Inspect the exact citations above before changing a judgement. Revisions assess the current corpus; the previous snapshot stays unchanged. Confirm authority only with evidence of adoption rights or delegation for this scope and date. In Judgement basis, identify the supporting source, passage and applicable dates. If evidence is missing, leave authority Unresolved and explain the gap.</p>
         {inputs.map((item, index) => <fieldset key={index} disabled={busy}>
           <legend>Evidence {index + 1}</legend>
           <p>{item.rationale}</p>

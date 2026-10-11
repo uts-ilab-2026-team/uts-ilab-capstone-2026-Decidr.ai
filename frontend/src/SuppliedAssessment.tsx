@@ -92,6 +92,7 @@ export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResul
       {proposal.authority_resolution && <details><summary>Authority checks and citations</summary>
         {proposal.authority_resolution.adoption_findings?.map((finding, i) => <p key={i}>Documented adoption: version {finding.version}, decision dated {finding.decision}, sign-off by {finding.actor}. Adoption rights are checked separately.</p>)}
         {proposal.authority_resolution.gaps?.map((gap, i) => <p key={i}>{gap.message}</p>)}
+        {Boolean(proposal.authority_resolution.review_guidance?.length) && <section><h4>What to verify next</h4><ul>{proposal.authority_resolution.review_guidance?.map((step, i) => <li key={i}>{step}</li>)}</ul></section>}
         <ul>{proposal.authority_resolution.checks.map(check => <li key={check.name}>
           <strong>{check.passed ? "Passed" : "Unresolved"}: </strong>{check.reason}
         </li>)}</ul>

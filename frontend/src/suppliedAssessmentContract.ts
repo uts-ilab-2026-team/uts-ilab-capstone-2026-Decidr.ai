@@ -43,7 +43,7 @@ export interface SuppliedResult {
   limitations: string[];
   rule_comparison?: { status: string; message: string; notice: string; matching_evidence_ids: string[] };
   proposals?: {
-    authority_resolution?: { status: string; authority_verified: boolean | null; adoption_findings?: { method: string; decision: string; actor: string; version: string }[]; gaps?: { kind: string; message: string }[]; checks: { name: string; passed: boolean; reason: string }[]; citations: Citation[]; limitations: string[] };
+    authority_resolution?: { status: string; authority_verified: boolean | null; adoption_findings?: { method: string; decision: string; actor: string; version: string }[]; gaps?: { kind: string; message: string }[]; review_guidance?: string[]; checks: { name: string; passed: boolean; reason: string }[]; citations: Citation[]; limitations: string[] };
     passage_context?: { compatible: boolean; limitation: string; citation: Citation; clauses: { text: string; compatible: boolean; reason: string }[] };
     evidence_id: string;
     field_comparison: { differences: string[]; evidence_entails_claim: boolean } | null;
