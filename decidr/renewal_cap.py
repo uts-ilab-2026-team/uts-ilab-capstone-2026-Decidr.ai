@@ -11,7 +11,7 @@ PATTERN = re.compile(
 
 def parse_renewal_cap(text: str) -> dict | None:
     text = re.sub(r"^\d+[.)]\s+", "", text.casefold().strip())
-    text = " ".join(text.replace("**", "").replace("`", "").rstrip(".").split())
+    text = " ".join(text.replace("**", "").replace("`", "").replace("’", "'").rstrip(".").split())
     match = PATTERN.fullmatch(text)
     if not match or not 0 <= Decimal(match["cap"]) <= 100:
         return None

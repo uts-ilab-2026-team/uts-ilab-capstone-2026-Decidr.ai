@@ -306,16 +306,19 @@ def test_expense_api_preserves_citations_and_abstains_on_authority(setup):
     assert fresh["inputs"][0]["interpretation"]["stance"] == "unresolved"
 
 
-def test_renewal_cap_saved_with_exact_context_and_unresolved_authority(setup):
+@pytest.mark.parametrize("curly", [False, True])
+def test_renewal_cap_saved_with_exact_context_and_unresolved_authority(setup, curly):
     from test_renewal_cap import RULE as CAP, CONTEXT
 
     client, _, passage, store = setup
     passage.text = "1. " + CAP + CONTEXT
     store()
-    response = client.post(SAVE, json=body(claim=CAP, request_id="renewal-cap"))
+    claim = CAP.replace("account's", "account’s") if curly else CAP
+    response = client.post(SAVE, json=body(claim=claim, request_id="renewal-cap"))
     assert response.status_code == 201, response.text
     saved = response.json()
     r = saved["snapshot"]["response"]
+    assert r["claim_text"] == claim
     item = r["inputs"][0]
     assert item["interpretation"]["stance"] == "support"
     assert item["interpretation"]["mode"] == "formal"

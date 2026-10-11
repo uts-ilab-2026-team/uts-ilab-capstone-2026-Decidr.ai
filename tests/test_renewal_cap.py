@@ -72,3 +72,9 @@ def test_renewal_authority_cannot_come_from_title_or_operational_rights():
     r = resolve(sources, passages)
     assert r["authority_verified"] is None
     assert "for renewal discounts on" in " ".join(r["review_guidance"])
+
+
+def test_typographic_apostrophe_is_equivalent():
+    curly = RULE.replace("account's", "account’s")
+    assert compare_approval_rules(curly, RULE)["evidence_entails_claim"]
+    assert compare_approval_rules(RULE, curly)["evidence_entails_claim"]
