@@ -1,0 +1,41 @@
+{
+  "case_id": "C01-03--discount_condition",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "ef4e3e01562b109b389b95de31eba9015ae2d2726e52f8664fe5828951f2c63a",
+  "method_version": "llama31-facet-pilot-v2",
+  "status": "classified",
+  "relationship": "support",
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "discount_condition",
+    "stance": "support",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the statement \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" The context passage clarifies that this rule has been in place since the threshold was bumped last year, but does not replace the focal passage with a different proposition.",
+    "citations": [
+      {
+        "evidence_id": "EV-b3ada77a1695b325",
+        "source_id": "phase2:INT-02",
+        "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:001",
+        "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.",
+        "start": 24,
+        "end": 120
+      }
+    ]
+  },
+  "prompt_tokens": 3845,
+  "generated_tokens": 172,
+  "completion_reason": "stop",
+  "raw_model_content": "{\n  \"stance\": \"support\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the statement \\\"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\\\" The context passage clarifies that this rule has been in place since the threshold was bumped last year, but does not replace the focal passage with a different proposition.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-b3ada77a1695b325\",\n      \"quotation\": \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\"\n    }\n  ]\n}",
+  "raw_proposal": {
+    "stance": "support",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the statement \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" The context passage clarifies that this rule has been in place since the threshold was bumped last year, but does not replace the focal passage with a different proposition.",
+    "citations": [
+      {
+        "evidence_id": "EV-b3ada77a1695b325",
+        "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year."
+      }
+    ]
+  },
+  "elapsed_seconds": 6.64
+}

@@ -177,7 +177,9 @@ def scope_context(
             status="scope_supplied", facet=f"{claim}\n\nScope supplied by user: {answer}"
         )
         return result
-    if EXPLICIT_SCOPE.search(claim) or RECORD_ID.search(claim):
+    from decidr.transaction_claims import parse_transaction_claim
+
+    if parse_transaction_claim(claim) or EXPLICIT_SCOPE.search(claim) or RECORD_ID.search(claim):
         return result
     for rule in RULES:
         if not re.search(rule.trigger, claim, re.IGNORECASE | re.DOTALL):

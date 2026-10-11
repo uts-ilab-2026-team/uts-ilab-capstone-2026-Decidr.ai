@@ -226,6 +226,10 @@ def infer_mode(text: str) -> Mode:
 
 
 def infer_target(text: str, mode: Mode | None = None) -> AssessmentTarget:
+    from decidr.transaction_claims import parse_transaction_claim
+
+    if parse_transaction_claim(text):
+        return "underlying_event"
     lowered = _lower(text)
     if re.search(r"\b(reported|said|told|stated|wrote|asked|according to)\b", lowered):
         return "recorded_statement"

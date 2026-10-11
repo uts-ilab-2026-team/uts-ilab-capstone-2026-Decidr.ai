@@ -1,0 +1,40 @@
+{
+  "case_id": "C01-06--approval_timing",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "b17035d4cf0e333aac43e1492dc3e79d7df2eab87d077eb0321ddbb266b63390",
+  "method_version": "llama31-facet-pilot-v1",
+  "status": "classified",
+  "relationship": "qualify",
+  "prompt_tokens": 3280,
+  "generated_tokens": 154,
+  "completion_reason": "stop",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal evidence suggests that the approval threshold for discounts above 15% is being raised from 10% to 15%, but it does not establish that Finance (Head of Finance & People Ops) approval is required before the deal is closed. The relevant passage states that the approval threshold is being raised, but it does not mention the timing of the approval.",
+    "citations": [
+      {
+        "evidence_id": "EV-a126ba875f4418df",
+        "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01."
+      }
+    ]
+  },
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_timing",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal evidence suggests that the approval threshold for discounts above 15% is being raised from 10% to 15%, but it does not establish that Finance (Head of Finance & People Ops) approval is required before the deal is closed. The relevant passage states that the approval threshold is being raised, but it does not mention the timing of the approval.",
+    "citations": [
+      {
+        "evidence_id": "EV-a126ba875f4418df",
+        "source_id": "phase2:MTG-01",
+        "locator": "heading:MTG-01 — Discount Policy Review > Final decision#block:001",
+        "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01.",
+        "start": 0,
+        "end": 75
+      }
+    ]
+  },
+  "elapsed_seconds": 6.17
+}

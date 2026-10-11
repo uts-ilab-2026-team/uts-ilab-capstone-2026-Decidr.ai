@@ -170,6 +170,7 @@ def corpus_search(request: CorpusSearchRequest) -> dict:
             "Additional linked groups are outside the ranked-group limit.",
             "Temporal applicability and credibility have not been assessed.",
             "Search results are not exhaustive evidence coverage.",
+            "When record identifiers are supplied, displayed groups require explicit identifier links; unrelated keyword matches are omitted.",
         ],
     }
 

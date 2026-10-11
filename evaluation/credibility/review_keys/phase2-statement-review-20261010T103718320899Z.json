@@ -1,0 +1,47 @@
+{
+  "packet_id": "phase2-statement-review-20261010T103718320899Z",
+  "packet_sha256": "a2f6aa07a08e5515e58d84ddbbea45a7c79f654d7eb0524a0b1bcdd2dfa8162e",
+  "original_inputs_sha256": "6badae0eb09de9268cb0a19f08134ace82c9f720fa71d3e15821089824abdc0e",
+  "mapping": [
+    {
+      "review_id": "R01",
+      "original_case_id": "reported_practice--broader",
+      "input_sha256": "ecdb77c69b999e23cfbfbb5a62c821374becc7b5d72fb8c0476f1dfe273b85c1"
+    },
+    {
+      "review_id": "R02",
+      "original_case_id": "reported_practice--narrow",
+      "input_sha256": "bf480ee64bd7a28e1502f065dbcf5f81c0d06f1872080ccf57ab77949bf3a0a7"
+    },
+    {
+      "review_id": "R03",
+      "original_case_id": "limited_visibility--narrow",
+      "input_sha256": "828b493887934215548ec8f205e78ca6d2677d49ac89c22695363e0e7104f0a4"
+    },
+    {
+      "review_id": "R04",
+      "original_case_id": "instruction_vs_completion--broader",
+      "input_sha256": "be1e42316556df39bb9661aa665405b5e3598b2556071b94ccef9bc23aad9e82"
+    },
+    {
+      "review_id": "R05",
+      "original_case_id": "communication_vs_policy--broader",
+      "input_sha256": "9d5352184bb964532f3e980a576bf7fed25b89676df6575de537937b5942a97b"
+    },
+    {
+      "review_id": "R06",
+      "original_case_id": "instruction_vs_completion--narrow",
+      "input_sha256": "ae8821763e4f304c31fa3e1e0b214b90eb604604bc1a6302e2f84b34a7797823"
+    },
+    {
+      "review_id": "R07",
+      "original_case_id": "communication_vs_policy--narrow",
+      "input_sha256": "406c7ce1f2309a6e4731e92eadb9fb836db782665e582ebed07bb60a5d986857"
+    },
+    {
+      "review_id": "R08",
+      "original_case_id": "limited_visibility--broader",
+      "input_sha256": "e584bdb083ba41510ff782aa7021313a0b7a4e1c1c20f384d359ced39cdb6553"
+    }
+  ]
+}

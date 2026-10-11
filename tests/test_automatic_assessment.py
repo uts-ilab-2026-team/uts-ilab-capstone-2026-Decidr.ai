@@ -23,6 +23,8 @@ SAVE = "/api/assessments/automatic"
 
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
+    # These tests pin the legacy deterministic engine; general-provider integration is separate.
+    monkeypatch.setenv("DECIDR_ASSESSMENT_PROVIDER", "bounded")
     path = tmp_path / "corpus.sqlite"
     initialise_database(path)
     source = Source(
@@ -360,7 +362,8 @@ def test_deployment_rule_role_context_and_frozen_event_gap(setup, padding):
     assert response.status_code == 201, response.text
     saved = response.json()
     result = saved["snapshot"]["response"]
-    assert result["assessment"]["overall_outcome"] == "Insufficient evidence"
+    assert result["assessment"]["overall_outcome"] == "Not assessed automatically"
+    assert result["credibility_assessment"]["overall_outcome"] == "Insufficient evidence"
     assert result["deployment_event_findings"][0]["status"] == "unresolved"
     assert all(
         x["interpretation"]["stance"] not in {"support", "contradict"} for x in result["inputs"]
@@ -396,3 +399,402 @@ def test_automatic_difference_explains_field_without_inventing_contradiction(set
     assert item["interpretation"]["stance"] == "unresolved"
     assert "approver" in item["interpretation"]["rationale"]
     assert "does not prove contradiction" in item["interpretation"]["rationale"]
+
+
+def test_practice_findings_scan_frozen_records_without_changing_formal_target(setup):
+    import json
+
+    client, source, passage, store = setup
+    source.source_type = "project_tasks"
+    passage.source_type = "project_tasks"
+    passage.locator = "csv:row:2"
+    passage.text = json.dumps(
+        {
+            "task_id": "UNSEEN-22",
+            "process_or_capability": "Expense Approval",
+            "expense_amount": "930",
+            "currency": "€",
+            "reimbursement_date": "2026-06-10",
+            "payment_status": "reimbursed",
+            "approval_date": "2026-06-12",
+            "approval_role": "Regional Finance",
+            "approval_status": "approved",
+        }
+    )
+    store()
+    claim = "Expense claims over €725 require approval from Regional Finance before reimbursement is processed."
+    result = client.post(SAVE, json=body(claim=claim, request_id="practice-run")).json()
+    response = result["snapshot"]["response"]
+    assert response["assessment_target"] == "formal_rule"
+    assert response["assessment"]["formal_outcome"] == "Insufficient evidence"
+    finding = response["practice_assessment"]["findings"][0]
+    assert finding["status"] == "recorded_departure"
+    assert finding["citation"]["quotation"] == passage.text
+    passage.text = "changed after saving"
+    store()
+    saved = client.get("/api/assessments/" + result["snapshot"]["run_id"]).json()
+    assert saved == result
+
+
+def test_transaction_claim_is_classified_and_saved_with_partial_result(setup):
+    import json
+
+    client, source, passage, store = setup
+    source.source_type = passage.source_type = "crm_records"
+    passage.row_identifier = "SALE-972"
+    passage.locator = "csv:row:2"
+    passage.text = json.dumps(
+        {
+            "deal_id": "SALE-972",
+            "discount_pct": "32",
+            "approval_role": "Alex Chen",
+            "approval_record": "Approved via Slack",
+            "close_date": "2026-04-02",
+        }
+    )
+    store()
+    claim = "SALE-972 Alex approved 32% discount before the contract was signed."
+    saved = client.post(SAVE, json=body(claim=claim, request_id="transaction-run"))
+    assert saved.status_code == 201, saved.text
+    result = saved.json()
+    response = result["snapshot"]["response"]
+    assert response["claim_text"] == claim
+    assert response["assessment_target"] == "underlying_event"
+    assert "rule_comparison" not in response
+    assert response["transaction_assessment"]["status"] == "partially_supported"
+    assert response["transaction_assessment"]["citations"][0]["quotation"] == passage.text
+    passage.text = "changed"
+    store()
+    assert client.get("/api/assessments/" + result["snapshot"]["run_id"]).json() == result
+
+
+def test_connected_evidence_saved_with_exact_citations(setup):
+    client, _, passage, _ = setup
+    saved = client.post(SAVE, json=body(request_id="connected-run"))
+    assert saved.status_code == 201, saved.text
+    result = saved.json()
+    report = result["snapshot"]["response"]["evidence_synthesis"]
+    assert report["counts"]["formal"] == 1
+    assert report["nodes"][0]["citation"]["quotation"] == passage.text
+    assert client.get("/api/assessments/" + result["snapshot"]["run_id"]).json() == result
+
+
+def test_record_primary_conclusion_consistent_with_history_and_separate_credibility(setup):
+    import json
+
+    client, source, passage, store = setup
+    source.source_type = passage.source_type = "crm_records"
+    passage.row_identifier = "SALE-972"
+    passage.text = json.dumps(
+        {
+            "deal_id": "SALE-972",
+            "discount_pct": "32",
+            "approval_role": "Alex Chen",
+            "approval_record": "Approved via Slack",
+        }
+    )
+    store()
+    saved = client.post(
+        SAVE, json=body(claim="SALE-972 Alex approved 32% discount", request_id="conclusion-run")
+    ).json()
+    response = saved["snapshot"]["response"]
+    assert response["claim_conclusion"]["status"] == "supported_by_records"
+    assert response["assessment"]["overall_outcome"] == response["claim_conclusion"]["label"]
+    assert response["credibility_assessment"]["overall_outcome"] == "Insufficient evidence"
+    assert response["inputs"][0]["interpretation"]["stance"] == "support"
+    assert "approval rule" not in response["inputs"][0]["interpretation"]["rationale"]
+    rows = client.get("/api/assessments").json()["items"]
+    assert rows[0]["claim_conclusion"] == response["claim_conclusion"]
+    assert rows[0]["overall_outcome"] == response["assessment"]["overall_outcome"]
+    assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
+
+
+@pytest.mark.parametrize(
+    "claim,changes,expected",
+    [
+        (
+            "For SALE-972, the 32% discount was approved by Alex before signing.",
+            {},
+            "partially_supported",
+        ),
+        (
+            "Alex authorised a 32% discount for SALE-972 before the contract was signed.",
+            {},
+            "partially_supported",
+        ),
+        (
+            "SALE-972 Alex approved 32% discount",
+            {"approval_status": "not approved", "approval_record": "Recorded in approvals"},
+            "contradicted_by_records",
+        ),
+        (
+            "SALE-972 Alex approved 32% discount",
+            {"approval_status": "", "approval_record": "Awaiting sign-off"},
+            "partially_supported",
+        ),
+    ],
+)
+def test_event_components_drive_primary_saved_and_list_outcomes(setup, claim, changes, expected):
+    import json
+
+    client, source, passage, store = setup
+    source.source_type = passage.source_type = "crm_records"
+    passage.row_identifier = "SALE-972"
+    passage.text = json.dumps(
+        {
+            "deal_id": "SALE-972",
+            "discount_pct": "32",
+            "approval_role": "Alex Chen",
+            "approval_status": "approved",
+            **changes,
+        }
+    )
+    store()
+    saved = client.post(SAVE, json=body(claim=claim, request_id="event-regression")).json()
+    r = saved["snapshot"]["response"]
+    assert r["transaction_assessment"]["status"] == expected
+    assert r["assessment"]["basis"] == "transaction_components_v1"
+    assert r["assessment"]["overall_outcome"] == r["claim_conclusion"]["label"]
+    assert r["assessment"]["components"] == r["transaction_assessment"]["components"]
+    assert r["credibility_assessment"]["overall_outcome"] == "Insufficient evidence"
+    assert all(
+        "complete approval rule" not in i["interpretation"]["rationale"] for i in r["inputs"]
+    )
+    listed = client.get("/api/assessments").json()["items"][0]
+    assert listed["overall_outcome"] == r["assessment"]["overall_outcome"]
+    assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
+
+
+@pytest.mark.parametrize(
+    "scope,expected",
+    [("All deal types", "supported_by_records"), ("Renewals only", "partially_supported")],
+)
+def test_no_id_channel_claim_with_optional_scope_saves_component_outcome(setup, scope, expected):
+    import json
+
+    client, source, passage, store = setup
+    source.source_type = passage.source_type = "crm_records"
+    passage.row_identifier = "SALE-972"
+    passage.text = json.dumps(
+        {
+            "deal_id": "SALE-972",
+            "discount_pct": "32",
+            "approval_role": "Alex Chen (exception)",
+            "approval_record": "Recorded outside CRM (Teams)",
+            "notes": "Same-day exception approved by Alex — urgent request.",
+            "close_date": "2026-04-02",
+        }
+    )
+    store()
+    claim = "Alex approved  32% discount on teams\n\n"
+    facet = claim + "\n\nScope supplied by user: " + scope
+    saved = client.post(SAVE, json=body(claim=claim, facet=facet, request_id="channel-event"))
+    assert saved.status_code == 201, saved.text
+    result = saved.json()
+    response = result["snapshot"]["response"]
+    assert response["claim_text"] == claim
+    assert response["facet"] == facet
+    assert response["transaction_assessment"]["status"] == expected
+    assert response["assessment"]["overall_outcome"] == response["claim_conclusion"]["label"]
+    assert response["assessment"]["basis"] == "transaction_components_v1"
+    assert response["transaction_assessment"]["citations"][0]["quotation"] == passage.text
+    assert client.get("/api/assessments/" + result["snapshot"]["run_id"]).json() == result
+
+
+@pytest.mark.parametrize(
+    "changes,expected",
+    [
+        ({}, "supported_by_records"),
+        ({"contract_signed_date": ""}, "partially_supported"),
+        ({"discount_pct": "9"}, "contradicted_by_records"),
+        (
+            {"approval_status": "pending", "approval_record": "Approved via email"},
+            "conflicting_records",
+        ),
+        ({"approval_status": "not approved"}, "contradicted_by_records"),
+    ],
+)
+def test_primary_result_matches_preview_snapshot_export_and_history(setup, changes, expected):
+    import copy
+    import json
+
+    from decidr.assessment_history import content_hash
+
+    client, source, passage, store = setup
+    source.source_type = passage.source_type = "crm_records"
+    passage.row_identifier = "ORDER-530"
+    passage.text = json.dumps(
+        {
+            "deal_id": "ORDER-530",
+            "discount_pct": "41",
+            "approval_role": "Sam Patel",
+            "approval_status": "approved",
+            "approval_date": "2026-04-01",
+            "contract_signed_date": "2026-04-03",
+            **changes,
+        }
+    )
+    store()
+    query = body(
+        claim="The 41% discount for ORDER-530 was authorised by Sam Patel before signing."
+    )
+    preview = client.post(URL, json=query).json()
+    response = client.post(SAVE, json={**query, "request_id": "consistent-result"})
+    assert response.status_code == 201, response.text
+    saved = response.json()
+    snapshot = saved["snapshot"]
+    primary = snapshot["response"]["assessment"]
+    assert snapshot["response"]["claim_conclusion"]["status"] == expected
+    assert primary == preview["assessment"]
+    assert snapshot["response"]["claim_conclusion"]["label"] == primary["overall_outcome"]
+    summary = client.get("/api/assessments").json()["items"][0]
+    assert (
+        summary["overall_outcome"]
+        == summary["claim_conclusion"]["label"]
+        == primary["overall_outcome"]
+    )
+    run_id = snapshot["run_id"]
+    assert client.get(f"/api/assessments/{run_id}/export").json() == saved
+    assert content_hash(snapshot) == saved["snapshot_sha256"]
+    packet = copy.deepcopy(snapshot["request"])
+    packet["inputs"][0]["judgement_basis"] = "Reviewer retained unresolved source verification."
+    revision = client.post(
+        "/api/assessments",
+        json={
+            "request_id": "review-consistent-result",
+            "parent_run_id": run_id,
+            "revision_reason": "Reviewed recorded assertions without asserting authenticity.",
+            "assessment": packet,
+        },
+    )
+    assert revision.status_code == 201, revision.text
+    assert revision.json()["snapshot"]["parent_snapshot_sha256"] == saved["snapshot_sha256"]
+    passage.text = "Changed corpus content."
+    store()
+    assert client.get(f"/api/assessments/{run_id}/export").json() == saved
+
+
+def test_component_evidence_missing_from_ranked_proposals_is_added_for_review(setup, monkeypatch):
+    import json
+
+    module = importlib.import_module("decidr.api.automatic_assessment")
+    original = module.build_interpretation
+
+    def drop_ranked_proposals(*args, **kwargs):
+        draft = original(*args, **kwargs)
+        draft["proposals"] = []
+        return draft
+
+    client, source, passage, store = setup
+    source.source_type = passage.source_type = "crm_records"
+    passage.row_identifier = "ORDER-530"
+    passage.text = json.dumps(
+        {
+            "deal_id": "ORDER-530",
+            "discount_pct": "41",
+            "approval_role": "Sam Patel",
+            "approval_status": "approved",
+        }
+    )
+    store()
+    monkeypatch.setattr(module, "build_interpretation", drop_ranked_proposals)
+    r = client.post(URL, json=body(claim="ORDER-530 Sam Patel approved 41% discount")).json()
+    assert r["claim_conclusion"]["status"] == "supported_by_records"
+    assert len(r["inputs"]) == 1
+    assert r["inputs"][0]["interpretation"]["stance"] == "support"
+    assert r["inputs"][0]["interpretation"]["citations"][0]["quotation"] == passage.text
+
+
+def test_unrecognised_event_is_interpretation_gap_not_an_evidence_verdict(setup):
+    client, _, _, _ = setup
+    result = client.post(
+        SAVE,
+        json=body(
+            claim="Alex approved 32% discount and the customer paid in full.",
+            assessment_target="underlying_event",
+            request_id="unsupported-event",
+        ),
+    ).json()
+    response = result["snapshot"]["response"]
+    assert response["assessment"]["overall_outcome"] == "Not assessed automatically"
+    assert response["claim_conclusion"]["status"] == "unsupported_interpretation"
+    assert response["assurance"]["outcome_basis"] == "interpretation_incomplete"
+    assert "rule_comparison" not in response
+    assert all(
+        "complete approval rule" not in item["interpretation"]["rationale"]
+        for item in response["inputs"]
+    )
+    summary = client.get("/api/assessments").json()["items"][0]
+    assert summary["overall_outcome"] == response["assessment"]["overall_outcome"]
+
+
+@pytest.mark.parametrize(
+    "deal_type,scope_status,scope_gate,outcome",
+    [
+        ("new business", "supported", True, "supported_by_records"),
+        ("renewal", "contradicted", False, "contradicted_by_records"),
+        (None, "unresolved", None, "partially_supported"),
+    ],
+)
+def test_resolved_event_scope_and_graph_use_same_cited_record(
+    setup, deal_type, scope_status, scope_gate, outcome
+):
+    import json
+
+    client, source, passage, store = setup
+    source.source_type = passage.source_type = "crm_records"
+    passage.row_identifier = "ORDER-530"
+    row = {
+        "deal_id": "ORDER-530",
+        "discount_pct": "41",
+        "approval_role": "Sam Patel",
+        "approval_status": "approved",
+        "approval_record": "Recorded outside CRM (Teams)",
+        "close_date": "2026-04-03",
+    }
+    if deal_type is not None:
+        row["deal_type"] = deal_type
+    passage.text = json.dumps(row)
+    store()
+    claim = "The 41% discount was authorised by Sam Patel on Teams."
+    response = client.post(
+        SAVE,
+        json=body(
+            claim=claim,
+            facet=claim + "\n\nScope supplied by user: New-business deals",
+            request_id="resolved-scope",
+        ),
+    )
+    assert response.status_code == 201, response.text
+    saved = response.json()
+    result = saved["snapshot"]["response"]
+    assert result["assessment_target"] == "underlying_event"
+    transaction = result["transaction_assessment"]
+    assert transaction["status"] == outcome
+    scope = next(
+        component for component in transaction["components"] if component["field"] == "scope"
+    )
+    assert scope["status"] == scope_status
+    assert scope["observations"][0]["evidence_id"] == passage.evidence_id
+    used_input = next(
+        item
+        for item in result["inputs"]
+        if item["interpretation"]["citations"][0]["evidence_id"] == passage.evidence_id
+    )
+    assert used_input["supplied_judgements"]["scope_matches"] is scope_gate
+    assert used_input["supplied_judgements"]["authority_verified"] is None
+    assert used_input["supplied_judgements"]["independence_verified"] is False
+    graph = result["evidence_synthesis"]
+    assert any(
+        node["lane"] == "documented" and node["record_id"] == "ORDER-530"
+        for node in graph["nodes"]
+    )
+    assert all(node["citation"]["quotation"] == passage.text for node in graph["nodes"])
+    if deal_type is None:
+        assert "deal type" in scope["observations"][0]["reason"]
+        assert "scope" in transaction["next_step"]
+    listed = client.get("/api/assessments").json()["items"][0]
+    assert listed["overall_outcome"] == result["assessment"]["overall_outcome"]
+    assert (
+        client.get("/api/assessments/" + saved["snapshot"]["run_id"] + "/export").json() == saved
+    )

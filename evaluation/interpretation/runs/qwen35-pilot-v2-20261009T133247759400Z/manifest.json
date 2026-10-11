@@ -1,0 +1,13 @@
+{
+  "method_version": "qwen35-facet-pilot-v2",
+  "baseline_run": "evaluation/interpretation/runs/llama31-pilot-v2-20261009T130632838321Z",
+  "model": "qwen3.5:latest",
+  "model_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+  "ollama_version": {
+    "version": "0.34.4"
+  },
+  "case_count": 18,
+  "request_change": "Model field only",
+  "reference_labels_loaded": false,
+  "limitation": "Development comparison, not independent accuracy evaluation. Model tokenisation and default behaviour may differ despite identical request settings."
+}

@@ -1,0 +1,40 @@
+{
+  "case_id": "C01-05--approval_requirement",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "9e14166cbf0816a0da36c19b5b23041789030e2b9f9ac99d25c22b73c2bd91ce",
+  "method_version": "llama31-facet-pilot-v1",
+  "status": "classified",
+  "relationship": "qualify",
+  "prompt_tokens": 3445,
+  "generated_tokens": 208,
+  "completion_reason": "stop",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage suggests that the approval of discounts above 15% is not strictly required, as Harriet Doyle states that she \"approves what comes to me\" and implies that there may be instances where Diane Okafor okays urgent ones without informing her. This indicates that there may be exceptions to the policy, and the requirement for approval may not be absolute.",
+    "citations": [
+      {
+        "evidence_id": "EV-2bccc2506965f13d",
+        "quotation": "On discount approval: *\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\"*"
+      }
+    ]
+  },
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_requirement",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage suggests that the approval of discounts above 15% is not strictly required, as Harriet Doyle states that she \"approves what comes to me\" and implies that there may be instances where Diane Okafor okays urgent ones without informing her. This indicates that there may be exceptions to the policy, and the requirement for approval may not be absolute.",
+    "citations": [
+      {
+        "evidence_id": "EV-2bccc2506965f13d",
+        "source_id": "phase2:INT-03",
+        "locator": "heading:INT-03 — Interview: Harriet Doyle > Discussion notes#block:001",
+        "quotation": "On discount approval: *\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\"*",
+        "start": 0,
+        "end": 309
+      }
+    ]
+  },
+  "elapsed_seconds": 7.95
+}

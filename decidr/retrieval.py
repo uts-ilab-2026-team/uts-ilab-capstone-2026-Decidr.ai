@@ -130,6 +130,20 @@ class RecordReference:
     relationship: str
 
 
+def record_identifiers(query: str) -> list[str]:
+    """Explicit record identifiers, preserving boundaries and numeric suffixes."""
+    return sorted(
+        {
+            match.group().upper()
+            for match in re.finditer(
+                r"(?<![\w-])[A-Z][A-Z0-9]*(?:-[0-9]+)+(?![\w-])",
+                query,
+                flags=re.IGNORECASE,
+            )
+        }
+    )
+
+
 def find_record_references(
     query: str,
     evidence: list[Evidence],
@@ -141,16 +155,7 @@ def find_record_references(
     corpus so an early ranking cutoff cannot remove explicitly linked records.
     Textual mentions remain weaker connections than structured references.
     """
-    identifiers = sorted(
-        {
-            match.group().upper()
-            for match in re.finditer(
-                r"(?<![\w-])[A-Z][A-Z0-9]*(?:-[0-9]+)+(?![\w-])",
-                query,
-                flags=re.IGNORECASE,
-            )
-        }
-    )
+    identifiers = record_identifiers(query)
     references = []
     for identifier in identifiers:
         pattern = re.compile(

@@ -1,0 +1,53 @@
+{
+  "case_id": "C01-02--approval_timing",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "e680dff6478b610e518fcee104925d323479b227f8e79e0a749767a2b7d8509d",
+  "method_version": "llama31-facet-pilot-v2",
+  "status": "classified",
+  "relationship": "qualify",
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_timing",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not specify the timing of approval for discounts above 15%. The context passage (EV-9cbd6c4c8c261136) provides more information on the formal requirements for discount approval, but it does not establish the timing of approval for discounts above 15%. Therefore, the focal passage qualifies the original claim by indicating that the timing of approval is not formally documented.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "source_id": "phase2:POL-01",
+        "locator": "heading:POL-01 — Discount Approval Policy > Exceptions#block:001",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy.",
+        "start": 0,
+        "end": 121
+      },
+      {
+        "evidence_id": "EV-9cbd6c4c8c261136",
+        "source_id": "phase2:POL-01",
+        "locator": "heading:POL-01 — Discount Approval Policy > Formal requirements#block:001",
+        "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+        "start": 0,
+        "end": 188
+      }
+    ]
+  },
+  "prompt_tokens": 3567,
+  "generated_tokens": 253,
+  "completion_reason": "stop",
+  "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not specify the timing of approval for discounts above 15%. The context passage (EV-9cbd6c4c8c261136) provides more information on the formal requirements for discount approval, but it does not establish the timing of approval for discounts above 15%. Therefore, the focal passage qualifies the original claim by indicating that the timing of approval is not formally documented.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-52b47138155c5463\",\n      \"quotation\": \"None are formally documented under this version. Any deviation from the above requires an updated version of this policy.\"\n    },\n    {\n      \"evidence_id\": \"EV-9cbd6c4c8c261136\",\n      \"quotation\": \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\"\n    }\n  ]\n}",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not specify the timing of approval for discounts above 15%. The context passage (EV-9cbd6c4c8c261136) provides more information on the formal requirements for discount approval, but it does not establish the timing of approval for discounts above 15%. Therefore, the focal passage qualifies the original claim by indicating that the timing of approval is not formally documented.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy."
+      },
+      {
+        "evidence_id": "EV-9cbd6c4c8c261136",
+        "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM."
+      }
+    ]
+  },
+  "elapsed_seconds": 8.88
+}

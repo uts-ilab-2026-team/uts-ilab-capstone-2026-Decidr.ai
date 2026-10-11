@@ -128,13 +128,13 @@ function IcoMerge() {
 // ─── Data helpers ─────────────────────────────────────────────────────────────
 
 // What the assessment screen is showing: a register Fact, or a free-text claim to retrieve.
-type ClaimTarget = { kind: "fact"; factId: string } | { kind: "query"; text: string };
+type ClaimTarget = { kind: "fact"; factId: string } | { kind: "query"; text: string; asOf: string };
 
 type Nav = {
   go: (s: Screen) => void;
   openClaim: (factId: string) => void;
   openSaved: (runId: string) => void;
-  checkClaim: (text: string) => void;
+  checkClaim: (text: string, asOf?: string) => void;
   openEvidence: (evidence: Evidence) => void;
   openSource: (documentId: string) => void;
 };
@@ -879,9 +879,10 @@ function EmptyDashboardState({ onCheck }: { onCheck: () => void }) {
 
 // ─── Screen 2: Check a claim ──────────────────────────────────────────────────
 
-function CheckScreen({ nav }: { nav: Nav }) {
+export function CheckScreen({ nav }: { nav: Nav }) {
   const [text, setText] = useState("");
-  const ready = text.trim().length > 0 && text.length <= 10000;
+  const [assessmentDate, setAssessmentDate] = useState(todayIso);
+  const ready = text.trim().length > 0 && text.length <= 10000 && /^\d{4}-\d{2}-\d{2}$/.test(assessmentDate);
 
   return (
     <PageShell>
@@ -908,7 +909,11 @@ function CheckScreen({ nav }: { nav: Nav }) {
             resize: "vertical", marginBottom: 16,
           }}
         />
-        <Btn disabled={!ready} onClick={() => nav.checkClaim(text)}>
+        <label htmlFor="claim-date" style={{display: "block", marginBottom: 16}}>
+          Assess as of <input id="claim-date" type="date" required value={assessmentDate} onChange={event => setAssessmentDate(event.target.value)} style={{marginLeft: 12, padding: 8, font: "inherit"}} />
+        </label>
+        <p style={{color: MUTED, fontSize: 12}}>Choose when the claim should hold. Source dates and role authority will still need supporting evidence.</p>
+        <Btn disabled={!ready} onClick={() => nav.checkClaim(text, assessmentDate)}>
           Find evidence
         </Btn>
       </div>
@@ -1887,7 +1892,7 @@ export default function App() {
     go,
     openSaved: (runId) => { setSavedRunId(runId); setScreen("saved-assessment"); },
     openClaim: (factId) => { setTarget({ kind: "fact", factId }); setScreen("assessment"); },
-    checkClaim: (text) => { setTarget({ kind: "query", text }); setScreen("assessment"); },
+    checkClaim: (text, selectedDate = todayIso()) => { setTarget({ kind: "query", text, asOf: selectedDate }); setScreen("assessment"); },
     openEvidence: (item) => { setEvidence(item); setScreen("evidence-detail"); },
     openSource: (documentId) => { setSourceId(documentId); setScreen("source-detail"); },
   };
@@ -1929,8 +1934,9 @@ export default function App() {
           {view === "check" && <CheckScreen nav={nav} />}
           {view === "assessment" && target?.kind === "query" && (
             <CorpusScreen
-              key={target.text}
+              key={`${target.text}:${target.asOf}`}
               claim={target.text}
+              initialAsOf={target.asOf}
               onBack={() => nav.go("check")}
             />
           )}

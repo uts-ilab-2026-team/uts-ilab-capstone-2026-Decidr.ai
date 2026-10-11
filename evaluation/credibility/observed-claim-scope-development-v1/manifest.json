@@ -1,0 +1,16 @@
+{
+  "packet_version": "observed-claim-scope-development-v1",
+  "created_at": "2026-10-10T10:04:16.215811+00:00",
+  "purpose": "Development of claim-specific observed-evidence eligibility",
+  "case_count": 8,
+  "pair_count": 4,
+  "inputs_sha256": "6badae0eb09de9268cb0a19f08134ace82c9f720fa71d3e15821089824abdc0e",
+  "limitations": [
+    "Provisional assistant-supplied judgements; not independent ground truth.",
+    "No interpreter, credibility scorer or model was run.",
+    "Failure to directly support does not itself mean contradiction.",
+    "Related passages are context, not independent corroborating votes.",
+    "Person-to-person origin chains have not been adjudicated.",
+    "These cases do not measure generalisation or Phase 3 readiness."
+  ]
+}

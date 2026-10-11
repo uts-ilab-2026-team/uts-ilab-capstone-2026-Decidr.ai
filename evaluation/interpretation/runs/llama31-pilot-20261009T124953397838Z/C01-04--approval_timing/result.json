@@ -1,0 +1,40 @@
+{
+  "case_id": "C01-04--approval_timing",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "b27a93517a2ccadf5df8e3fd31a480f7b5b743b84a360b7b19794c9fa1e69536",
+  "method_version": "llama31-facet-pilot-v1",
+  "status": "classified",
+  "relationship": "qualify",
+  "prompt_tokens": 3430,
+  "generated_tokens": 175,
+  "completion_reason": "stop",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal evidence suggests that there is a workaround for urgent deals, where the AE can go ahead with the deal and then square it with Harriet after. This implies that there may be exceptions to the original claim's requirement for Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company."
+      }
+    ]
+  },
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_timing",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal evidence suggests that there is a workaround for urgent deals, where the AE can go ahead with the deal and then square it with Harriet after. This implies that there may be exceptions to the original claim's requirement for Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "source_id": "phase2:INT-02",
+        "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:002",
+        "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.",
+        "start": 19,
+        "end": 238
+      }
+    ]
+  },
+  "elapsed_seconds": 6.64
+}

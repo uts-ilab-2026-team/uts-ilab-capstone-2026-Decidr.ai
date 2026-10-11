@@ -316,8 +316,16 @@ export const saveAssessmentRevision = (body: {
   parent_run_id: string; revision_reason: string; request_id: string;
 }) => post<import("./AutomaticAssessment").AssessmentSnapshot>("/assessments", body);
 
+export const saveCanonicalReview = (runId: string, body: {
+  request_id: string; revision_reason: string;
+  findings: import("./suppliedAssessmentContract").CanonicalReviewFinding[];
+}) => post<import("./AutomaticAssessment").AssessmentSnapshot>(`/assessments/${encodeURIComponent(runId)}/review-canonical`, body);
+
 
 export interface SavedAssessmentSummary {
+  processing?: import("./suppliedAssessmentContract").CanonicalAssessment["processing"] | null;
+  confidence?: import("./suppliedAssessmentContract").CanonicalAssessment["confidence"] | null;
+  claim_conclusion?: {status: string; label: string; summary: string; basis: string; notice: string} | null;
   run_id: string; parent_run_id: string | null; created_at: string;
   claim_text: string; facet: string; as_of: string; overall_outcome: string;
   formal_outcome: string; observed_outcome: string; record_type: string;

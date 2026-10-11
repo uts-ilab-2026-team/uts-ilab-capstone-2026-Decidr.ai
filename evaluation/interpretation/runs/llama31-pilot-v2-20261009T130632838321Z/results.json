@@ -1,0 +1,741 @@
+[
+  {
+    "case_id": "C01-01--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "94c0250681db92c1677222fb81ae0d8fdf09d778f59fb4e4923ae0fd4199f3a4",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "support",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_requirement",
+      "stance": "support",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is stated in point 1 of the policy: \"Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\" The context passage provides background on the purpose of the policy, which is to ensure discounts offered to customers are commercially sound and do not erode margin without appropriate oversight. However, this does not replace the focal passage with a different proposition.",
+      "citations": [
+        {
+          "evidence_id": "EV-9cbd6c4c8c261136",
+          "source_id": "phase2:POL-01",
+          "locator": "heading:POL-01 — Discount Approval Policy > Formal requirements#block:001",
+          "quotation": "Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+          "start": 3,
+          "end": 188
+        }
+      ]
+    },
+    "prompt_tokens": 3573,
+    "generated_tokens": 226,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"support\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is stated in point 1 of the policy: \\\"Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\\\" The context passage provides background on the purpose of the policy, which is to ensure discounts offered to customers are commercially sound and do not erode margin without appropriate oversight. However, this does not replace the focal passage with a different proposition.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-9cbd6c4c8c261136\",\n      \"quotation\": \"Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "support",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is stated in point 1 of the policy: \"Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\" The context passage provides background on the purpose of the policy, which is to ensure discounts offered to customers are commercially sound and do not erode margin without appropriate oversight. However, this does not replace the focal passage with a different proposition.",
+      "citations": [
+        {
+          "evidence_id": "EV-9cbd6c4c8c261136",
+          "quotation": "Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM."
+        }
+      ]
+    },
+    "elapsed_seconds": 20.79
+  },
+  {
+    "case_id": "C01-01--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "728eafae45f2c6bbda12a656a46c5164e2dd8cf9e8b921c6f9cea6a1f54d1047",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "support",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_timing",
+      "stance": "support",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\" The passage clearly states the condition for approval (15% or greater) and the timing (before the deal is closed).",
+      "citations": [
+        {
+          "evidence_id": "EV-9cbd6c4c8c261136",
+          "source_id": "phase2:POL-01",
+          "locator": "heading:POL-01 — Discount Approval Policy > Formal requirements#block:001",
+          "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+          "start": 0,
+          "end": 188
+        }
+      ]
+    },
+    "prompt_tokens": 3567,
+    "generated_tokens": 204,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"support\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: \\\"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\\\" The passage clearly states the condition for approval (15% or greater) and the timing (before the deal is closed).\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-9cbd6c4c8c261136\",\n      \"quotation\": \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "support",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\" The passage clearly states the condition for approval (15% or greater) and the timing (before the deal is closed).",
+      "citations": [
+        {
+          "evidence_id": "EV-9cbd6c4c8c261136",
+          "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM."
+        }
+      ]
+    },
+    "elapsed_seconds": 6.79
+  },
+  {
+    "case_id": "C01-01--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "370927b6feb2e90f2e4e2fe56c672170bf1c98a28636768bccef9908f166f9d4",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "support",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "discount_condition",
+      "stance": "support",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\" The passage also specifies that approval must be recorded in the CRM's `approval_record` field, referencing the approver and date. The business scope is also established as new-business deals, as stated in the passage: \"This policy applies to new-business deals.\"",
+      "citations": [
+        {
+          "evidence_id": "EV-9cbd6c4c8c261136",
+          "source_id": "phase2:POL-01",
+          "locator": "heading:POL-01 — Discount Approval Policy > Formal requirements#block:001",
+          "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+          "start": 0,
+          "end": 188
+        }
+      ]
+    },
+    "prompt_tokens": 3564,
+    "generated_tokens": 232,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"support\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: \\\"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\\\" The passage also specifies that approval must be recorded in the CRM's `approval_record` field, referencing the approver and date. The business scope is also established as new-business deals, as stated in the passage: \\\"This policy applies to new-business deals.\\\"\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-9cbd6c4c8c261136\",\n      \"quotation\": \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "support",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\" The passage also specifies that approval must be recorded in the CRM's `approval_record` field, referencing the approver and date. The business scope is also established as new-business deals, as stated in the passage: \"This policy applies to new-business deals.\"",
+      "citations": [
+        {
+          "evidence_id": "EV-9cbd6c4c8c261136",
+          "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM."
+        }
+      ]
+    },
+    "elapsed_seconds": 7.77
+  },
+  {
+    "case_id": "C01-02--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "b602a19d1d9877047916fa04143f37341aeafe0125fcf19dad4f8fe51474d2dc",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "error",
+    "relationship": null,
+    "interpretation": null,
+    "prompt_tokens": 3573,
+    "generated_tokens": 238,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. The policy version 3.0, effective 2025-03-01, has a threshold of 15% for approval, which is higher than the original claim's threshold of 15%. Therefore, the focal passage qualifies the original claim by introducing a higher threshold for approval.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-52b47138155c5463\",\n      \"quotation\": \"None are formally documented under this version. Any deviation from the above requires an updated version of this policy.\"\n    },\n    {\n      \"evidence_id\": \"EV-547da0c838ba707d\",\n      \"quotation\": \"- **Version:** 3.0\\n- **Effective date:** 2025-03-01\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. The policy version 3.0, effective 2025-03-01, has a threshold of 15% for approval, which is higher than the original claim's threshold of 15%. Therefore, the focal passage qualifies the original claim by introducing a higher threshold for approval.",
+      "citations": [
+        {
+          "evidence_id": "EV-52b47138155c5463",
+          "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy."
+        },
+        {
+          "evidence_id": "EV-547da0c838ba707d",
+          "quotation": "- **Version:** 3.0\n- **Effective date:** 2025-03-01"
+        }
+      ]
+    },
+    "error": "Quotation does not match original evidence",
+    "elapsed_seconds": 16.52
+  },
+  {
+    "case_id": "C01-02--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "e680dff6478b610e518fcee104925d323479b227f8e79e0a749767a2b7d8509d",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "qualify",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_timing",
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not specify the timing of approval for discounts above 15%. The context passage (EV-9cbd6c4c8c261136) provides more information on the formal requirements for discount approval, but it does not establish the timing of approval for discounts above 15%. Therefore, the focal passage qualifies the original claim by indicating that the timing of approval is not formally documented.",
+      "citations": [
+        {
+          "evidence_id": "EV-52b47138155c5463",
+          "source_id": "phase2:POL-01",
+          "locator": "heading:POL-01 — Discount Approval Policy > Exceptions#block:001",
+          "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy.",
+          "start": 0,
+          "end": 121
+        },
+        {
+          "evidence_id": "EV-9cbd6c4c8c261136",
+          "source_id": "phase2:POL-01",
+          "locator": "heading:POL-01 — Discount Approval Policy > Formal requirements#block:001",
+          "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+          "start": 0,
+          "end": 188
+        }
+      ]
+    },
+    "prompt_tokens": 3567,
+    "generated_tokens": 253,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not specify the timing of approval for discounts above 15%. The context passage (EV-9cbd6c4c8c261136) provides more information on the formal requirements for discount approval, but it does not establish the timing of approval for discounts above 15%. Therefore, the focal passage qualifies the original claim by indicating that the timing of approval is not formally documented.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-52b47138155c5463\",\n      \"quotation\": \"None are formally documented under this version. Any deviation from the above requires an updated version of this policy.\"\n    },\n    {\n      \"evidence_id\": \"EV-9cbd6c4c8c261136\",\n      \"quotation\": \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not specify the timing of approval for discounts above 15%. The context passage (EV-9cbd6c4c8c261136) provides more information on the formal requirements for discount approval, but it does not establish the timing of approval for discounts above 15%. Therefore, the focal passage qualifies the original claim by indicating that the timing of approval is not formally documented.",
+      "citations": [
+        {
+          "evidence_id": "EV-52b47138155c5463",
+          "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy."
+        },
+        {
+          "evidence_id": "EV-9cbd6c4c8c261136",
+          "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM."
+        }
+      ]
+    },
+    "elapsed_seconds": 8.88
+  },
+  {
+    "case_id": "C01-02--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "3f57b66d24c0df944b516442e7a303d8505486ab66aff4cb9a5b38bf57a7731a",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "qualify",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "discount_condition",
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is a qualification of the original claim, as it introduces an exception to the general rule.",
+      "citations": [
+        {
+          "evidence_id": "EV-52b47138155c5463",
+          "source_id": "phase2:POL-01",
+          "locator": "heading:POL-01 — Discount Approval Policy > Exceptions#block:001",
+          "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy.",
+          "start": 0,
+          "end": 121
+        }
+      ]
+    },
+    "prompt_tokens": 3564,
+    "generated_tokens": 151,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is a qualification of the original claim, as it introduces an exception to the general rule.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-52b47138155c5463\",\n      \"quotation\": \"None are formally documented under this version. Any deviation from the above requires an updated version of this policy.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is a qualification of the original claim, as it introduces an exception to the general rule.",
+      "citations": [
+        {
+          "evidence_id": "EV-52b47138155c5463",
+          "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy."
+        }
+      ]
+    },
+    "elapsed_seconds": 5.89
+  },
+  {
+    "case_id": "C01-03--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "c607333d5c76f5c4bb0d4c5c024bdca16c58eb1314c2fdf45424b0cc2a0576f9",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "support",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_requirement",
+      "stance": "support",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is stated by Diane Okafor, who mentions that \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" The context passage clarifies that Harriet is the person responsible for approving discounts above 15%, and that this rule has been in place since the threshold was bumped last year.",
+      "citations": [
+        {
+          "evidence_id": "EV-b3ada77a1695b325",
+          "source_id": "phase2:INT-02",
+          "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:001",
+          "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.",
+          "start": 24,
+          "end": 120
+        }
+      ]
+    },
+    "prompt_tokens": 3854,
+    "generated_tokens": 181,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"support\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is stated by Diane Okafor, who mentions that \\\"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\\\" The context passage clarifies that Harriet is the person responsible for approving discounts above 15%, and that this rule has been in place since the threshold was bumped last year.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-b3ada77a1695b325\",\n      \"quotation\": \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "support",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is stated by Diane Okafor, who mentions that \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" The context passage clarifies that Harriet is the person responsible for approving discounts above 15%, and that this rule has been in place since the threshold was bumped last year.",
+      "citations": [
+        {
+          "evidence_id": "EV-b3ada77a1695b325",
+          "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year."
+        }
+      ]
+    },
+    "elapsed_seconds": 17.36
+  },
+  {
+    "case_id": "C01-03--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "183c5fed722a8ddea34e5d446954f5a9fe3e2abfb2a205850424c97fd8d636f2",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "support",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_timing",
+      "stance": "support",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval. The passage states, \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" This establishes the timing of the approval as before the deal is closed, as the passage implies that the approval is required before the deal is finalized.",
+      "citations": [
+        {
+          "evidence_id": "EV-b3ada77a1695b325",
+          "source_id": "phase2:INT-02",
+          "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:001",
+          "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.",
+          "start": 24,
+          "end": 120
+        }
+      ]
+    },
+    "prompt_tokens": 3848,
+    "generated_tokens": 162,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"support\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval. The passage states, \\\"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\\\" This establishes the timing of the approval as before the deal is closed, as the passage implies that the approval is required before the deal is finalized.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-b3ada77a1695b325\",\n      \"quotation\": \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "support",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval. The passage states, \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" This establishes the timing of the approval as before the deal is closed, as the passage implies that the approval is required before the deal is finalized.",
+      "citations": [
+        {
+          "evidence_id": "EV-b3ada77a1695b325",
+          "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year."
+        }
+      ]
+    },
+    "elapsed_seconds": 6.46
+  },
+  {
+    "case_id": "C01-03--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "ef4e3e01562b109b389b95de31eba9015ae2d2726e52f8664fe5828951f2c63a",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "support",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "discount_condition",
+      "stance": "support",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the statement \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" The context passage clarifies that this rule has been in place since the threshold was bumped last year, but does not replace the focal passage with a different proposition.",
+      "citations": [
+        {
+          "evidence_id": "EV-b3ada77a1695b325",
+          "source_id": "phase2:INT-02",
+          "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:001",
+          "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.",
+          "start": 24,
+          "end": 120
+        }
+      ]
+    },
+    "prompt_tokens": 3845,
+    "generated_tokens": 172,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"support\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the statement \\\"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\\\" The context passage clarifies that this rule has been in place since the threshold was bumped last year, but does not replace the focal passage with a different proposition.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-b3ada77a1695b325\",\n      \"quotation\": \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "support",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the statement \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" The context passage clarifies that this rule has been in place since the threshold was bumped last year, but does not replace the focal passage with a different proposition.",
+      "citations": [
+        {
+          "evidence_id": "EV-b3ada77a1695b325",
+          "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year."
+        }
+      ]
+    },
+    "elapsed_seconds": 6.64
+  },
+  {
+    "case_id": "C01-04--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "7756574db3b7c207c70d8b1dc7897e5a9db410ce1af2a854ed13b86dfc5bc67c",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "context",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_requirement",
+      "stance": "context",
+      "mode": "observed",
+      "rationale": "The focal passage does not establish that the approval is required for the discounts described in the original claim. The passage discusses a workaround for urgent deals, where the AE is told to go ahead and the approval is squared with Harriet after. This suggests that the approval is not always required, but rather a pragmatic approach is taken in certain situations.",
+      "citations": [
+        {
+          "evidence_id": "EV-31776d09dcfe69a2",
+          "source_id": "phase2:INT-02",
+          "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:002",
+          "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.",
+          "start": 19,
+          "end": 238
+        }
+      ]
+    },
+    "prompt_tokens": 3854,
+    "generated_tokens": 181,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"context\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage does not establish that the approval is required for the discounts described in the original claim. The passage discusses a workaround for urgent deals, where the AE is told to go ahead and the approval is squared with Harriet after. This suggests that the approval is not always required, but rather a pragmatic approach is taken in certain situations.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-31776d09dcfe69a2\",\n      \"quotation\": \"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "context",
+      "mode": "observed",
+      "rationale": "The focal passage does not establish that the approval is required for the discounts described in the original claim. The passage discusses a workaround for urgent deals, where the AE is told to go ahead and the approval is squared with Harriet after. This suggests that the approval is not always required, but rather a pragmatic approach is taken in certain situations.",
+      "citations": [
+        {
+          "evidence_id": "EV-31776d09dcfe69a2",
+          "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company."
+        }
+      ]
+    },
+    "elapsed_seconds": 16.96
+  },
+  {
+    "case_id": "C01-04--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "b27a93517a2ccadf5df8e3fd31a480f7b5b743b84a360b7b19794c9fa1e69536",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "context",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_timing",
+      "stance": "context",
+      "mode": "observed",
+      "rationale": "The focal passage does not establish the claimed timing of approval for discounts above 15%. It describes a pragmatic approach to urgent deals, where the AE is allowed to proceed without approval from Harriet, with the understanding that the approval will be squared with her after. This does not imply that approval is required before the deal is closed.",
+      "citations": [
+        {
+          "evidence_id": "EV-31776d09dcfe69a2",
+          "source_id": "phase2:INT-02",
+          "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:002",
+          "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.",
+          "start": 19,
+          "end": 238
+        }
+      ]
+    },
+    "prompt_tokens": 3848,
+    "generated_tokens": 179,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"context\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage does not establish the claimed timing of approval for discounts above 15%. It describes a pragmatic approach to urgent deals, where the AE is allowed to proceed without approval from Harriet, with the understanding that the approval will be squared with her after. This does not imply that approval is required before the deal is closed.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-31776d09dcfe69a2\",\n      \"quotation\": \"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "context",
+      "mode": "observed",
+      "rationale": "The focal passage does not establish the claimed timing of approval for discounts above 15%. It describes a pragmatic approach to urgent deals, where the AE is allowed to proceed without approval from Harriet, with the understanding that the approval will be squared with her after. This does not imply that approval is required before the deal is closed.",
+      "citations": [
+        {
+          "evidence_id": "EV-31776d09dcfe69a2",
+          "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company."
+        }
+      ]
+    },
+    "elapsed_seconds": 7.31
+  },
+  {
+    "case_id": "C01-04--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "b4803e706726b4d7485ee767674eb5e01994bade84f43570a8f446a9d1152b96",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "qualify",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "discount_condition",
+      "stance": "qualify",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that Diane Okafor, the Head of Sales, has a pragmatic approach to urgent deals, stating that she will \"just tell the AE to go ahead and I'll square it with her after\". This suggests that there may be a workaround or exception to the approval requirement for discounts above 15%. However, this is not a formal requirement, but rather a reported practice.",
+      "citations": [
+        {
+          "evidence_id": "EV-31776d09dcfe69a2",
+          "source_id": "phase2:INT-02",
+          "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:002",
+          "quotation": "On urgent deals: *\"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"*",
+          "start": 0,
+          "end": 240
+        }
+      ]
+    },
+    "prompt_tokens": 3845,
+    "generated_tokens": 202,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage establishes that Diane Okafor, the Head of Sales, has a pragmatic approach to urgent deals, stating that she will \\\"just tell the AE to go ahead and I'll square it with her after\\\". This suggests that there may be a workaround or exception to the approval requirement for discounts above 15%. However, this is not a formal requirement, but rather a reported practice.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-31776d09dcfe69a2\",\n      \"quotation\": \"On urgent deals: *\\\"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\\\"*\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that Diane Okafor, the Head of Sales, has a pragmatic approach to urgent deals, stating that she will \"just tell the AE to go ahead and I'll square it with her after\". This suggests that there may be a workaround or exception to the approval requirement for discounts above 15%. However, this is not a formal requirement, but rather a reported practice.",
+      "citations": [
+        {
+          "evidence_id": "EV-31776d09dcfe69a2",
+          "quotation": "On urgent deals: *\"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"*"
+        }
+      ]
+    },
+    "elapsed_seconds": 7.53
+  },
+  {
+    "case_id": "C01-05--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "9e14166cbf0816a0da36c19b5b23041789030e2b9f9ac99d25c22b73c2bd91ce",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "qualify",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_requirement",
+      "stance": "qualify",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that Harriet Doyle, the Head of Finance & People Ops, approves discounts that come to her, but she also mentions that Diane sometimes okays urgent ones herself and tells Harriet after. This suggests that there is an informal workaround for discount approval, which is not in line with the policy. However, Harriet does not explicitly state that the policy requires Finance (Head of Finance & People Ops) approval for discounts above 15%. Therefore, the focal passage qualifies the original claim by indicating that there may be exceptions to the policy.",
+      "citations": [
+        {
+          "evidence_id": "EV-2bccc2506965f13d",
+          "source_id": "phase2:INT-03",
+          "locator": "heading:INT-03 — Interview: Harriet Doyle > Discussion notes#block:001",
+          "quotation": "On discount approval: *\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\"*",
+          "start": 0,
+          "end": 309
+        }
+      ]
+    },
+    "prompt_tokens": 3863,
+    "generated_tokens": 245,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage establishes that Harriet Doyle, the Head of Finance & People Ops, approves discounts that come to her, but she also mentions that Diane sometimes okays urgent ones herself and tells Harriet after. This suggests that there is an informal workaround for discount approval, which is not in line with the policy. However, Harriet does not explicitly state that the policy requires Finance (Head of Finance & People Ops) approval for discounts above 15%. Therefore, the focal passage qualifies the original claim by indicating that there may be exceptions to the policy.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-2bccc2506965f13d\",\n      \"quotation\": \"On discount approval: *\\\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\\\"*\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that Harriet Doyle, the Head of Finance & People Ops, approves discounts that come to her, but she also mentions that Diane sometimes okays urgent ones herself and tells Harriet after. This suggests that there is an informal workaround for discount approval, which is not in line with the policy. However, Harriet does not explicitly state that the policy requires Finance (Head of Finance & People Ops) approval for discounts above 15%. Therefore, the focal passage qualifies the original claim by indicating that there may be exceptions to the policy.",
+      "citations": [
+        {
+          "evidence_id": "EV-2bccc2506965f13d",
+          "quotation": "On discount approval: *\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\"*"
+        }
+      ]
+    },
+    "elapsed_seconds": 18.29
+  },
+  {
+    "case_id": "C01-05--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "283a982d9b67f6dc77ac7b3bf30a73eed86d48b23d250da0c7c48c9e184b620e",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "qualify",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_timing",
+      "stance": "qualify",
+      "mode": "observed",
+      "rationale": "The focal passage does not establish the claimed timing of approval for discounts above 15%. Harriet Doyle states that she approves what comes to her, but notes that Diane sometimes okays urgent ones herself and tells Harriet after, which is not in line with the policy. This suggests that there may be informal workarounds to the policy, but it does not provide clear evidence of the timing of approval for discounts above 15%. The passage also mentions that Harriet does not have full visibility into how often the informal discount workaround happens, which further supports the qualification.",
+      "citations": [
+        {
+          "evidence_id": "EV-2bccc2506965f13d",
+          "source_id": "phase2:INT-03",
+          "locator": "heading:INT-03 — Interview: Harriet Doyle > Discussion notes#block:001",
+          "quotation": "On discount approval: *\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\"*",
+          "start": 0,
+          "end": 309
+        }
+      ]
+    },
+    "prompt_tokens": 3857,
+    "generated_tokens": 247,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage does not establish the claimed timing of approval for discounts above 15%. Harriet Doyle states that she approves what comes to her, but notes that Diane sometimes okays urgent ones herself and tells Harriet after, which is not in line with the policy. This suggests that there may be informal workarounds to the policy, but it does not provide clear evidence of the timing of approval for discounts above 15%. The passage also mentions that Harriet does not have full visibility into how often the informal discount workaround happens, which further supports the qualification.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-2bccc2506965f13d\",\n      \"quotation\": \"On discount approval: *\\\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\\\"*\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "observed",
+      "rationale": "The focal passage does not establish the claimed timing of approval for discounts above 15%. Harriet Doyle states that she approves what comes to her, but notes that Diane sometimes okays urgent ones herself and tells Harriet after, which is not in line with the policy. This suggests that there may be informal workarounds to the policy, but it does not provide clear evidence of the timing of approval for discounts above 15%. The passage also mentions that Harriet does not have full visibility into how often the informal discount workaround happens, which further supports the qualification.",
+      "citations": [
+        {
+          "evidence_id": "EV-2bccc2506965f13d",
+          "quotation": "On discount approval: *\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\"*"
+        }
+      ]
+    },
+    "elapsed_seconds": 9.2
+  },
+  {
+    "case_id": "C01-05--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "24bf113222cf0c88a7e54b68b57ed94a961566af0f80063547301b0b2e07bd70",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "qualify",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "discount_condition",
+      "stance": "qualify",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that Harriet Doyle, the Head of Finance & People Ops, approves discounts above 15% but notes that she does not have full visibility into how often it happens versus how often it's reported to her. This suggests that there may be informal manager pre-approval for expenses, which is not in line with the policy. However, it does not establish a formal requirement for approval above 15%.",
+      "citations": [
+        {
+          "evidence_id": "EV-2bccc2506965f13d",
+          "source_id": "phase2:INT-03",
+          "locator": "heading:INT-03 — Interview: Harriet Doyle > Discussion notes#block:001",
+          "quotation": "On discount approval: *\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\"*",
+          "start": 0,
+          "end": 309
+        }
+      ]
+    },
+    "prompt_tokens": 3854,
+    "generated_tokens": 219,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage establishes that Harriet Doyle, the Head of Finance & People Ops, approves discounts above 15% but notes that she does not have full visibility into how often it happens versus how often it's reported to her. This suggests that there may be informal manager pre-approval for expenses, which is not in line with the policy. However, it does not establish a formal requirement for approval above 15%.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-2bccc2506965f13d\",\n      \"quotation\": \"On discount approval: *\\\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\\\"*\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "observed",
+      "rationale": "The focal passage establishes that Harriet Doyle, the Head of Finance & People Ops, approves discounts above 15% but notes that she does not have full visibility into how often it happens versus how often it's reported to her. This suggests that there may be informal manager pre-approval for expenses, which is not in line with the policy. However, it does not establish a formal requirement for approval above 15%.",
+      "citations": [
+        {
+          "evidence_id": "EV-2bccc2506965f13d",
+          "quotation": "On discount approval: *\"I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that's not really how the policy reads, but I get why it happens. I'll be straight with you, I don't have full visibility into how often it happens versus how often it's reported to me.\"*"
+        }
+      ]
+    },
+    "elapsed_seconds": 8.31
+  },
+  {
+    "case_id": "C01-06--approval_requirement",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "3843fbe6b7f07126378580d4386237e3a3659438265c1d8c03d044c8da8dfcb0",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "qualify",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_requirement",
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that this approval is required for discounts above 15%. The passage mentions that Option 3 (20%) was discussed but not adopted, and Harriet felt it removed too much oversight. This suggests that the approval threshold is being raised to balance oversight with efficiency, but it does not provide explicit guidance on the approval process for discounts above 15%. Therefore, the focal passage qualifies the original claim by establishing a new approval threshold, but not the specific approval requirement for discounts above 15%.",
+      "citations": [
+        {
+          "evidence_id": "EV-a126ba875f4418df",
+          "source_id": "phase2:MTG-01",
+          "locator": "heading:MTG-01 — Discount Policy Review > Final decision#block:001",
+          "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight.",
+          "start": 0,
+          "end": 166
+        }
+      ]
+    },
+    "prompt_tokens": 3704,
+    "generated_tokens": 237,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that this approval is required for discounts above 15%. The passage mentions that Option 3 (20%) was discussed but not adopted, and Harriet felt it removed too much oversight. This suggests that the approval threshold is being raised to balance oversight with efficiency, but it does not provide explicit guidance on the approval process for discounts above 15%. Therefore, the focal passage qualifies the original claim by establishing a new approval threshold, but not the specific approval requirement for discounts above 15%.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-a126ba875f4418df\",\n      \"quotation\": \"Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that this approval is required for discounts above 15%. The passage mentions that Option 3 (20%) was discussed but not adopted, and Harriet felt it removed too much oversight. This suggests that the approval threshold is being raised to balance oversight with efficiency, but it does not provide explicit guidance on the approval process for discounts above 15%. Therefore, the focal passage qualifies the original claim by establishing a new approval threshold, but not the specific approval requirement for discounts above 15%.",
+      "citations": [
+        {
+          "evidence_id": "EV-a126ba875f4418df",
+          "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight."
+        }
+      ]
+    },
+    "elapsed_seconds": 17.98
+  },
+  {
+    "case_id": "C01-06--approval_timing",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "b17035d4cf0e333aac43e1492dc3e79d7df2eab87d077eb0321ddbb266b63390",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "qualify",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "approval_timing",
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that approval is required before the deal is closed. Instead, it suggests that approval is required for discounts above 15%. This implies that approval is required after the deal is closed, not before.",
+      "citations": [
+        {
+          "evidence_id": "EV-a126ba875f4418df",
+          "source_id": "phase2:MTG-01",
+          "locator": "heading:MTG-01 — Discount Policy Review > Final decision#block:001",
+          "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight.",
+          "start": 0,
+          "end": 166
+        }
+      ]
+    },
+    "prompt_tokens": 3698,
+    "generated_tokens": 178,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that approval is required before the deal is closed. Instead, it suggests that approval is required for discounts above 15%. This implies that approval is required after the deal is closed, not before.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-a126ba875f4418df\",\n      \"quotation\": \"Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that approval is required before the deal is closed. Instead, it suggests that approval is required for discounts above 15%. This implies that approval is required after the deal is closed, not before.",
+      "citations": [
+        {
+          "evidence_id": "EV-a126ba875f4418df",
+          "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight."
+        }
+      ]
+    },
+    "elapsed_seconds": 6.99
+  },
+  {
+    "case_id": "C01-06--discount_condition",
+    "dataset_version": "phase2-interpretation-facets-pilot-v1",
+    "input_sha256": "51f1083730aa2c0439354d223a567afe1c167705cc2e43a37399e06e8dde5804",
+    "method_version": "llama31-facet-pilot-v2",
+    "status": "classified",
+    "relationship": "qualify",
+    "interpretation": {
+      "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+      "facet": "discount_condition",
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that discounts above 15% require Finance approval. The passage mentions that option 3 (20%) was discussed but not adopted, suggesting that the 15% threshold is the agreed-upon limit. Therefore, the focal passage qualifies the original claim by establishing a lower threshold for Finance approval.",
+      "citations": [
+        {
+          "evidence_id": "EV-a126ba875f4418df",
+          "source_id": "phase2:MTG-01",
+          "locator": "heading:MTG-01 — Discount Policy Review > Final decision#block:001",
+          "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight.",
+          "start": 0,
+          "end": 166
+        }
+      ]
+    },
+    "prompt_tokens": 3695,
+    "generated_tokens": 197,
+    "completion_reason": "stop",
+    "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that discounts above 15% require Finance approval. The passage mentions that option 3 (20%) was discussed but not adopted, suggesting that the 15% threshold is the agreed-upon limit. Therefore, the focal passage qualifies the original claim by establishing a lower threshold for Finance approval.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-a126ba875f4418df\",\n      \"quotation\": \"Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight.\"\n    }\n  ]\n}",
+    "raw_proposal": {
+      "stance": "qualify",
+      "mode": "formal",
+      "rationale": "The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that discounts above 15% require Finance approval. The passage mentions that option 3 (20%) was discussed but not adopted, suggesting that the 15% threshold is the agreed-upon limit. Therefore, the focal passage qualifies the original claim by establishing a lower threshold for Finance approval.",
+      "citations": [
+        {
+          "evidence_id": "EV-a126ba875f4418df",
+          "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight."
+        }
+      ]
+    },
+    "elapsed_seconds": 8.14
+  }
+]

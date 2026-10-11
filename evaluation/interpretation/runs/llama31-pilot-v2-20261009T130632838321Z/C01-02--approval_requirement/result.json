@@ -1,0 +1,30 @@
+{
+  "case_id": "C01-02--approval_requirement",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "b602a19d1d9877047916fa04143f37341aeafe0125fcf19dad4f8fe51474d2dc",
+  "method_version": "llama31-facet-pilot-v2",
+  "status": "error",
+  "relationship": null,
+  "interpretation": null,
+  "prompt_tokens": 3573,
+  "generated_tokens": 238,
+  "completion_reason": "stop",
+  "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. The policy version 3.0, effective 2025-03-01, has a threshold of 15% for approval, which is higher than the original claim's threshold of 15%. Therefore, the focal passage qualifies the original claim by introducing a higher threshold for approval.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-52b47138155c5463\",\n      \"quotation\": \"None are formally documented under this version. Any deviation from the above requires an updated version of this policy.\"\n    },\n    {\n      \"evidence_id\": \"EV-547da0c838ba707d\",\n      \"quotation\": \"- **Version:** 3.0\\n- **Effective date:** 2025-03-01\"\n    }\n  ]\n}",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. The policy version 3.0, effective 2025-03-01, has a threshold of 15% for approval, which is higher than the original claim's threshold of 15%. Therefore, the focal passage qualifies the original claim by introducing a higher threshold for approval.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy."
+      },
+      {
+        "evidence_id": "EV-547da0c838ba707d",
+        "quotation": "- **Version:** 3.0\n- **Effective date:** 2025-03-01"
+      }
+    ]
+  },
+  "error": "Quotation does not match original evidence",
+  "elapsed_seconds": 16.52
+}

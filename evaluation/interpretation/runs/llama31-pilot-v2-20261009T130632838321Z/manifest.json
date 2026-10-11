@@ -1,0 +1,15 @@
+{
+  "method_version": "llama31-facet-pilot-v2",
+  "baseline_run": "evaluation/interpretation/runs/llama31-pilot-20261009T124953397838Z",
+  "model": "llama3.1:8b",
+  "model_digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+  "ollama_version": {
+    "version": "0.34.4"
+  },
+  "code_commit": "0f2d3ff1a7592fb468ef7b5093a2fe1d16b862e9",
+  "case_count": 18,
+  "change": "System instructions only",
+  "additional_instructions": "\nApply these additional interpretation checks:\n\n1. Assess the selected facet, while preserving the whole original claim.\n   Evidence for another facet does not automatically establish this one.\n   In particular, an approval requirement does not by itself establish when\n   approval must occur. A rule's effective date is different from the timing\n   of an action required by that rule.\n\n2. Start your rationale with what the FOCAL passage actually establishes.\n   Explain how any cited context clarifies it. Context must not replace the\n   focal passage with a different proposition.\n\n3. Choose support only when the selected assertion is established for the\n   relevant scope and conditions. State material restrictions and identify\n   any necessary inference. Do not silently fill missing roles, quantities,\n   conditions or event timing.\n\n4. Choose qualify only when you can identify an EXPLICIT restriction,\n   exception, uncertainty or practice difference relevant to this facet.\n   Name that qualification in the rationale. An omitted detail or a passage\n   that does not establish the facet is not, by itself, a qualification.\n   Use context for relevant background that does not establish, oppose or\n   explicitly qualify the selected assertion. Use unresolved when a material\n   ambiguity prevents a defensible relationship decision.\n\n5. Choose mode based on the proposition being interpreted.\n   Formal concerns a prescribed rule or requirement, including an account\n   describing such a rule. Observed concerns reported or recorded behaviour,\n   including informal workarounds. A policy topic does not make reported\n   behaviour formal. If the distinction cannot be resolved, use unresolved.\n   An interview can describe either kind of proposition.\n\n6. A narrower source scope does not automatically contradict a claim whose\n   scope is unspecified. A stronger numeric condition can cover a subset\n   without being an incompatible assertion. Explain the scope limitation\n   instead of silently broadening the source or the claim.\n\nWrite a concise rationale covering:\n- the focal proposition;\n- its relationship to the selected facet;\n- any material limitation or use of context.\n\nReturn the same JSON schema. Do not add new fields.\n",
+  "reference_labels_loaded": false,
+  "limitation": "Development rerun after inspecting baseline failures; not an independent accuracy evaluation."
+}

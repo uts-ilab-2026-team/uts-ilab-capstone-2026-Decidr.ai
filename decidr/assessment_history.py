@@ -156,6 +156,8 @@ def existing_retry(path: Path, owner_id: int, request: dict) -> dict | None:
 
 
 def list_runs(path: Path, owner_id: int, *, limit: int, offset: int) -> list[dict]:
+    from decidr.transaction_claims import transaction_conclusion
+
     if not path.is_file():
         return []
     with closing(_connect(path)) as connection:
@@ -176,11 +178,15 @@ def list_runs(path: Path, owner_id: int, *, limit: int, offset: int) -> list[dic
                 "claim_text": response["claim_text"],
                 "facet": response["facet"],
                 "as_of": response["as_of"],
+                "claim_conclusion": response.get("claim_conclusion")
+                or transaction_conclusion(response.get("transaction_assessment")),
                 "overall_outcome": response["assessment"]["overall_outcome"],
                 "formal_outcome": response["assessment"]["formal_outcome"],
                 "observed_outcome": response["assessment"]["observed_outcome"],
                 "record_type": snapshot.get("record_type", "conditional_supplied_assessment"),
                 "outcome_basis": response["assurance"]["outcome_basis"],
+                "processing": response.get("canonical_assessment", {}).get("processing"),
+                "confidence": response.get("canonical_assessment", {}).get("confidence"),
                 "review_status": snapshot["review_status"],
                 "snapshot_sha256": record["snapshot_sha256"],
             }
@@ -226,12 +232,16 @@ def append_run(path: Path, owner_id: int, request: dict, bundle: dict) -> tuple[
                 "record_type": (
                     "automatic_assessment"
                     if bundle["response"]["status"] == "assessed_automatically"
+                    else "automatic_processing_failure"
+                    if bundle["response"]["status"] == "processing_failed"
+                    else "canonical_human_review"
+                    if bundle["response"].get("canonical_assessment") and parent_id
                     else "conditional_supplied_assessment"
                 ),
             }
         )
         payload["response"].update(persisted=True, index_scope="frozen")
-        payload["provenance"]["revision_basis"] = "current_index_at_save_time"
+        payload["provenance"].setdefault("revision_basis", "current_index_at_save_time")
         digest = content_hash(payload)
         connection.execute(
             "INSERT INTO assessment_runs VALUES(?,?,?,?,?,?,?,?)",

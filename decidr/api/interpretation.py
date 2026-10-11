@@ -112,7 +112,10 @@ def build_interpretation(request: InterpretationProposalRequest, *, capture: boo
                 selected_ids.append(evidence_id)
     selected_ids = selected_ids[: request.max_inputs]
     if request.assessment_target == "unspecified":
-        assessment_target = infer_target(facet)
+        scope_prefix = request.claim + "\n\nScope supplied by user: "
+        assessment_target = infer_target(
+            request.claim if facet.startswith(scope_prefix) else facet
+        )
         target_inferred = True
     else:
         assessment_target = request.assessment_target

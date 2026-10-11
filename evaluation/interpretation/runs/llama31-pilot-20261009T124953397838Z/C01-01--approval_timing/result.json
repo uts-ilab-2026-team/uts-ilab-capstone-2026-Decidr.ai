@@ -1,0 +1,40 @@
+{
+  "case_id": "C01-01--approval_timing",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "728eafae45f2c6bbda12a656a46c5164e2dd8cf9e8b921c6f9cea6a1f54d1047",
+  "method_version": "llama31-facet-pilot-v1",
+  "status": "classified",
+  "relationship": "support",
+  "prompt_tokens": 3149,
+  "generated_tokens": 180,
+  "completion_reason": "stop",
+  "raw_proposal": {
+    "stance": "support",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: '1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.'",
+    "citations": [
+      {
+        "evidence_id": "EV-9cbd6c4c8c261136",
+        "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM."
+      }
+    ]
+  },
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_timing",
+    "stance": "support",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: '1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.'",
+    "citations": [
+      {
+        "evidence_id": "EV-9cbd6c4c8c261136",
+        "source_id": "phase2:POL-01",
+        "locator": "heading:POL-01 — Discount Approval Policy > Formal requirements#block:001",
+        "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+        "start": 0,
+        "end": 188
+      }
+    ]
+  },
+  "elapsed_seconds": 6.11
+}

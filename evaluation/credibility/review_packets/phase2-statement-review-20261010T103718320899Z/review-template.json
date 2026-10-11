@@ -1,0 +1,177 @@
+{
+  "packet_id": "phase2-statement-review-20261010T103718320899Z",
+  "packet_sha256": "a2f6aa07a08e5515e58d84ddbbea45a7c79f654d7eb0524a0b1bcdd2dfa8162e",
+  "reviewer": "",
+  "reviewed_at": "",
+  "prior_exposure": "",
+  "cases": [
+    {
+      "review_id": "R01",
+      "assessment_target": "",
+      "packet_relationship": "",
+      "rationale": "",
+      "additional_context_needed": "",
+      "evidence_reviews": [
+        {
+          "evidence_id": "EV-31776d09dcfe69a2",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        }
+      ]
+    },
+    {
+      "review_id": "R02",
+      "assessment_target": "",
+      "packet_relationship": "",
+      "rationale": "",
+      "additional_context_needed": "",
+      "evidence_reviews": [
+        {
+          "evidence_id": "EV-31776d09dcfe69a2",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        }
+      ]
+    },
+    {
+      "review_id": "R03",
+      "assessment_target": "",
+      "packet_relationship": "",
+      "rationale": "",
+      "additional_context_needed": "",
+      "evidence_reviews": [
+        {
+          "evidence_id": "EV-2bccc2506965f13d",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        }
+      ]
+    },
+    {
+      "review_id": "R04",
+      "assessment_target": "",
+      "packet_relationship": "",
+      "rationale": "",
+      "additional_context_needed": "",
+      "evidence_reviews": [
+        {
+          "evidence_id": "EV-f6cd693a4b876cb8",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        },
+        {
+          "evidence_id": "EV-d7f1d36cea1b1aee",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        },
+        {
+          "evidence_id": "EV-4875d9b03c28f36e",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        }
+      ]
+    },
+    {
+      "review_id": "R05",
+      "assessment_target": "",
+      "packet_relationship": "",
+      "rationale": "",
+      "additional_context_needed": "",
+      "evidence_reviews": [
+        {
+          "evidence_id": "EV-c9eef1886cdc4cc9",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        },
+        {
+          "evidence_id": "EV-6831f6e734942bd3",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        },
+        {
+          "evidence_id": "EV-196691caf02dd3c5",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        }
+      ]
+    },
+    {
+      "review_id": "R06",
+      "assessment_target": "",
+      "packet_relationship": "",
+      "rationale": "",
+      "additional_context_needed": "",
+      "evidence_reviews": [
+        {
+          "evidence_id": "EV-f6cd693a4b876cb8",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        },
+        {
+          "evidence_id": "EV-d7f1d36cea1b1aee",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        },
+        {
+          "evidence_id": "EV-4875d9b03c28f36e",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        }
+      ]
+    },
+    {
+      "review_id": "R07",
+      "assessment_target": "",
+      "packet_relationship": "",
+      "rationale": "",
+      "additional_context_needed": "",
+      "evidence_reviews": [
+        {
+          "evidence_id": "EV-c9eef1886cdc4cc9",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        },
+        {
+          "evidence_id": "EV-6831f6e734942bd3",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        },
+        {
+          "evidence_id": "EV-196691caf02dd3c5",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        }
+      ]
+    },
+    {
+      "review_id": "R08",
+      "assessment_target": "",
+      "packet_relationship": "",
+      "rationale": "",
+      "additional_context_needed": "",
+      "evidence_reviews": [
+        {
+          "evidence_id": "EV-2bccc2506965f13d",
+          "relationship": "",
+          "quotation": "",
+          "rationale": ""
+        }
+      ]
+    }
+  ]
+}

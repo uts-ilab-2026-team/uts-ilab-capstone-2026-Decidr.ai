@@ -89,3 +89,8 @@
 @media (max-width: 1000px) { .ev-summary-fields { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 @media (max-width: 700px) { .ev-graph-branches { grid-template-columns: minmax(0,1fr); border-left: 1px solid #cbc7c1; padding-left: 12px; } .ev-graph-branches::before { left: 0; right: 50%; } .ev-graph-branch::before { left: -13px; top: 44px; height: 0; width: 25px; border-top: 1px solid #cbc7c1; } }
 @media print { .ev-graph { break-inside: avoid; } .ev-button, .ev-back, .ev-segments { display: none; } }
+
+.ev-component-summary { display: grid; gap: 0; margin: 20px 0; }
+.ev-component-summary > div { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid #eeeae5; }
+.ev-component-summary dt { font-weight: 500; }
+.ev-component-summary dd { margin: 0; flex-shrink: 0; }

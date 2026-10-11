@@ -4,11 +4,11 @@ import ScopeClarification from "./ScopeClarification";
 import { searchCorpus, getCorpusEvidence, useApi, type CorpusGroup, type CorpusSource } from "./api";
 import { Badge, DetailFrame, EvidenceRow, PassageView, SourceMetadata, passagePreview } from "./EvidenceUI";
 
-export default function CorpusScreen(props: { claim: string; onBack: () => void }) {
+export default function CorpusScreen(props: { claim: string; initialAsOf?: string; onBack: () => void }) {
   return <CorpusClaimScreen key={props.claim} {...props} />;
 }
 
-function CorpusClaimScreen({ claim, onBack }: { claim: string; onBack: () => void }) {
+function CorpusClaimScreen({ claim, initialAsOf, onBack }: { claim: string; initialAsOf?: string; onBack: () => void }) {
   const [assessmentReady, setAssessmentReady] = useState(false);
   const [scopeAnswer, setScopeAnswer] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -39,7 +39,7 @@ function CorpusClaimScreen({ claim, onBack }: { claim: string; onBack: () => voi
       </section>
       {data?.scope_context && <ScopeClarification key={scopeAnswer ?? "unanswered"} context={data.scope_context} onAnswer={answer => { setAssessmentReady(false); setScopeAnswer(answer); setSelected(null); setAssessmentDetail(false); }} />}
     </div>
-    <div hidden={!!selected}>{(scopeAnswer === null || data?.scope_context?.answer === scopeAnswer) && <AutomaticAssessment key={`${claim}:${scopeAnswer}`} claim={claim} expectedFacet={scopeAnswer === null ? undefined : data?.scope_context?.facet} onDetailChange={setAssessmentDetail} onResultChange={setAssessmentReady} />}</div>
+    <div hidden={!!selected}>{(scopeAnswer === null || data?.scope_context?.answer === scopeAnswer) && <AutomaticAssessment key={`${claim}:${scopeAnswer}`} claim={claim} initialAsOf={initialAsOf} expectedFacet={scopeAnswer === null ? undefined : data?.scope_context?.facet} onDetailChange={setAssessmentDetail} onResultChange={setAssessmentReady} />}</div>
     <div hidden={!!selected || assessmentDetail || assessmentReady}>
       {!data && !error && <p role="status">Searching the corpus…</p>}
       {error && <section className="ev-card" role="alert"><h2>Corpus search unavailable</h2><p>{error}</p>

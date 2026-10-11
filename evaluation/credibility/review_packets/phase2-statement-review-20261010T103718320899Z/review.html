@@ -1,0 +1,515 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Decidr — evidence review packet</title><style>
+body{font:16px/1.55 system-ui,sans-serif;max-width:980px;margin:36px auto;padding:0 22px;color:#182536;background:#f7f9fb}
+h1,h2,h3{line-height:1.2}section{background:white;border:1px solid #d4dce5;padding:24px;margin:28px 0;border-radius:10px}
+article{border-top:1px solid #d4dce5;margin-top:22px;padding-top:14px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.6 ui-monospace,monospace;background:#f1f4f7;padding:14px}
+.claim{font-size:19px;font-weight:650}.locator{font-size:13px;overflow-wrap:anywhere}label{display:block;margin:14px 0}select,input,textarea{box-sizing:border-box;display:block;width:100%;font:inherit;margin-top:5px;padding:9px;border:1px solid #98a8ba;border-radius:4px}textarea{min-height:86px}button{font:inherit;padding:10px 20px;cursor:pointer;background:#174d71;color:white;border:0;border-radius:5px}aside{border-left:4px solid #174d71;padding:8px 18px;background:#eaf1f6}summary{cursor:pointer}footer{position:sticky;bottom:0;background:#f7f9fb;padding:14px;border-top:1px solid #ccd6e1}#status{margin-left:12px}
+@media print{body{background:white;font-size:12px;margin:0}section{break-before:page;border:0}footer,button{display:none}textarea{min-height:65px}details pre{display:block}}
+</style><h1>Decidr evidence review</h1><p>Eight development cases · proposals and model results withheld</p>
+<aside><b>Review the exact claim against the supplied record.</b> A statement that somebody said something differs from a claim that it actually happened or was the effective rule. A matching quotation alone does not settle the relationship. Repeated accounts may share one origin.</aside>
+<h2>Instructions</h2><ol><li>Work individually before discussing answers or reading proposed labels/results. Disclose prior exposure below; this is not an unseen validation set.</li><li>Read the full claim, passage text and source metadata. Original Markdown is displayed verbatim. Do not treat every item from one source as independent corroboration.</li><li>Choose a target type, assess each passage, and assess the supplied packet together. Quote the exact text supporting your reasoning; explain missing scope or context. Do not infer events from instructions or approvals from missing fields.</li><li>Use <b>support</b> for evidence establishing the assertion within its stated scope; <b>contradict</b> for incompatible evidence about that same assertion; <b>qualify</b> for a material condition or limitation; <b>context</b> for relevant background that does not establish it; <b>unresolved</b> when the relationship cannot be determined. Missing information alone is not contradiction.</li><li>Record any additional evidence needed. This packet review is not a whole-corpus verdict or a request to assign numeric weights. If you consult other sources, record their identities and passages in the rationale.</li><li>Download your review JSON before closing. Entries are not automatically saved or transmitted. Reviewer names are audit labels, not authentication.</li></ol>
+<label>Reviewer name or agreed identifier<input id="reviewer"></label><label>Prior exposure to these cases or suggested answers<select id="exposure"><option value="">Select…</option><option value="none_declared">None declared</option><option value="cases_only">Cases seen; proposed answers/results not seen</option><option value="answers_seen">Proposed answers or results seen</option><option value="uncertain">Uncertain — explain in rationale</option></select></label>
+<section data-case="R01"><h2>R01</h2><p class="claim">All urgent new-business deals with discounts of 15% or greater were closed without prior Finance approval.</p><details><summary>Source metadata: INT-02 — Interview: Diane Okafor</summary><pre>{
+  &quot;source_id&quot;: &quot;phase2:INT-02&quot;,
+  &quot;title&quot;: &quot;INT-02 — Interview: Diane Okafor&quot;,
+  &quot;original_file_path&quot;: &quot;/Users/reis/Downloads/Decidr-main-clean/data/raw/phase2_model_development/04_interviews/INT-02_diane_okafor.md&quot;,
+  &quot;source_type&quot;: &quot;interview&quot;,
+  &quot;organisational_function&quot;: &quot;Sales&quot;,
+  &quot;responsible_person_or_role&quot;: &quot;Head of Sales, Sales&quot;,
+  &quot;author_or_system&quot;: &quot;Head of Sales&quot;,
+  &quot;creation_date&quot;: &quot;2026-06-15&quot;,
+  &quot;last_updated_date&quot;: null,
+  &quot;superseded_date&quot;: null,
+  &quot;effective_start_date&quot;: null,
+  &quot;effective_end_date&quot;: null,
+  &quot;version&quot;: null,
+  &quot;approval_status&quot;: null,
+  &quot;formality_level&quot;: &quot;operational&quot;,
+  &quot;lifecycle_status&quot;: &quot;current&quot;,
+  &quot;predecessor_source_id&quot;: null,
+  &quot;successor_source_id&quot;: null,
+  &quot;derived_from_source_id&quot;: null,
+  &quot;duplicate_group&quot;: null,
+  &quot;ingestion_status&quot;: &quot;ingested&quot;,
+  &quot;exclusion_reason&quot;: null,
+  &quot;checksum&quot;: &quot;a0e0f96d194e836879e34391e9e99aa6fe23c92502ed0767f5fb47633fccfe4e&quot;,
+  &quot;metadata_notes&quot;: &quot;release=phase2; relative_path=04_interviews/INT-02_diane_okafor.md&quot;,
+  &quot;metadata_provenance&quot;: {
+    &quot;title&quot;: &quot;direct:markdown_h1&quot;,
+    &quot;source_type&quot;: &quot;inferred:directory&quot;,
+    &quot;release&quot;: &quot;direct:configured_root&quot;,
+    &quot;checksum&quot;: &quot;calculated:sha256&quot;,
+    &quot;lifecycle_status&quot;: &quot;inferred:active_directory_not_proof_of_approval&quot;
+  },
+  &quot;metadata_version&quot;: &quot;document-metadata-v1&quot;,
+  &quot;header_evidence&quot;: [
+    {
+      &quot;key&quot;: &quot;role / function&quot;,
+      &quot;value&quot;: &quot;Head of Sales, Sales&quot;,
+      &quot;quote&quot;: &quot;- **Role / function:** Head of Sales, Sales&quot;,
+      &quot;line&quot;: 3,
+      &quot;start&quot;: 36,
+      &quot;end&quot;: 79,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-02&quot;
+    },
+    {
+      &quot;key&quot;: &quot;tenure&quot;,
+      &quot;value&quot;: &quot;5.1 years&quot;,
+      &quot;quote&quot;: &quot;- **Tenure:** 5.1 years&quot;,
+      &quot;line&quot;: 4,
+      &quot;start&quot;: 80,
+      &quot;end&quot;: 103,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-02&quot;
+    },
+    {
+      &quot;key&quot;: &quot;interview date&quot;,
+      &quot;value&quot;: &quot;2026-06-15&quot;,
+      &quot;quote&quot;: &quot;- **Interview date:** 2026-06-15&quot;,
+      &quot;line&quot;: 5,
+      &quot;start&quot;: 104,
+      &quot;end&quot;: 136,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-02&quot;
+    },
+    {
+      &quot;key&quot;: &quot;areas of responsibility&quot;,
+      &quot;value&quot;: &quot;Sales strategy, team management, pipeline, deal approvals within her authority.&quot;,
+      &quot;quote&quot;: &quot;- **Areas of responsibility:** Sales strategy, team management, pipeline, deal approvals within her authority.&quot;,
+      &quot;line&quot;: 6,
+      &quot;start&quot;: 137,
+      &quot;end&quot;: 247,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-02&quot;
+    }
+  ],
+  &quot;approval_clauses&quot;: [],
+  &quot;metadata_conflicts&quot;: []
+}</pre></details><label>What is the claim asking us to establish?<select data-field="assessment_target"><option value="">Select…</option><option value="recorded_statement">What was recorded as said/reported/instructed</option><option value="underlying_event">What actually happened or was the case</option><option value="formal_rule">What an applicable rule requires or permits</option><option value="mixed">More than one assertion type</option><option value="unclear">Cannot determine</option></select></label><article data-evidence="EV-31776d09dcfe69a2"><h3>EV-31776d09dcfe69a2</h3><p class="locator">heading:INT-02 — Interview: Diane Okafor &gt; Discussion notes#block:002</p><pre class="passage">On urgent deals: *&quot;Look, if something&#x27;s time-sensitive and Harriet&#x27;s not around, I&#x27;ll just tell the AE to go ahead and I&#x27;ll square it with her after. That&#x27;s not really bypassing anything, it&#x27;s just being pragmatic — we&#x27;re a small company.&quot;*</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><h3>Whole supplied packet</h3><label>Relationship to the exact claim<select data-field="packet_relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Overall rationale: scope, dates, conditions, attribution and uncertainty<textarea data-field="rationale"></textarea></label><label>Additional evidence/context needed, or “none”<textarea data-field="additional_context_needed"></textarea></label></section><section data-case="R02"><h2>R02</h2><p class="claim">In her interview, Diane reported telling an AE to proceed on urgent deals when Harriet was unavailable and settling matters with Harriet afterwards.</p><details><summary>Source metadata: INT-02 — Interview: Diane Okafor</summary><pre>{
+  &quot;source_id&quot;: &quot;phase2:INT-02&quot;,
+  &quot;title&quot;: &quot;INT-02 — Interview: Diane Okafor&quot;,
+  &quot;original_file_path&quot;: &quot;/Users/reis/Downloads/Decidr-main-clean/data/raw/phase2_model_development/04_interviews/INT-02_diane_okafor.md&quot;,
+  &quot;source_type&quot;: &quot;interview&quot;,
+  &quot;organisational_function&quot;: &quot;Sales&quot;,
+  &quot;responsible_person_or_role&quot;: &quot;Head of Sales, Sales&quot;,
+  &quot;author_or_system&quot;: &quot;Head of Sales&quot;,
+  &quot;creation_date&quot;: &quot;2026-06-15&quot;,
+  &quot;last_updated_date&quot;: null,
+  &quot;superseded_date&quot;: null,
+  &quot;effective_start_date&quot;: null,
+  &quot;effective_end_date&quot;: null,
+  &quot;version&quot;: null,
+  &quot;approval_status&quot;: null,
+  &quot;formality_level&quot;: &quot;operational&quot;,
+  &quot;lifecycle_status&quot;: &quot;current&quot;,
+  &quot;predecessor_source_id&quot;: null,
+  &quot;successor_source_id&quot;: null,
+  &quot;derived_from_source_id&quot;: null,
+  &quot;duplicate_group&quot;: null,
+  &quot;ingestion_status&quot;: &quot;ingested&quot;,
+  &quot;exclusion_reason&quot;: null,
+  &quot;checksum&quot;: &quot;a0e0f96d194e836879e34391e9e99aa6fe23c92502ed0767f5fb47633fccfe4e&quot;,
+  &quot;metadata_notes&quot;: &quot;release=phase2; relative_path=04_interviews/INT-02_diane_okafor.md&quot;,
+  &quot;metadata_provenance&quot;: {
+    &quot;title&quot;: &quot;direct:markdown_h1&quot;,
+    &quot;source_type&quot;: &quot;inferred:directory&quot;,
+    &quot;release&quot;: &quot;direct:configured_root&quot;,
+    &quot;checksum&quot;: &quot;calculated:sha256&quot;,
+    &quot;lifecycle_status&quot;: &quot;inferred:active_directory_not_proof_of_approval&quot;
+  },
+  &quot;metadata_version&quot;: &quot;document-metadata-v1&quot;,
+  &quot;header_evidence&quot;: [
+    {
+      &quot;key&quot;: &quot;role / function&quot;,
+      &quot;value&quot;: &quot;Head of Sales, Sales&quot;,
+      &quot;quote&quot;: &quot;- **Role / function:** Head of Sales, Sales&quot;,
+      &quot;line&quot;: 3,
+      &quot;start&quot;: 36,
+      &quot;end&quot;: 79,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-02&quot;
+    },
+    {
+      &quot;key&quot;: &quot;tenure&quot;,
+      &quot;value&quot;: &quot;5.1 years&quot;,
+      &quot;quote&quot;: &quot;- **Tenure:** 5.1 years&quot;,
+      &quot;line&quot;: 4,
+      &quot;start&quot;: 80,
+      &quot;end&quot;: 103,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-02&quot;
+    },
+    {
+      &quot;key&quot;: &quot;interview date&quot;,
+      &quot;value&quot;: &quot;2026-06-15&quot;,
+      &quot;quote&quot;: &quot;- **Interview date:** 2026-06-15&quot;,
+      &quot;line&quot;: 5,
+      &quot;start&quot;: 104,
+      &quot;end&quot;: 136,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-02&quot;
+    },
+    {
+      &quot;key&quot;: &quot;areas of responsibility&quot;,
+      &quot;value&quot;: &quot;Sales strategy, team management, pipeline, deal approvals within her authority.&quot;,
+      &quot;quote&quot;: &quot;- **Areas of responsibility:** Sales strategy, team management, pipeline, deal approvals within her authority.&quot;,
+      &quot;line&quot;: 6,
+      &quot;start&quot;: 137,
+      &quot;end&quot;: 247,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-02&quot;
+    }
+  ],
+  &quot;approval_clauses&quot;: [],
+  &quot;metadata_conflicts&quot;: []
+}</pre></details><label>What is the claim asking us to establish?<select data-field="assessment_target"><option value="">Select…</option><option value="recorded_statement">What was recorded as said/reported/instructed</option><option value="underlying_event">What actually happened or was the case</option><option value="formal_rule">What an applicable rule requires or permits</option><option value="mixed">More than one assertion type</option><option value="unclear">Cannot determine</option></select></label><article data-evidence="EV-31776d09dcfe69a2"><h3>EV-31776d09dcfe69a2</h3><p class="locator">heading:INT-02 — Interview: Diane Okafor &gt; Discussion notes#block:002</p><pre class="passage">On urgent deals: *&quot;Look, if something&#x27;s time-sensitive and Harriet&#x27;s not around, I&#x27;ll just tell the AE to go ahead and I&#x27;ll square it with her after. That&#x27;s not really bypassing anything, it&#x27;s just being pragmatic — we&#x27;re a small company.&quot;*</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><h3>Whole supplied packet</h3><label>Relationship to the exact claim<select data-field="packet_relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Overall rationale: scope, dates, conditions, attribution and uncertainty<textarea data-field="rationale"></textarea></label><label>Additional evidence/context needed, or “none”<textarea data-field="additional_context_needed"></textarea></label></section><section data-case="R03"><h2>R03</h2><p class="claim">In her interview, Harriet reported incomplete visibility into how often Diane&#x27;s urgent-deal workaround occurred.</p><details><summary>Source metadata: INT-03 — Interview: Harriet Doyle</summary><pre>{
+  &quot;source_id&quot;: &quot;phase2:INT-03&quot;,
+  &quot;title&quot;: &quot;INT-03 — Interview: Harriet Doyle&quot;,
+  &quot;original_file_path&quot;: &quot;/Users/reis/Downloads/Decidr-main-clean/data/raw/phase2_model_development/04_interviews/INT-03_harriet_doyle.md&quot;,
+  &quot;source_type&quot;: &quot;interview&quot;,
+  &quot;organisational_function&quot;: &quot;Finance &amp; People Ops&quot;,
+  &quot;responsible_person_or_role&quot;: &quot;Head of Finance &amp; People Ops, Finance &amp; People Ops&quot;,
+  &quot;author_or_system&quot;: &quot;Head of Finance &amp; People Ops&quot;,
+  &quot;creation_date&quot;: &quot;2026-06-17&quot;,
+  &quot;last_updated_date&quot;: null,
+  &quot;superseded_date&quot;: null,
+  &quot;effective_start_date&quot;: null,
+  &quot;effective_end_date&quot;: null,
+  &quot;version&quot;: null,
+  &quot;approval_status&quot;: null,
+  &quot;formality_level&quot;: &quot;operational&quot;,
+  &quot;lifecycle_status&quot;: &quot;current&quot;,
+  &quot;predecessor_source_id&quot;: null,
+  &quot;successor_source_id&quot;: null,
+  &quot;derived_from_source_id&quot;: null,
+  &quot;duplicate_group&quot;: null,
+  &quot;ingestion_status&quot;: &quot;ingested&quot;,
+  &quot;exclusion_reason&quot;: null,
+  &quot;checksum&quot;: &quot;cb0bc3bd78c6163c002f5addde262ac96ef9a6b921bb1d74ae126485a8ead1df&quot;,
+  &quot;metadata_notes&quot;: &quot;release=phase2; relative_path=04_interviews/INT-03_harriet_doyle.md&quot;,
+  &quot;metadata_provenance&quot;: {
+    &quot;title&quot;: &quot;direct:markdown_h1&quot;,
+    &quot;source_type&quot;: &quot;inferred:directory&quot;,
+    &quot;release&quot;: &quot;direct:configured_root&quot;,
+    &quot;checksum&quot;: &quot;calculated:sha256&quot;,
+    &quot;lifecycle_status&quot;: &quot;inferred:active_directory_not_proof_of_approval&quot;
+  },
+  &quot;metadata_version&quot;: &quot;document-metadata-v1&quot;,
+  &quot;header_evidence&quot;: [
+    {
+      &quot;key&quot;: &quot;role / function&quot;,
+      &quot;value&quot;: &quot;Head of Finance &amp; People Ops, Finance &amp; People Ops&quot;,
+      &quot;quote&quot;: &quot;- **Role / function:** Head of Finance &amp; People Ops, Finance &amp; People Ops&quot;,
+      &quot;line&quot;: 3,
+      &quot;start&quot;: 37,
+      &quot;end&quot;: 110,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-03&quot;
+    },
+    {
+      &quot;key&quot;: &quot;tenure&quot;,
+      &quot;value&quot;: &quot;5.7 years&quot;,
+      &quot;quote&quot;: &quot;- **Tenure:** 5.7 years&quot;,
+      &quot;line&quot;: 4,
+      &quot;start&quot;: 111,
+      &quot;end&quot;: 134,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-03&quot;
+    },
+    {
+      &quot;key&quot;: &quot;interview date&quot;,
+      &quot;value&quot;: &quot;2026-06-17&quot;,
+      &quot;quote&quot;: &quot;- **Interview date:** 2026-06-17&quot;,
+      &quot;line&quot;: 5,
+      &quot;start&quot;: 135,
+      &quot;end&quot;: 167,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-03&quot;
+    },
+    {
+      &quot;key&quot;: &quot;areas of responsibility&quot;,
+      &quot;value&quot;: &quot;Finance, discount approval, expense approval, people ops oversight.&quot;,
+      &quot;quote&quot;: &quot;- **Areas of responsibility:** Finance, discount approval, expense approval, people ops oversight.&quot;,
+      &quot;line&quot;: 6,
+      &quot;start&quot;: 168,
+      &quot;end&quot;: 266,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-03&quot;
+    }
+  ],
+  &quot;approval_clauses&quot;: [],
+  &quot;metadata_conflicts&quot;: []
+}</pre></details><label>What is the claim asking us to establish?<select data-field="assessment_target"><option value="">Select…</option><option value="recorded_statement">What was recorded as said/reported/instructed</option><option value="underlying_event">What actually happened or was the case</option><option value="formal_rule">What an applicable rule requires or permits</option><option value="mixed">More than one assertion type</option><option value="unclear">Cannot determine</option></select></label><article data-evidence="EV-2bccc2506965f13d"><h3>EV-2bccc2506965f13d</h3><p class="locator">heading:INT-03 — Interview: Harriet Doyle &gt; Discussion notes#block:001</p><pre class="passage">On discount approval: *&quot;I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that&#x27;s not really how the policy reads, but I get why it happens. I&#x27;ll be straight with you, I don&#x27;t have full visibility into how often it happens versus how often it&#x27;s reported to me.&quot;*</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><h3>Whole supplied packet</h3><label>Relationship to the exact claim<select data-field="packet_relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Overall rationale: scope, dates, conditions, attribution and uncertainty<textarea data-field="rationale"></textarea></label><label>Additional evidence/context needed, or “none”<textarea data-field="additional_context_needed"></textarea></label></section><section data-case="R04"><h2>R04</h2><p class="claim">DEAL-014 actually closed on 2 July 2025 without any prior Finance approval.</p><details><summary>Source metadata: Internal Communications Log</summary><pre>{
+  &quot;source_id&quot;: &quot;phase2:communications-log&quot;,
+  &quot;title&quot;: &quot;Internal Communications Log&quot;,
+  &quot;original_file_path&quot;: &quot;/Users/reis/Downloads/Decidr-main-clean/data/raw/phase2_model_development/06_communications/communications_log.md&quot;,
+  &quot;source_type&quot;: &quot;internal_communication&quot;,
+  &quot;organisational_function&quot;: null,
+  &quot;responsible_person_or_role&quot;: null,
+  &quot;author_or_system&quot;: null,
+  &quot;creation_date&quot;: null,
+  &quot;last_updated_date&quot;: null,
+  &quot;superseded_date&quot;: null,
+  &quot;effective_start_date&quot;: null,
+  &quot;effective_end_date&quot;: null,
+  &quot;version&quot;: null,
+  &quot;approval_status&quot;: null,
+  &quot;formality_level&quot;: &quot;operational&quot;,
+  &quot;lifecycle_status&quot;: &quot;current&quot;,
+  &quot;predecessor_source_id&quot;: null,
+  &quot;successor_source_id&quot;: null,
+  &quot;derived_from_source_id&quot;: null,
+  &quot;duplicate_group&quot;: null,
+  &quot;ingestion_status&quot;: &quot;ingested&quot;,
+  &quot;exclusion_reason&quot;: null,
+  &quot;checksum&quot;: &quot;d1a4c9e2ac38a23c8796e5de3e0c8de0e1b62496fa04a5641b0eda7920b60fa8&quot;,
+  &quot;metadata_notes&quot;: &quot;release=phase2; relative_path=06_communications/communications_log.md&quot;,
+  &quot;metadata_provenance&quot;: {
+    &quot;title&quot;: &quot;direct:markdown_h1&quot;,
+    &quot;source_type&quot;: &quot;inferred:directory&quot;,
+    &quot;release&quot;: &quot;direct:configured_root&quot;,
+    &quot;checksum&quot;: &quot;calculated:sha256&quot;,
+    &quot;lifecycle_status&quot;: &quot;inferred:active_directory_not_proof_of_approval&quot;
+  },
+  &quot;metadata_version&quot;: &quot;document-metadata-v1&quot;,
+  &quot;header_evidence&quot;: [],
+  &quot;approval_clauses&quot;: [],
+  &quot;metadata_conflicts&quot;: []
+}</pre></details><label>What is the claim asking us to establish?<select data-field="assessment_target"><option value="">Select…</option><option value="recorded_statement">What was recorded as said/reported/instructed</option><option value="underlying_event">What actually happened or was the case</option><option value="formal_rule">What an applicable rule requires or permits</option><option value="mixed">More than one assertion type</option><option value="unclear">Cannot determine</option></select></label><article data-evidence="EV-f6cd693a4b876cb8"><h3>EV-f6cd693a4b876cb8</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-01 — Slack DM: #deal-approvals#block:001</p><pre class="passage">**Participants:** Diane Okafor (Head of Sales) → Callum Reyes (Senior Account Executive)
+**Timestamp:** 2025-07-02, 14:12
+**Thread relationship:** Standalone DM, referencing deal DEAL-014.</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><article data-evidence="EV-d7f1d36cea1b1aee"><h3>EV-d7f1d36cea1b1aee</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-01 — Slack DM: #deal-approvals#block:002</p><pre class="passage">&gt; **Diane:** Go ahead and close DEAL-014 at 18% — I&#x27;m fine with it given the volume commitment. Don&#x27;t wait on Harriet, she&#x27;s out this week.
+&gt; **Callum:** Appreciate it — closing it out now.
+&gt; **Diane:** 👍</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><article data-evidence="EV-4875d9b03c28f36e"><h3>EV-4875d9b03c28f36e</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-01 — Slack DM: #deal-approvals#block:003</p><pre class="passage">*No corresponding entry was made in the CRM&#x27;s `approval_record` field for DEAL-014.*</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><h3>Whole supplied packet</h3><label>Relationship to the exact claim<select data-field="packet_relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Overall rationale: scope, dates, conditions, attribution and uncertainty<textarea data-field="rationale"></textarea></label><label>Additional evidence/context needed, or “none”<textarea data-field="additional_context_needed"></textarea></label></section><section data-case="R05"><h2>R05</h2><p class="claim">The formally effective Finance approval threshold on 19 May 2025 was 10%.</p><details><summary>Source metadata: Internal Communications Log</summary><pre>{
+  &quot;source_id&quot;: &quot;phase2:communications-log&quot;,
+  &quot;title&quot;: &quot;Internal Communications Log&quot;,
+  &quot;original_file_path&quot;: &quot;/Users/reis/Downloads/Decidr-main-clean/data/raw/phase2_model_development/06_communications/communications_log.md&quot;,
+  &quot;source_type&quot;: &quot;internal_communication&quot;,
+  &quot;organisational_function&quot;: null,
+  &quot;responsible_person_or_role&quot;: null,
+  &quot;author_or_system&quot;: null,
+  &quot;creation_date&quot;: null,
+  &quot;last_updated_date&quot;: null,
+  &quot;superseded_date&quot;: null,
+  &quot;effective_start_date&quot;: null,
+  &quot;effective_end_date&quot;: null,
+  &quot;version&quot;: null,
+  &quot;approval_status&quot;: null,
+  &quot;formality_level&quot;: &quot;operational&quot;,
+  &quot;lifecycle_status&quot;: &quot;current&quot;,
+  &quot;predecessor_source_id&quot;: null,
+  &quot;successor_source_id&quot;: null,
+  &quot;derived_from_source_id&quot;: null,
+  &quot;duplicate_group&quot;: null,
+  &quot;ingestion_status&quot;: &quot;ingested&quot;,
+  &quot;exclusion_reason&quot;: null,
+  &quot;checksum&quot;: &quot;d1a4c9e2ac38a23c8796e5de3e0c8de0e1b62496fa04a5641b0eda7920b60fa8&quot;,
+  &quot;metadata_notes&quot;: &quot;release=phase2; relative_path=06_communications/communications_log.md&quot;,
+  &quot;metadata_provenance&quot;: {
+    &quot;title&quot;: &quot;direct:markdown_h1&quot;,
+    &quot;source_type&quot;: &quot;inferred:directory&quot;,
+    &quot;release&quot;: &quot;direct:configured_root&quot;,
+    &quot;checksum&quot;: &quot;calculated:sha256&quot;,
+    &quot;lifecycle_status&quot;: &quot;inferred:active_directory_not_proof_of_approval&quot;
+  },
+  &quot;metadata_version&quot;: &quot;document-metadata-v1&quot;,
+  &quot;header_evidence&quot;: [],
+  &quot;approval_clauses&quot;: [],
+  &quot;metadata_conflicts&quot;: []
+}</pre></details><label>What is the claim asking us to establish?<select data-field="assessment_target"><option value="">Select…</option><option value="recorded_statement">What was recorded as said/reported/instructed</option><option value="underlying_event">What actually happened or was the case</option><option value="formal_rule">What an applicable rule requires or permits</option><option value="mixed">More than one assertion type</option><option value="unclear">Cannot determine</option></select></label><article data-evidence="EV-c9eef1886cdc4cc9"><h3>EV-c9eef1886cdc4cc9</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-05 — Email#block:001</p><pre class="passage">**From:** Jonah Fischer (Account Executive)
+**To:** Callum Reyes (Senior Account Executive)
+**Timestamp:** 2025-05-19, 11:02
+**Subject:** Quick q — discount threshold</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><article data-evidence="EV-6831f6e734942bd3"><h3>EV-6831f6e734942bd3</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-05 — Email#block:002</p><pre class="passage">&gt; **Jonah:** Hey — what&#x27;s our current Finance approval threshold for discounts? Want to make sure I quote this deal right.
+&gt; **Callum:** 10% and above needs Finance sign-off. Below that you&#x27;re fine to close yourself.
+&gt; **Jonah:** Perfect, thank you!</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><article data-evidence="EV-196691caf02dd3c5"><h3>EV-196691caf02dd3c5</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-05 — Email#block:003</p><pre class="passage">*This exchange occurs after the March 2025 threshold change took effect (POL-01, effective 2025-03-01). No correction is recorded in this thread or elsewhere.*</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><h3>Whole supplied packet</h3><label>Relationship to the exact claim<select data-field="packet_relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Overall rationale: scope, dates, conditions, attribution and uncertainty<textarea data-field="rationale"></textarea></label><label>Additional evidence/context needed, or “none”<textarea data-field="additional_context_needed"></textarea></label></section><section data-case="R06"><h2>R06</h2><p class="claim">In the recorded conversation dated 2 July 2025, Diane told Callum to close DEAL-014 at an 18% discount without waiting for Harriet.</p><details><summary>Source metadata: Internal Communications Log</summary><pre>{
+  &quot;source_id&quot;: &quot;phase2:communications-log&quot;,
+  &quot;title&quot;: &quot;Internal Communications Log&quot;,
+  &quot;original_file_path&quot;: &quot;/Users/reis/Downloads/Decidr-main-clean/data/raw/phase2_model_development/06_communications/communications_log.md&quot;,
+  &quot;source_type&quot;: &quot;internal_communication&quot;,
+  &quot;organisational_function&quot;: null,
+  &quot;responsible_person_or_role&quot;: null,
+  &quot;author_or_system&quot;: null,
+  &quot;creation_date&quot;: null,
+  &quot;last_updated_date&quot;: null,
+  &quot;superseded_date&quot;: null,
+  &quot;effective_start_date&quot;: null,
+  &quot;effective_end_date&quot;: null,
+  &quot;version&quot;: null,
+  &quot;approval_status&quot;: null,
+  &quot;formality_level&quot;: &quot;operational&quot;,
+  &quot;lifecycle_status&quot;: &quot;current&quot;,
+  &quot;predecessor_source_id&quot;: null,
+  &quot;successor_source_id&quot;: null,
+  &quot;derived_from_source_id&quot;: null,
+  &quot;duplicate_group&quot;: null,
+  &quot;ingestion_status&quot;: &quot;ingested&quot;,
+  &quot;exclusion_reason&quot;: null,
+  &quot;checksum&quot;: &quot;d1a4c9e2ac38a23c8796e5de3e0c8de0e1b62496fa04a5641b0eda7920b60fa8&quot;,
+  &quot;metadata_notes&quot;: &quot;release=phase2; relative_path=06_communications/communications_log.md&quot;,
+  &quot;metadata_provenance&quot;: {
+    &quot;title&quot;: &quot;direct:markdown_h1&quot;,
+    &quot;source_type&quot;: &quot;inferred:directory&quot;,
+    &quot;release&quot;: &quot;direct:configured_root&quot;,
+    &quot;checksum&quot;: &quot;calculated:sha256&quot;,
+    &quot;lifecycle_status&quot;: &quot;inferred:active_directory_not_proof_of_approval&quot;
+  },
+  &quot;metadata_version&quot;: &quot;document-metadata-v1&quot;,
+  &quot;header_evidence&quot;: [],
+  &quot;approval_clauses&quot;: [],
+  &quot;metadata_conflicts&quot;: []
+}</pre></details><label>What is the claim asking us to establish?<select data-field="assessment_target"><option value="">Select…</option><option value="recorded_statement">What was recorded as said/reported/instructed</option><option value="underlying_event">What actually happened or was the case</option><option value="formal_rule">What an applicable rule requires or permits</option><option value="mixed">More than one assertion type</option><option value="unclear">Cannot determine</option></select></label><article data-evidence="EV-f6cd693a4b876cb8"><h3>EV-f6cd693a4b876cb8</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-01 — Slack DM: #deal-approvals#block:001</p><pre class="passage">**Participants:** Diane Okafor (Head of Sales) → Callum Reyes (Senior Account Executive)
+**Timestamp:** 2025-07-02, 14:12
+**Thread relationship:** Standalone DM, referencing deal DEAL-014.</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><article data-evidence="EV-d7f1d36cea1b1aee"><h3>EV-d7f1d36cea1b1aee</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-01 — Slack DM: #deal-approvals#block:002</p><pre class="passage">&gt; **Diane:** Go ahead and close DEAL-014 at 18% — I&#x27;m fine with it given the volume commitment. Don&#x27;t wait on Harriet, she&#x27;s out this week.
+&gt; **Callum:** Appreciate it — closing it out now.
+&gt; **Diane:** 👍</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><article data-evidence="EV-4875d9b03c28f36e"><h3>EV-4875d9b03c28f36e</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-01 — Slack DM: #deal-approvals#block:003</p><pre class="passage">*No corresponding entry was made in the CRM&#x27;s `approval_record` field for DEAL-014.*</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><h3>Whole supplied packet</h3><label>Relationship to the exact claim<select data-field="packet_relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Overall rationale: scope, dates, conditions, attribution and uncertainty<textarea data-field="rationale"></textarea></label><label>Additional evidence/context needed, or “none”<textarea data-field="additional_context_needed"></textarea></label></section><section data-case="R07"><h2>R07</h2><p class="claim">In the recorded email exchange dated 19 May 2025, Callum told Jonah that discounts of 10% and above needed Finance sign-off.</p><details><summary>Source metadata: Internal Communications Log</summary><pre>{
+  &quot;source_id&quot;: &quot;phase2:communications-log&quot;,
+  &quot;title&quot;: &quot;Internal Communications Log&quot;,
+  &quot;original_file_path&quot;: &quot;/Users/reis/Downloads/Decidr-main-clean/data/raw/phase2_model_development/06_communications/communications_log.md&quot;,
+  &quot;source_type&quot;: &quot;internal_communication&quot;,
+  &quot;organisational_function&quot;: null,
+  &quot;responsible_person_or_role&quot;: null,
+  &quot;author_or_system&quot;: null,
+  &quot;creation_date&quot;: null,
+  &quot;last_updated_date&quot;: null,
+  &quot;superseded_date&quot;: null,
+  &quot;effective_start_date&quot;: null,
+  &quot;effective_end_date&quot;: null,
+  &quot;version&quot;: null,
+  &quot;approval_status&quot;: null,
+  &quot;formality_level&quot;: &quot;operational&quot;,
+  &quot;lifecycle_status&quot;: &quot;current&quot;,
+  &quot;predecessor_source_id&quot;: null,
+  &quot;successor_source_id&quot;: null,
+  &quot;derived_from_source_id&quot;: null,
+  &quot;duplicate_group&quot;: null,
+  &quot;ingestion_status&quot;: &quot;ingested&quot;,
+  &quot;exclusion_reason&quot;: null,
+  &quot;checksum&quot;: &quot;d1a4c9e2ac38a23c8796e5de3e0c8de0e1b62496fa04a5641b0eda7920b60fa8&quot;,
+  &quot;metadata_notes&quot;: &quot;release=phase2; relative_path=06_communications/communications_log.md&quot;,
+  &quot;metadata_provenance&quot;: {
+    &quot;title&quot;: &quot;direct:markdown_h1&quot;,
+    &quot;source_type&quot;: &quot;inferred:directory&quot;,
+    &quot;release&quot;: &quot;direct:configured_root&quot;,
+    &quot;checksum&quot;: &quot;calculated:sha256&quot;,
+    &quot;lifecycle_status&quot;: &quot;inferred:active_directory_not_proof_of_approval&quot;
+  },
+  &quot;metadata_version&quot;: &quot;document-metadata-v1&quot;,
+  &quot;header_evidence&quot;: [],
+  &quot;approval_clauses&quot;: [],
+  &quot;metadata_conflicts&quot;: []
+}</pre></details><label>What is the claim asking us to establish?<select data-field="assessment_target"><option value="">Select…</option><option value="recorded_statement">What was recorded as said/reported/instructed</option><option value="underlying_event">What actually happened or was the case</option><option value="formal_rule">What an applicable rule requires or permits</option><option value="mixed">More than one assertion type</option><option value="unclear">Cannot determine</option></select></label><article data-evidence="EV-c9eef1886cdc4cc9"><h3>EV-c9eef1886cdc4cc9</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-05 — Email#block:001</p><pre class="passage">**From:** Jonah Fischer (Account Executive)
+**To:** Callum Reyes (Senior Account Executive)
+**Timestamp:** 2025-05-19, 11:02
+**Subject:** Quick q — discount threshold</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><article data-evidence="EV-6831f6e734942bd3"><h3>EV-6831f6e734942bd3</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-05 — Email#block:002</p><pre class="passage">&gt; **Jonah:** Hey — what&#x27;s our current Finance approval threshold for discounts? Want to make sure I quote this deal right.
+&gt; **Callum:** 10% and above needs Finance sign-off. Below that you&#x27;re fine to close yourself.
+&gt; **Jonah:** Perfect, thank you!</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><article data-evidence="EV-196691caf02dd3c5"><h3>EV-196691caf02dd3c5</h3><p class="locator">heading:Internal Communications Log &gt; COMMS-05 — Email#block:003</p><pre class="passage">*This exchange occurs after the March 2025 threshold change took effect (POL-01, effective 2025-03-01). No correction is recorded in this thread or elsewhere.*</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><h3>Whole supplied packet</h3><label>Relationship to the exact claim<select data-field="packet_relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Overall rationale: scope, dates, conditions, attribution and uncertainty<textarea data-field="rationale"></textarea></label><label>Additional evidence/context needed, or “none”<textarea data-field="additional_context_needed"></textarea></label></section><section data-case="R08"><h2>R08</h2><p class="claim">Harriet independently verified every urgent deal that Diane approved before informing Finance.</p><details><summary>Source metadata: INT-03 — Interview: Harriet Doyle</summary><pre>{
+  &quot;source_id&quot;: &quot;phase2:INT-03&quot;,
+  &quot;title&quot;: &quot;INT-03 — Interview: Harriet Doyle&quot;,
+  &quot;original_file_path&quot;: &quot;/Users/reis/Downloads/Decidr-main-clean/data/raw/phase2_model_development/04_interviews/INT-03_harriet_doyle.md&quot;,
+  &quot;source_type&quot;: &quot;interview&quot;,
+  &quot;organisational_function&quot;: &quot;Finance &amp; People Ops&quot;,
+  &quot;responsible_person_or_role&quot;: &quot;Head of Finance &amp; People Ops, Finance &amp; People Ops&quot;,
+  &quot;author_or_system&quot;: &quot;Head of Finance &amp; People Ops&quot;,
+  &quot;creation_date&quot;: &quot;2026-06-17&quot;,
+  &quot;last_updated_date&quot;: null,
+  &quot;superseded_date&quot;: null,
+  &quot;effective_start_date&quot;: null,
+  &quot;effective_end_date&quot;: null,
+  &quot;version&quot;: null,
+  &quot;approval_status&quot;: null,
+  &quot;formality_level&quot;: &quot;operational&quot;,
+  &quot;lifecycle_status&quot;: &quot;current&quot;,
+  &quot;predecessor_source_id&quot;: null,
+  &quot;successor_source_id&quot;: null,
+  &quot;derived_from_source_id&quot;: null,
+  &quot;duplicate_group&quot;: null,
+  &quot;ingestion_status&quot;: &quot;ingested&quot;,
+  &quot;exclusion_reason&quot;: null,
+  &quot;checksum&quot;: &quot;cb0bc3bd78c6163c002f5addde262ac96ef9a6b921bb1d74ae126485a8ead1df&quot;,
+  &quot;metadata_notes&quot;: &quot;release=phase2; relative_path=04_interviews/INT-03_harriet_doyle.md&quot;,
+  &quot;metadata_provenance&quot;: {
+    &quot;title&quot;: &quot;direct:markdown_h1&quot;,
+    &quot;source_type&quot;: &quot;inferred:directory&quot;,
+    &quot;release&quot;: &quot;direct:configured_root&quot;,
+    &quot;checksum&quot;: &quot;calculated:sha256&quot;,
+    &quot;lifecycle_status&quot;: &quot;inferred:active_directory_not_proof_of_approval&quot;
+  },
+  &quot;metadata_version&quot;: &quot;document-metadata-v1&quot;,
+  &quot;header_evidence&quot;: [
+    {
+      &quot;key&quot;: &quot;role / function&quot;,
+      &quot;value&quot;: &quot;Head of Finance &amp; People Ops, Finance &amp; People Ops&quot;,
+      &quot;quote&quot;: &quot;- **Role / function:** Head of Finance &amp; People Ops, Finance &amp; People Ops&quot;,
+      &quot;line&quot;: 3,
+      &quot;start&quot;: 37,
+      &quot;end&quot;: 110,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-03&quot;
+    },
+    {
+      &quot;key&quot;: &quot;tenure&quot;,
+      &quot;value&quot;: &quot;5.7 years&quot;,
+      &quot;quote&quot;: &quot;- **Tenure:** 5.7 years&quot;,
+      &quot;line&quot;: 4,
+      &quot;start&quot;: 111,
+      &quot;end&quot;: 134,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-03&quot;
+    },
+    {
+      &quot;key&quot;: &quot;interview date&quot;,
+      &quot;value&quot;: &quot;2026-06-17&quot;,
+      &quot;quote&quot;: &quot;- **Interview date:** 2026-06-17&quot;,
+      &quot;line&quot;: 5,
+      &quot;start&quot;: 135,
+      &quot;end&quot;: 167,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-03&quot;
+    },
+    {
+      &quot;key&quot;: &quot;areas of responsibility&quot;,
+      &quot;value&quot;: &quot;Finance, discount approval, expense approval, people ops oversight.&quot;,
+      &quot;quote&quot;: &quot;- **Areas of responsibility:** Finance, discount approval, expense approval, people ops oversight.&quot;,
+      &quot;line&quot;: 6,
+      &quot;start&quot;: 168,
+      &quot;end&quot;: 266,
+      &quot;scope&quot;: &quot;document_header&quot;,
+      &quot;references&quot;: [],
+      &quot;source_id&quot;: &quot;phase2:INT-03&quot;
+    }
+  ],
+  &quot;approval_clauses&quot;: [],
+  &quot;metadata_conflicts&quot;: []
+}</pre></details><label>What is the claim asking us to establish?<select data-field="assessment_target"><option value="">Select…</option><option value="recorded_statement">What was recorded as said/reported/instructed</option><option value="underlying_event">What actually happened or was the case</option><option value="formal_rule">What an applicable rule requires or permits</option><option value="mixed">More than one assertion type</option><option value="unclear">Cannot determine</option></select></label><article data-evidence="EV-2bccc2506965f13d"><h3>EV-2bccc2506965f13d</h3><p class="locator">heading:INT-03 — Interview: Harriet Doyle &gt; Discussion notes#block:001</p><pre class="passage">On discount approval: *&quot;I approve what comes to me. I know Diane sometimes okays urgent ones herself and tells me after — that&#x27;s not really how the policy reads, but I get why it happens. I&#x27;ll be straight with you, I don&#x27;t have full visibility into how often it happens versus how often it&#x27;s reported to me.&quot;*</pre><label>Relationship of this passage to the exact claim<select data-field="relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Exact quotation supporting your judgement (copy from above)<textarea data-field="quotation"></textarea></label><label>Passage rationale / limits / dependence on other passages<textarea data-field="rationale"></textarea></label></article><h3>Whole supplied packet</h3><label>Relationship to the exact claim<select data-field="packet_relationship"><option value="">Select…</option><option value="support">Support</option><option value="contradict">Contradict</option><option value="qualify">Qualify</option><option value="context">Context</option><option value="unresolved">Unresolved</option></select></label><label>Overall rationale: scope, dates, conditions, attribution and uncertainty<textarea data-field="rationale"></textarea></label><label>Additional evidence/context needed, or “none”<textarea data-field="additional_context_needed"></textarea></label></section><footer><button id="save">Download review JSON</button><span id="status"></span></footer>
+<script type="application/json" id="template">{"packet_id": "phase2-statement-review-20261010T103718320899Z", "packet_sha256": "a2f6aa07a08e5515e58d84ddbbea45a7c79f654d7eb0524a0b1bcdd2dfa8162e", "reviewer": "", "reviewed_at": "", "prior_exposure": "", "cases": [{"review_id": "R01", "assessment_target": "", "packet_relationship": "", "rationale": "", "additional_context_needed": "", "evidence_reviews": [{"evidence_id": "EV-31776d09dcfe69a2", "relationship": "", "quotation": "", "rationale": ""}]}, {"review_id": "R02", "assessment_target": "", "packet_relationship": "", "rationale": "", "additional_context_needed": "", "evidence_reviews": [{"evidence_id": "EV-31776d09dcfe69a2", "relationship": "", "quotation": "", "rationale": ""}]}, {"review_id": "R03", "assessment_target": "", "packet_relationship": "", "rationale": "", "additional_context_needed": "", "evidence_reviews": [{"evidence_id": "EV-2bccc2506965f13d", "relationship": "", "quotation": "", "rationale": ""}]}, {"review_id": "R04", "assessment_target": "", "packet_relationship": "", "rationale": "", "additional_context_needed": "", "evidence_reviews": [{"evidence_id": "EV-f6cd693a4b876cb8", "relationship": "", "quotation": "", "rationale": ""}, {"evidence_id": "EV-d7f1d36cea1b1aee", "relationship": "", "quotation": "", "rationale": ""}, {"evidence_id": "EV-4875d9b03c28f36e", "relationship": "", "quotation": "", "rationale": ""}]}, {"review_id": "R05", "assessment_target": "", "packet_relationship": "", "rationale": "", "additional_context_needed": "", "evidence_reviews": [{"evidence_id": "EV-c9eef1886cdc4cc9", "relationship": "", "quotation": "", "rationale": ""}, {"evidence_id": "EV-6831f6e734942bd3", "relationship": "", "quotation": "", "rationale": ""}, {"evidence_id": "EV-196691caf02dd3c5", "relationship": "", "quotation": "", "rationale": ""}]}, {"review_id": "R06", "assessment_target": "", "packet_relationship": "", "rationale": "", "additional_context_needed": "", "evidence_reviews": [{"evidence_id": "EV-f6cd693a4b876cb8", "relationship": "", "quotation": "", "rationale": ""}, {"evidence_id": "EV-d7f1d36cea1b1aee", "relationship": "", "quotation": "", "rationale": ""}, {"evidence_id": "EV-4875d9b03c28f36e", "relationship": "", "quotation": "", "rationale": ""}]}, {"review_id": "R07", "assessment_target": "", "packet_relationship": "", "rationale": "", "additional_context_needed": "", "evidence_reviews": [{"evidence_id": "EV-c9eef1886cdc4cc9", "relationship": "", "quotation": "", "rationale": ""}, {"evidence_id": "EV-6831f6e734942bd3", "relationship": "", "quotation": "", "rationale": ""}, {"evidence_id": "EV-196691caf02dd3c5", "relationship": "", "quotation": "", "rationale": ""}]}, {"review_id": "R08", "assessment_target": "", "packet_relationship": "", "rationale": "", "additional_context_needed": "", "evidence_reviews": [{"evidence_id": "EV-2bccc2506965f13d", "relationship": "", "quotation": "", "rationale": ""}]}]}</script><script>
+const template=JSON.parse(document.getElementById('template').textContent);
+document.getElementById('save').onclick=()=>{
+ const result=JSON.parse(JSON.stringify(template));result.reviewer=document.getElementById('reviewer').value.trim();result.prior_exposure=document.getElementById('exposure').value;result.reviewed_at=new Date().toISOString();
+ for(const section of document.querySelectorAll('section[data-case]')){
+  const c=result.cases.find(x=>x.review_id===section.dataset.case);
+  for(const field of section.querySelectorAll('[data-field]')){
+   const article=field.closest('article[data-evidence]');
+   if(article){c.evidence_reviews.find(x=>x.evidence_id===article.dataset.evidence)[field.dataset.field]=field.value.trim();}
+   else{c[field.dataset.field]=field.value.trim();}
+  }
+ }
+ const incomplete=!result.reviewer||!result.prior_exposure||result.cases.some(c=>!c.assessment_target||!c.packet_relationship||!c.rationale||c.evidence_reviews.some(e=>!e.relationship||!e.rationale));
+ result.review_status=incomplete?'draft':'submitted_for_comparison';
+ const blob=new Blob([JSON.stringify(result,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=template.packet_id+'-review.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ document.getElementById('status').textContent=incomplete?'Draft downloaded; some fields remain blank.':'Review downloaded. Keep your original copy.';
+};</script></html>

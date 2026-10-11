@@ -55,3 +55,17 @@ def test_body_mention_outside_rule_section_does_not_generate_question():
     sources, evidence = corpus()
     evidence[1].heading = "References"
     assert scope_context("Discounts require approval", None, sources, evidence)["status"] == "not_requested"
+
+
+@pytest.mark.parametrize(
+    "claim",
+    [
+        "Alex approved a 32% discount on Teams.",
+        "The 41% discount was authorised by Sam Patel before signing.",
+    ],
+)
+def test_recognised_transaction_does_not_request_unnecessary_policy_scope(claim):
+    assert check(claim)["status"] == "not_requested"
+    result = check(claim, "New-business deals")
+    assert result["status"] == "scope_supplied"
+    assert result["facet"] == claim + "\n\nScope supplied by user: New-business deals"

@@ -1,0 +1,20 @@
+{
+  "experiment_version": "recorded-statement-sensitivity-v1",
+  "git_revision": "70cc85560ea78658415c71d379298c185c606c66",
+  "as_of": "2026-07-31",
+  "code_sha256": {
+    "/Users/reis/Downloads/Decidr-integration/framework/credibility.py": "be5c00814972123bd7b605c232b43fe4d1d2755a151130a78d3b67a42c836868",
+    "/Users/reis/Downloads/Decidr-integration/decidr/assessment_adapter.py": "a656478e504a9ba341f5929ab907477e29a45340f6e69d152a5b59dfe5090605",
+    "/Users/reis/Downloads/Decidr-integration/decidr/assessment_targets.py": "406af19bbceb70bd2f7e8c525ff30ea8e80010f4f34d55ff7c1baf1d5bb9e375",
+    "/Users/reis/Downloads/decidr-recorded-statement-experiment.py": "d76ed1d6041b996045bb56735ae63ad13e945319c37c4b15e0f483414d58a69d"
+  },
+  "configuration_sha256": "5c9e2b5ac3fc8705956ba6537310f511269120a5a79700902e80f02bb9a45d27",
+  "results_sha256": "f70e899184a2a3f99c16cbf7882f48ea05836fea083d7dfd43b521c1399b8e8f",
+  "scoring_formula_promoted": false,
+  "limitations": [
+    "Target declarations, support attempts and quality assumptions are supplied.",
+    "Broader cases are adversarial target checks, not interpretation predictions.",
+    "Only recorded-statement scores are experimentally adjusted.",
+    "No held-out evaluation, calibration, or accuracy claim."
+  ]
+}
