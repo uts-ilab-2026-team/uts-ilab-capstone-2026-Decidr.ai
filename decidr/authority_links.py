@@ -35,6 +35,69 @@ def _date_context(source: Source, as_of: date) -> dict:
     }
 
 
+def _meeting_context(seed: Evidence, source: Source, passages: list[Evidence]) -> dict:
+    """Keep sibling decision sections within the seed's exact heading parent.
+
+    Heading proximity supplies review context only, never a semantic connection
+    between a decision and the referenced policy. Preserve negative decisions.
+    """
+    result = {
+        "status": "not_expanded",
+        "passages": [],
+        "total_matches": 0,
+        "omitted_matches": 0,
+        "limit": 8,
+        "reason": "Meeting type and an explicit parent heading are required.",
+    }
+    if source.source_type != "meeting" or not seed.section or " > " not in seed.section:
+        return result
+    parent, heading = seed.section.rsplit(" > ", 1)
+    if not parent.strip() or heading != seed.heading:
+        return result
+    selected_headings = {
+        "decision owner",
+        "final decision",
+        "conditions or exceptions",
+        "unresolved matters",
+        "actions",
+    }
+    matches = []
+    for passage in passages:
+        if passage.source_id != seed.source_id or passage.evidence_id == seed.evidence_id:
+            continue
+        section = passage.section or ""
+        if section == parent:
+            kind = "parent_section"
+        elif " > " in section:
+            candidate_parent, candidate_heading = section.rsplit(" > ", 1)
+            if (
+                candidate_parent != parent
+                or candidate_heading != passage.heading
+                or candidate_heading.casefold() not in selected_headings
+            ):
+                continue
+            kind = "sibling_decision_section"
+        else:
+            continue
+        matches.append((passage, kind))
+    matches.sort(key=lambda item: (item[0].section or "", item[0].locator, item[0].evidence_id))
+    result.update(
+        status="context_found" if matches else "no_matching_sections",
+        parent_section=parent,
+        total_matches=len(matches),
+        omitted_matches=max(0, len(matches) - result["limit"]),
+        reason=(
+            "Sections share the reference's heading parent. Their relevance to the policy, "
+            "adoption decision and signatory authority remains unverified."
+        ),
+    )
+    result["passages"] = [
+        {"relationship": kind, "heading": passage.heading, "citation": _quote(passage)}
+        for passage, kind in matches[: result["limit"]]
+    ]
+    return result
+
+
 def explicit_authority_links(
     *,
     source: Source,
@@ -108,6 +171,7 @@ def explicit_authority_links(
                 "citation": _quote(passage),
                 "date_context": _date_context(referring, as_of),
                 "adoption_status": "unresolved",
+                "meeting_context": _meeting_context(passage, referring, passages),
             }
         )
     result["status"] = "references_found" if matches else "unresolved"

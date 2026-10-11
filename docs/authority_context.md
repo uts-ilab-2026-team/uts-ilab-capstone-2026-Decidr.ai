@@ -1,5 +1,26 @@
 # Cited authority context
 
+## Context from explicitly linked meetings
+
+Each explicit reference includes `meeting_context`. For meeting sources with a
+structured heading parent, this retains the parent passage and sibling sections
+named Decision owner, Final decision, Conditions or exceptions, Unresolved
+matters and Actions. Each passage has its own complete exact citation. The
+reference passage itself is not duplicated in its context.
+
+Expansion stays within the same source and exact heading parent, so an explicit
+reference under one agenda item does not pull decisions from another item.
+Non-meetings, missing heading hierarchy and other section names are not expanded.
+The selection is a bounded structural rule, not general interpretation of meeting
+minutes. A maximum of eight context passages per reference is returned, with
+total and omitted counts and deterministic ordering.
+
+These are contextual decision records. They may contain rejection, conditional
+approval or unresolved scope, and do not automatically establish policy adoption,
+sign-off, independence or authority. `adoption_status` remains unresolved.
+Context does not increase the explicit-reference count or enter scoring inputs.
+The frontend and history contracts are unchanged.
+
 ## Cross-document references
 
 Proposals also return `authority_links`. This searches original indexed passages
