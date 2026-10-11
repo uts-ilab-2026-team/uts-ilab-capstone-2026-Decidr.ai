@@ -1,14 +1,20 @@
 import { useRef, useState } from "react";
 import SuppliedAssessment from "./SuppliedAssessment";
+import ScopeClarification from "./ScopeClarification";
 import { searchCorpus, getCorpusEvidence, useApi, type CorpusGroup, type CorpusSource } from "./api";
 import { Badge, DetailFrame, EvidenceRow, PassageView, SourceMetadata, passagePreview } from "./EvidenceUI";
 
-export default function CorpusScreen({ claim, onBack }: { claim: string; onBack: () => void }) {
+export default function CorpusScreen(props: { claim: string; onBack: () => void }) {
+  return <CorpusClaimScreen key={props.claim} {...props} />;
+}
+
+function CorpusClaimScreen({ claim, onBack }: { claim: string; onBack: () => void }) {
+  const [scopeAnswer, setScopeAnswer] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [selected, setSelected] = useState<CorpusGroup | null>(null);
   const [assessmentDetail, setAssessmentDetail] = useState(false);
   const origin = useRef<HTMLElement | null>(null);
-  const { data, error } = useApi(() => searchCorpus(claim), [claim, attempt]);
+  const { data, error } = useApi(() => searchCorpus(claim, scopeAnswer), [claim, scopeAnswer, attempt]);
   const sources = new Map(data?.sources.map((source) => [source.source_id, source]) ?? []);
   const open = (group: CorpusGroup) => { origin.current = document.activeElement as HTMLElement; setSelected(group); };
   const back = () => { setSelected(null); requestAnimationFrame(() => origin.current?.focus()); };
@@ -30,8 +36,9 @@ export default function CorpusScreen({ claim, onBack }: { claim: string; onBack:
         <p className="ev-claim">{claim}</p><Badge>Retrieval candidates · Unassessed</Badge>
         <p className="ev-muted">Retrieval does not establish support, contradiction, credibility or temporal applicability.</p>
       </section>
+      {data?.scope_context && <ScopeClarification key={scopeAnswer ?? "unanswered"} context={data.scope_context} onAnswer={answer => { setScopeAnswer(answer); setSelected(null); setAssessmentDetail(false); }} />}
     </div>
-    <div hidden={!!selected}><SuppliedAssessment key={claim} claim={claim} onDetailChange={setAssessmentDetail} /></div>
+    <div hidden={!!selected}>{(scopeAnswer === null || data?.scope_context?.answer === scopeAnswer) && <SuppliedAssessment key={`${claim}:${scopeAnswer}`} claim={claim} expectedFacet={scopeAnswer === null ? undefined : data?.scope_context?.facet} onDetailChange={setAssessmentDetail} />}</div>
     <div hidden={!!selected || assessmentDetail}>
       {!data && !error && <p role="status">Searching the corpus…</p>}
       {error && <section className="ev-card" role="alert"><h2>Corpus search unavailable</h2><p>{error}</p>

@@ -84,6 +84,25 @@ def test_search_preserves_claim_citations_and_does_not_write(client, corpus_db):
     assert path.read_bytes() == before
 
 
+def test_scope_answer_preserves_original_claim_and_database(client, corpus_db):
+    path, _ = corpus_db
+    before = path.read_bytes()
+    claim = "  Travel approval requires a manager decision.  "
+    result = client.post("/api/corpus/search", json={"claim": claim, "scope_answer": "International travel"})
+    assert result.status_code == 200, result.text
+    body = result.json()
+    assert body["claim"] == claim
+    assert body["scope_context"]["answer"] == "International travel"
+    assert body["scope_context"]["facet"] == claim + "\n\nScope supplied by user: International travel"
+    assert body["assessment"] is None
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize("answer", ["", " ", 123, "a" * 501])
+def test_invalid_scope_answer_rejected(client, corpus_db, answer):
+    assert client.post("/api/corpus/search", json={"claim": "Travel", "scope_answer": answer}).status_code == 422
+
+
 def test_no_match_does_not_create_a_verdict(client, corpus_db):
     response = client.post(
         "/api/corpus/search", json={"claim": "zzzxxyyqq"}

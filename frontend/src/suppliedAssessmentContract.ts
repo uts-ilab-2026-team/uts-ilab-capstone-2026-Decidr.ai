@@ -43,13 +43,16 @@ export interface SuppliedResult {
   limitations: string[];
 }
 
-export function parseSuppliedRequest(text: string, claim: string): SuppliedRequest {
+export function parseSuppliedRequest(text: string, claim: string, expectedFacet?: string): SuppliedRequest {
   const value = JSON.parse(text);
   if (!value || typeof value !== "object" || Array.isArray(value) ||
       value.claim_text !== claim || typeof value.facet !== "string" || !value.facet.trim() ||
       typeof value.as_of !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.as_of) ||
       !Array.isArray(value.inputs) || value.inputs.length < 1 || value.inputs.length > 50) {
     throw new Error("Use an assessment request with the exact displayed claim, a facet, assessment date and 1–50 supplied inputs. Reviewer-return files are a different format.");
+  }
+  if (expectedFacet !== undefined && value.facet !== expectedFacet) {
+    throw new Error("The prepared facet must match the displayed claim and user-supplied scope. Prepare new judgements for this scope.");
   }
   return value;
 }

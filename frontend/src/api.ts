@@ -259,7 +259,14 @@ export interface CorpusGroup {
   passages: CorpusPassage[];
 }
 
+export interface ScopeContext {
+  status: "not_requested" | "clarification_available" | "scope_supplied";
+  question: string | null; options: string[]; answer: string | null; facet: string;
+  basis: { label: string; source_title: string; source_id: string; evidence_id: string; locator: string; quotation: string }[];
+}
+
 export interface CorpusSearchResponse {
+  scope_context?: ScopeContext;
   claim: string;
   status: "retrieved_unassessed";
   assessment: null;
@@ -274,8 +281,8 @@ export interface CorpusSearchResponse {
   limitations: string[];
 }
 
-export const searchCorpus = (claim: string) =>
-  post<CorpusSearchResponse>("/corpus/search", { claim, limit: 8 });
+export const searchCorpus = (claim: string, scopeAnswer: string | null = null) =>
+  post<CorpusSearchResponse>("/corpus/search", { claim, limit: 8, ...(scopeAnswer === null ? {} : { scope_answer: scopeAnswer }) });
 
 
 export interface CorpusCitationResponse {

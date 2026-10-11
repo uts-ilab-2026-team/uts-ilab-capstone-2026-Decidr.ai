@@ -4,6 +4,35 @@ import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import SuppliedAssessment, { SuppliedResultView, SuppliedEvidenceDetail } from "../src/SuppliedAssessment";
 import type { SuppliedResult } from "../src/suppliedAssessmentContract";
+import ScopeClarification from "../src/ScopeClarification";
+import { parseSuppliedRequest } from "../src/suppliedAssessmentContract";
+
+test("clarification uses existing cards and exposes optional scope choices", () => {
+  const html = renderToStaticMarkup(<ScopeClarification onAnswer={() => {}} context={{
+    status: "clarification_available", question: "Which deal type?", options: ["New-business deals", "Renewal deals", "All deal types"],
+    answer: null, facet: "Original", basis: [],
+  }} />);
+  for (const text of ["ev-card", "Which deal type?", "All deal types", "Continue without narrowing", "Another scope or explanation"])
+    assert.ok(html.includes(text));
+  assert.ok(!html.includes("Conditional outcome"));
+});
+
+test("selected scope is visible and does not become a verdict", () => {
+  const html = renderToStaticMarkup(<ScopeClarification onAnswer={() => {}} context={{
+    status: "scope_supplied", question: null, options: [], answer: "<custom scope>", facet: "Original", basis: [],
+  }} />);
+  assert.ok(html.includes("&lt;custom scope&gt;"));
+  assert.ok(html.includes("Change scope"));
+  assert.ok(html.includes("Evidence is still unassessed"));
+});
+
+test("prepared assessment must match the confirmed scoped facet", () => {
+  const body = { claim_text: "Original", facet: "Original", as_of: "2026-06-17", inputs: [{}] };
+  const facet = "Original\n\nScope supplied by user: Renewal deals";
+  assert.throws(() => parseSuppliedRequest(JSON.stringify(body), "Original", facet), /scope/);
+  body.facet = facet;
+  assert.equal(parseSuppliedRequest(JSON.stringify(body), "Original", facet).facet, facet);
+});
 
 test("result retains qualification, exclusions and conditional disclosure", () => {
   const result = {

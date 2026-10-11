@@ -137,7 +137,7 @@ export function SuppliedResultView({ result, onDetailChange }: { result: Supplie
   </section>;
 }
 
-export default function SuppliedAssessment({ claim, onDetailChange }: { claim: string; onDetailChange?: (open: boolean) => void }) {
+export default function SuppliedAssessment({ claim, expectedFacet, onDetailChange }: { claim: string; expectedFacet?: string; onDetailChange?: (open: boolean) => void }) {
   const [text, setText] = useState("");
   const [result, setResult] = useState<SuppliedResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +151,7 @@ export default function SuppliedAssessment({ claim, onDetailChange }: { claim: s
     const current = ++generation.current;
     setResult(null); setError(null); setBusy(true); detailChange(false);
     try {
-      const request = parseSuppliedRequest(text, claim);
+      const request = parseSuppliedRequest(text, claim, expectedFacet);
       const response = checkSuppliedResponse(await assessSupplied(request), request);
       if (current === generation.current) {
         setResult(response);
@@ -167,6 +167,7 @@ export default function SuppliedAssessment({ claim, onDetailChange }: { claim: s
     <details ref={editor} className="ev-card" hidden={detail}>
       <summary>{result ? "Edit supplied assessment inputs" : "Assess prepared judgements"} <span className="ev-muted" style={{ display: "inline" }}>· Development input</span></summary>
       <p>Use prepared judgements to assess a facet of this exact claim. Retrieved candidates remain unassessed. Automatic interpretation is not performed.</p>
+      {expectedFacet && <p className="ev-quote">Required scoped facet: {expectedFacet}</p>}
       <label>Prepared assessment request (JSON)
         <textarea value={text} disabled={busy} rows={6}
           onChange={event => { generation.current += 1; setText(event.target.value); setResult(null); setError(null); detailChange(false); }} />
