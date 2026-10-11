@@ -30,3 +30,33 @@ authority, approve proposed relationships or fill quality scores. Parsing failur
 are not presented as clarification questions. General semantic clarification and
 automatic assessment after an answer remain separate unfinished capabilities.
 The component uses existing card/button styles; no stylesheet is changed.
+
+## General bounded scope resolution
+
+The same optional card now covers five supported distinctions:
+
+| Claim with missing scope | Question | Corpus grounding |
+| --- | --- | --- |
+| Discounts require approval | New business, renewal or all deals | Two distinct policies' formal requirements |
+| Onboarding takes six weeks | Customer implementation or new hires | Two distinct onboarding policies |
+| Finance must approve this expense | Expense amount | Both approval amount bands in the expense policy |
+| Sales owns renewals | Commercial negotiation, relationship health or final accountability | Renewal procedure responsibilities and steps |
+| Engineering approves product requests | Prioritisation, feasibility or P1 sprint entry | Product process responsibilities and approval requirements |
+
+Rules match supported wording and exact document passages, never source IDs,
+reference labels, retrieval scores or expected verdicts. Every required grounding
+passage must be present in an ingested policy or procedure in an allowed section.
+The question does not establish approval, applicability or current authority.
+Unknown wording continues without clarification; it is not evidence of clarity.
+
+Explicit universal assertions and record IDs are not narrowed. Explicit scope,
+amount or decision stage suppresses the corresponding question. Original claim
+text remains unchanged. Answers are user-supplied scope, not validated facts or
+credibility judgements. A single optional question is returned per request.
+
+This is bounded scope resolution, not general natural-language interpretation.
+It does not resolve conflicting onboarding clock origins, infer dates, establish
+renewal decision authority, or convert practice into policy. Invoice prerequisites,
+export conditions and documented exceptions belong in the assessment when the
+assertion is already clear. No automatic verdict, authority verification, event
+verification or repeated clarification dialogue is introduced.
