@@ -1916,7 +1916,7 @@ export default function App() {
   const view = AUTH_SCREENS.includes(screen) ? "dashboard" : screen;
 
   return (
-    <div style={{ minWidth: 1440, height: "100%", display: "flex", background: PAGE }}>
+    <div style={{ minWidth: 900, height: "100%", display: "flex", background: PAGE }}>
       <Sidebar screen={view} setScreen={go} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -1925,7 +1925,7 @@ export default function App() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {view === "dashboard" && <PageShell><SavedDashboard onOpen={nav.openSaved} onRegister={() => nav.go("register")} onCheck={() => nav.go("check")} /></PageShell>}
           {view === "register" && <RegisterDashboardScreen nav={nav} asOf={asOf} />}
-          {view === "saved-assessment" && savedRunId && <PageShell><SavedAssessmentView key={savedRunId} runId={savedRunId} onBack={() => nav.go("dashboard")} onOpen={nav.openSaved} /></PageShell>}
+          {view === "saved-assessment" && savedRunId && <PageShell><SavedAssessmentView key={savedRunId} runId={savedRunId} onBack={() => nav.go("dashboard")} onOpen={nav.openSaved} onRunAgain={nav.checkClaim} /></PageShell>}
           {view === "check" && <CheckScreen nav={nav} />}
           {view === "assessment" && target?.kind === "query" && (
             <CorpusScreen

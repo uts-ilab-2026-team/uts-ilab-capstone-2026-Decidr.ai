@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import AssessmentGraph, { evidenceWeight } from "./AssessmentGraph";
 import { Badge, DetailFrame, EvidenceRow, SourceMetadata, humanize, outcomeTone } from "./EvidenceUI";
 import { assessSupplied, getCorpusEvidence } from "./api";
 import {
@@ -52,12 +53,12 @@ export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResul
   const automatic = result.status === "assessed_automatically";
   const proposal = result.proposals?.find(value => item.interpretation.citations.some(citation => citation.evidence_id === value.evidence_id));
   return <>
-    <div className="ev-chips"><Badge>{humanize(item.interpretation.mode)}</Badge><Badge>{item.interpretation.stance}</Badge>
-      <Badge>{item.source.lifecycle_status ?? "unknown"}</Badge></div>
-    <p className="ev-muted">{automatic ? "Automatic relationship" : "Supplied relationship"}: {item.interpretation.stance} · Mode: {item.interpretation.mode}</p>
-    <p>{item.admitted_to_framework
-      ? edge?.material ? "Admitted and material under supplied judgements." : "Admitted; not material under supplied judgements."
-      : "Retained without a scoring edge."}</p>
+    <div className="ev-chips"><Badge>{item.source.lifecycle_status ?? "unknown"}</Badge><span className="ev-muted">{item.source.source_id}</span></div>
+    <dl className="ev-card ev-summary-fields">
+      {[["Lane", humanize(item.interpretation.mode)], ["Relationship", item.interpretation.stance],
+        ["Source class", humanize(String(item.supplied_judgements.source_class ?? item.source.source_type ?? "Unknown"))],
+        ["Effective from", item.source.effective_start_date ?? "Not recorded"], ["Materiality", evidenceWeight(result, item)]].map(([name, value]) => <div key={name}><dt>{name}</dt><dd>{value}</dd></div>)}
+    </dl>
     <section className="ev-card"><h3>{automatic ? "Automatic interpretation" : "Supplied interpretation"}</h3><p className="ev-quote">{item.interpretation.rationale}</p>
       {!!item.reasons.length && <ul>{item.reasons.map((reason, i) => <li key={i}>{reason}</li>)}</ul>}
     </section>
@@ -70,7 +71,7 @@ export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResul
         {edge ? <>
           <p>Materiality: {edge.materiality_score === null ? "Not scored" : edge.materiality_score.toFixed(3)}</p>
           {Object.entries(edge.dimensions).map(([name, value]) => <div className="ev-dimension" key={name}><span>{humanize(name)}</span><span>{value.toFixed(2)}</span></div>)}
-        </> : <p className="ev-muted">Not scored. Retained as context under the supplied interpretation.</p>}
+        </> : <p className="ev-muted">Not scored. Retained for review; the reasons above explain why it cannot contribute to the verdict.</p>}
       </section>
       <section className="ev-card"><h3>Derivation and limitations</h3>
         {edge ? <ul>{[...edge.trace, ...edge.limitations].map((line, i) => <li key={i}>{line}</li>)}</ul>
@@ -103,6 +104,14 @@ export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResul
         <pre>{JSON.stringify({ context: proposal.authority_context, references: proposal.authority_links }, null, 2)}</pre>
       </details>
     </section>}
+    <div className="ev-two">
+      <section className="ev-card"><h3>Claim assessed against this source</h3><p>{result.claim_text}</p><p className="ev-muted">{humanize(item.interpretation.mode)} · {item.interpretation.stance} · {evidenceWeight(result, item)}</p></section>
+      <section className="ev-card"><h3>Lineage</h3>
+        {[["Previous version", item.source.predecessor_source_id], ["Superseded by", item.source.successor_source_id], ["Derived from", item.source.derived_from_source_id], ["Duplicate group", item.source.duplicate_group]].filter(([, id]) => id).map(([label, id]) => <p key={label}>{label}: <span className="ev-mono">{id}</span></p>)}
+        {!item.source.predecessor_source_id && !item.source.successor_source_id && !item.source.derived_from_source_id && !item.source.duplicate_group && <p className="ev-muted">No lineage recorded in this assessment snapshot.</p>}
+        <p className="ev-muted">Recorded links do not establish independent corroboration.</p>
+      </section>
+    </div>
     <SourceMetadata source={item.source} />
     <details className="ev-card"><summary>Technical details: supplied judgements and scoring</summary>
       <p className="ev-muted">{automatic ? "Authority is subject to the cited checks above; independence remains unverified. Quality dimensions are bounded grammar checks." : "Authority and independence flags are caller declarations. Quality scores are supplied assumptions."}</p>
@@ -111,26 +120,41 @@ export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResul
   </>;
 }
 
+export function explainEvidenceGap(gap: string, result: SuppliedResult): string {
+  if (gap === "No Document or structured row attests to this Fact.") {
+    return result.inputs.length
+      ? "Evidence was examined, but none passed all checks required to contribute to the verdict. Inspect the source details for the specific reasons."
+      : "No evidence was available to score in this assessment. This does not establish that the claim is false.";
+  }
+  if (gap === "No material formal attestation resolves the asserted value.")
+    return "No formal evidence with sufficient weight establishes the claim after the assessment checks.";
+  if (gap === "No material observed attestation resolves the asserted value.")
+    return "No evidence of actual practice with sufficient weight establishes the claim after the assessment checks.";
+  return gap;
+}
+
 export function SuppliedResultView({ result, onDetailChange }: { result: SuppliedResult; onDetailChange?: (open: boolean) => void }) {
   const [selected, setSelected] = useState<string | null>(null);
   const origin = useRef<HTMLElement | null>(null);
+  const graphSection = useRef<HTMLDivElement>(null);
   const item = result.inputs.find(input => input.input_id === selected);
   const sources = new Set(result.inputs.map(input => input.source.source_id)).size;
   const assessment = result.assessment;
   const open = (id: string) => { origin.current = document.activeElement as HTMLElement; setSelected(id); onDetailChange?.(true); };
   const back = () => { setSelected(null); onDetailChange?.(false); requestAnimationFrame(() => origin.current?.focus()); };
-  return <section className="ev-workspace" aria-label="Supplied assessment result">
+  return <section className="ev-workspace" aria-label="Assessment result">
     <div hidden={!!item}>
       <article className="ev-card">
         <span className="ev-kicker">Facet assessment · {result.status === "assessed_automatically" ? "Automatic result · Review pending" : "Supplied judgements"}</span>
-        <p className="ev-claim">{result.facet}</p>
-        {result.claim_text !== result.facet && <p className="ev-muted">Original claim: {result.claim_text}</p>}
+        <p className="ev-claim">{result.claim_text}</p>
+        {result.claim_text !== result.facet && <p className="ev-muted">Scope being assessed: {result.facet}</p>}
         <div className="ev-chips"><Badge>Target: {humanize(result.assessment_target)}</Badge><Badge>As of: {result.as_of}</Badge><Badge>{result.persisted ? "Saved snapshot" : "Not saved"}</Badge></div>
         {result.status === "assessed_automatically" && result.rule_comparison && <section className="ev-notice">
           <strong>{result.rule_comparison.message}</strong><p>{result.rule_comparison.notice}</p>
         </section>}
         <p><strong>Conditional outcome: {assessment.overall_outcome}</strong></p>
         <p className="ev-muted">{result.assurance.notice}</p>
+        <button className="ev-button" onClick={() => { graphSection.current?.scrollIntoView({block: "start"}); graphSection.current?.focus({preventScroll: true}); }}>View evidence graph</button>
       </article>
       <div className="ev-two">
         {[{ label: "Formally", value: assessment.formal_outcome }, { label: "In practice", value: assessment.observed_outcome }].map(lane =>
@@ -147,21 +171,21 @@ export function SuppliedResultView({ result, onDetailChange }: { result: Supplie
       <h3>Evidence used in this assessment</h3>
       <p className="ev-muted">Includes retained context and excluded inputs. Other retrieved candidates have not been assessed.</p>
       <div className="ev-list">{result.inputs.map(input => {
-        const edge = assessment.evidence.find(value => value.edge_id === input.edge_id);
         return <EvidenceRow key={input.input_id} title={input.source.title}
-          subtitle={`${humanize(input.interpretation.mode)} · ${input.admitted_to_framework ? edge?.material ? "Material under supplied judgements" : "Admitted; not material" : "Retained without a scoring edge."}`}
-          preview={input.interpretation.rationale}
-          badges={<Badge>{input.interpretation.stance}</Badge>} onOpen={() => open(input.input_id)} />;
+          subtitle={`${humanize(input.interpretation.mode)} · ${evidenceWeight(result, input)}`}
+          preview={input.interpretation.citations[0]?.quotation ?? input.interpretation.rationale}
+          badges={<><Badge>{input.interpretation.stance}</Badge><Badge>{input.source.lifecycle_status ?? "unknown"}</Badge></>} onOpen={() => open(input.input_id)} />;
       })}</div>
       {result.deployment_event_findings?.map((finding, i) => <section className="ev-card" key={i}><h3>Deployment sign-off evidence · unresolved</h3><p>{finding.event_id} · {finding.related_record}</p><p>{finding.message}</p><p>{finding.next_step}</p><CitationView citation={finding.citation} /></section>)}
+      <div ref={graphSection} className="ev-jump" tabIndex={-1}><AssessmentGraph result={result} onOpen={open} /></div>
       {assessment.gaps.length > 0 && <section className="ev-card"><h3>Evidence gaps</h3>
         <p className="ev-muted">Gaps refer to admitted evidence, not an exhaustive corpus search.</p>
-        <ul>{assessment.gaps.map((gap, i) => <li key={i}>{gap}</li>)}</ul>
+        <ul>{assessment.gaps.map((gap, i) => <li key={i}>{explainEvidenceGap(gap, result)}</li>)}</ul>
       </section>}
       <details className="ev-card"><summary>Assessment explanation, limits and rules</summary>
         <p>{assessment.summary}</p><ul>{result.limitations.map((limit, i) => <li key={i}>{limit}</li>)}</ul>
         <details><summary>Technical assurance and rules</summary>
-          <pre>{JSON.stringify({ assurance: result.assurance, target_validation: result.target_validation, config_version: result.config_version, rules: assessment.rules_applied }, null, 2)}</pre>
+          <pre>{JSON.stringify({ assurance: result.assurance, target_validation: result.target_validation, config_version: result.config_version, rules: assessment.rules_applied, original_gap_messages: assessment.gaps }, null, 2)}</pre>
         </details>
       </details>
     </div>

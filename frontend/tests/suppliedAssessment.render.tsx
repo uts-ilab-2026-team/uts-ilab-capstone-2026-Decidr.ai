@@ -59,7 +59,7 @@ test("result retains qualification, exclusions and conditional disclosure", () =
   const html = renderToStaticMarkup(<SuppliedResultView result={result} />) +
     renderToStaticMarkup(<SuppliedEvidenceDetail result={result} item={result.inputs[0]} />);
   for (const expected of ["Original claim", "Exact facet", "Conditional outcome",
-    "Conditional on supplied judgements.", "qualify", "Retained without a scoring edge.",
+    "Conditional on supplied judgements.", "qualify", "Not scored · retained for review",
     "Scope gate failed.", "Observed gap", "Supplied assumptions.", "e1", "paragraph:1"]) {
     assert.ok(html.includes(expected), expected);
   }
@@ -173,4 +173,76 @@ test("saved dashboard preserves snapshot verdicts, dates and result origins", ()
   for (const text of ["Automatic result", "Human review revision", "conditional", "Supported", "Insufficient evidence", "2025-03-01", "2025-04-01", "Original &lt;claim&gt;"]) assert.ok(html.includes(text), text);
   assert.equal(savedResultType({...original, record_type: "conditional_supplied_assessment"}), "Supplied assessment · review not established");
   assert.ok(!html.includes("<claim>"));
+});
+
+import AssessmentGraph, { graphInputs, evidenceWeight } from "../src/AssessmentGraph";
+import AssessmentReview from "../src/AssessmentReview";
+import type { AssessmentSnapshot } from "../src/AutomaticAssessment";
+const graphResult = {
+  claim_text: "Purchases above €720 require regional approval.", facet: "Purchases above €720 require regional approval.",
+  status: "assessed_automatically", assessment: { evidence: [{edge_id: "edge-zero", material: false, materiality_score: 0, dimensions: {}, trace: [], limitations: []}] },
+  inputs: [
+    {input_id: "regional-rule", source: {source_id: "policy:custom", title: "Regional purchasing policy <v7>", successor_source_id: "policy:v8"}, interpretation: {mode: "formal", stance: "support", citations: [], rationale: "Rule text matches."}, admitted_to_framework: false, edge_id: null, supplied_judgements: {}, reasons: ["Authority unresolved"]},
+    {input_id: "record", source: {source_id: "ledger:custom", title: "Purchasing ledger"}, interpretation: {mode: "observed", stance: "contradict", citations: [], rationale: "A recorded exception."}, admitted_to_framework: true, edge_id: "edge-zero", supplied_judgements: {}, reasons: []},
+  ],
+} as unknown as SuppliedResult;
+test("graph uses arbitrary snapshot evidence, preserves zero and filters lanes without changing outcomes", () => {
+  const before = JSON.stringify(graphResult);
+  assert.deepEqual(graphInputs(graphResult, "formal").map(i => i.input_id), ["regional-rule"]);
+  assert.deepEqual(graphInputs(graphResult, "observed").map(i => i.input_id), ["record"]);
+  assert.equal(graphInputs(graphResult, "both").length, 2);
+  assert.equal(evidenceWeight(graphResult, graphResult.inputs[1]), "0.00 · weighted down");
+  assert.equal(evidenceWeight(graphResult, graphResult.inputs[0]), "Not scored · retained for review");
+  const html = renderToStaticMarkup(<AssessmentGraph result={graphResult} onOpen={() => {}} />);
+  for (const value of ["Purchases above €720", "Regional purchasing policy &lt;v7&gt;", "Purchasing ledger", "support", "contradict", "aria-pressed", "retained without a score"]) assert.ok(html.includes(value), value);
+  assert.ok(!html.includes("POL-01"));
+  assert.ok(!html.includes("15%"));
+  assert.equal(JSON.stringify(graphResult), before);
+});
+test("source detail keeps recorded lineage separate from authority and missing scores", () => {
+  const html = renderToStaticMarkup(<SuppliedEvidenceDetail result={graphResult} item={graphResult.inputs[0]} />);
+  for (const text of ["policy:v8", "Superseded by", "Authority unresolved", "Not scored", "Recorded links do not establish independent corroboration"]) assert.ok(html.includes(text), text);
+});
+test("review can reopen saved inputs without JSON and keeps citations unchanged", () => {
+  const record = {snapshot: {run_id: "saved", request: {inputs: [{stance: "unresolved", rationale: "Needs evidence", judgement_basis: "Unknown", citations: [{quotation: "<exact quote>", evidence_id: "passage:77", source_id: "source:77", locator: "section:4", start: 0, end: 13}], scope_matches: null, temporal_matches: false, authority_verified: null, directness: 0, specificity: 1, completeness: 0.5}]}}} as AssessmentSnapshot;
+  const before = JSON.stringify(record);
+  const html = renderToStaticMarkup(<AssessmentReview record={record} onSaved={() => {}} />);
+  for (const text of ["Review this result", "&lt;exact quote&gt;", "passage:77", "source:77", "Reason for this review", "Save review as a new revision", "previous snapshot stays unchanged"]) assert.ok(html.includes(text), text);
+  assert.ok(html.includes('disabled=""'));
+  assert.ok(!html.includes("Prepared assessment request"));
+  assert.equal(JSON.stringify(record), before);
+});
+
+import { graphLanes } from "../src/AssessmentGraph";
+import { explainEvidenceGap } from "../src/SuppliedAssessment";
+test("graph has no empty lane columns and retains unclassified passages", () => {
+  assert.equal(graphLanes(graphResult, "formal").length, 1);
+  assert.equal(graphLanes(graphResult, "observed").length, 1);
+  const unclassified = {...graphResult, inputs: [{...graphResult.inputs[0], interpretation: {...graphResult.inputs[0].interpretation, mode: "unresolved"}}]};
+  assert.equal(graphLanes(unclassified, "both")[0].label, "Lane unresolved");
+  assert.equal(graphLanes(unclassified, "observed").length, 0);
+  const html = renderToStaticMarkup(<AssessmentGraph result={unclassified} onOpen={() => {}} />);
+  assert.ok(html.includes("ev-graph-single"));
+  assert.ok(html.includes("regional-rule"));
+  assert.ok(html.includes("Lane unresolved"));
+});
+test("gap explanation distinguishes rejected evidence from no retrieved evidence", () => {
+  const gap = "No Document or structured row attests to this Fact.";
+  assert.ok(explainEvidenceGap(gap, graphResult).startsWith("Evidence was examined"));
+  assert.ok(explainEvidenceGap(gap, {...graphResult, inputs: []}).startsWith("No evidence was available to score"));
+  assert.equal(explainEvidenceGap("A separate specific gap", graphResult), "A separate specific gap");
+  assert.ok(explainEvidenceGap("No material formal attestation resolves the asserted value.", graphResult).includes("after the assessment checks"));
+});
+
+import { checkReviewRevision } from "../src/AssessmentReview";
+test("review response must be a new saved revision of the same claim and date", () => {
+  const parent = {snapshot: {run_id: "parent", request: {claim_text: "Original", facet: "Scoped", as_of: "2026-10-11"}}} as AssessmentSnapshot;
+  const child = {snapshot: {run_id: "child", parent_run_id: "parent", response: {claim_text: "Original", facet: "Scoped", as_of: "2026-10-11", persisted: true, status: "assessed_supplied_judgements"}}} as AssessmentSnapshot;
+  assert.equal(checkReviewRevision(child, parent), child);
+  for (const changed of [
+    {...child, snapshot: {...child.snapshot, parent_run_id: "someone-else"}},
+    {...child, snapshot: {...child.snapshot, run_id: "parent"}},
+    {...child, snapshot: {...child.snapshot, response: {...child.snapshot.response, as_of: "2026-10-10"}}},
+    {...child, snapshot: {...child.snapshot, response: {...child.snapshot.response, persisted: false}}},
+  ]) assert.throws(() => checkReviewRevision(changed, parent), /does not match/);
 });

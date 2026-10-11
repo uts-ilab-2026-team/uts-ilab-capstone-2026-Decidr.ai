@@ -216,7 +216,7 @@ def infer_mode(text: str) -> Mode:
     lowered = _lower(text)
     if re.search(r"\b(reported|said|told|stated|wrote|asked|according to)\b", lowered):
         return "observed"
-    if parse_renewal_cap(text):
+    if compare_approval_rules(text, text) or parse_renewal_cap(text):
         return "formal"
     if re.search(r"\b(must|shall|required|requires|require|prohibited)\b|\bmay only\b", lowered):
         return "formal"
@@ -457,7 +457,7 @@ def propose_interpretation(
         rationale = (
             "All extracted approval-rule fields agree under the bounded grammar."
             if field_comparison["equivalent"] and field_comparison["evidence_entails_claim"]
-            else "The evidence approval rule covers the claim's discount range; all other extracted rule fields match."
+            else "The evidence rule covers the claimed range; all other extracted rule fields match."
             if field_comparison["evidence_entails_claim"]
             else "Approval-rule fields differ; no general entailment is inferred: "
             + ", ".join(field_comparison["differences"])

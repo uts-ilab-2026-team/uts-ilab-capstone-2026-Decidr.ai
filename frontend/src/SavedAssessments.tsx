@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getSavedAssessments, getSavedAssessment, useApi, type SavedAssessmentSummary } from "./api";
+import AssessmentReview from "./AssessmentReview";
 import { SuppliedResultView } from "./SuppliedAssessment";
 import { Badge, outcomeTone } from "./EvidenceUI";
 
@@ -41,7 +42,8 @@ export function SavedDashboard({onOpen, onRegister, onCheck}: {onOpen: (id: stri
     </>}
   </section>;
 }
-export function SavedAssessmentView({runId, onBack, onOpen}: {runId: string; onBack: () => void; onOpen: (id: string) => void}) {
+export function SavedAssessmentView({runId, onBack, onOpen, onRunAgain}: {runId: string; onBack: () => void; onOpen: (id: string) => void; onRunAgain: (claim: string) => void}) {
+  const [detail, setDetail] = useState(false);
   const {data, error} = useApi(() => getSavedAssessment(runId), [runId]);
   return <section className="ev-workspace"><button className="ev-button" onClick={onBack}>Back to saved assessments</button>
     {error ? <p role="alert">Could not load saved assessment: {error}</p> : !data ? <p role="status">Loading saved snapshot…</p> : data.snapshot.run_id !== runId ? <p role="alert">Snapshot identity mismatch.</p> : <>
@@ -49,8 +51,9 @@ export function SavedAssessmentView({runId, onBack, onOpen}: {runId: string; onB
       <p className="ev-muted">This is the result and evidence saved at that time. Opening it does not reassess the claim.</p>
       {data.snapshot.revision_reason && <p>Review reason: {data.snapshot.revision_reason}</p>}
       {data.snapshot.parent_run_id && <button className="ev-button" onClick={() => onOpen(data.snapshot.parent_run_id!)}>Open preceding snapshot</button>}
-      <a href={`/api/assessments/${encodeURIComponent(runId)}/export`}>Download saved assessment</a>
-      <SuppliedResultView result={data.snapshot.response} />
+      <div className="ev-toolbar" hidden={detail}><a className="ev-button" href={`/api/assessments/${encodeURIComponent(runId)}/export`}>Export saved assessment</a><button className="ev-button" onClick={() => onRunAgain(data.snapshot.request.claim_text)}>Run again</button></div>
+      <SuppliedResultView result={data.snapshot.response} onDetailChange={setDetail} />
+      <div hidden={detail}><AssessmentReview key={runId} record={data} onSaved={value => onOpen(value.snapshot.run_id)} /></div>
     </>}
   </section>;
 }

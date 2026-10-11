@@ -54,3 +54,38 @@
 .ev-automatic input, .ev-automatic select { font: inherit; border: 1px solid #e5e3df; border-radius: 6px; padding: 8px; margin-left: 8px; max-width: 100%; }
 .ev-automatic :is(input, select):focus-visible { outline: 2px solid #b7470b; outline-offset: 3px; }
 .ev-automatic fieldset { border: 1px solid #e5e3df; border-radius: 6px; padding: 16px; margin: 16px 0; min-width: 0; }
+
+/* Assessment and source views share the compact reference layout. */
+.ev-summary-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 0; }
+.ev-summary-fields > div { padding: 16px; border-right: 1px solid #f0eee9; overflow-wrap: anywhere; }
+.ev-summary-fields > div:last-child { border: 0; }
+.ev-summary-fields dt { color: #6b7280; font-size: 11px; margin-bottom: 6px; }
+.ev-summary-fields dd { margin: 0; font-size: 12px; }
+.ev-segments { display: flex; border: 1px solid #e5e3df; border-radius: 6px; overflow: hidden; }
+.ev-segments button { border: 0; background: white; color: #6b7280; padding: 8px 14px; }
+.ev-segments button[aria-pressed="true"] { background: #fff3eb; color: #b7470b; }
+.ev-graph-tree { padding: 8px 0 20px; }
+.ev-graph-claim { position: relative; max-width: 680px; margin: 0 auto 24px; text-align: center; background: #fffaf6; border: 1px solid #F26B21; border-radius: 8px; padding: 18px 24px; overflow-wrap: anywhere; }
+.ev-graph-claim::after { content: ''; position: absolute; top: 100%; left: 50%; height: 25px; border-left: 1px solid #cbc7c1; }
+.ev-graph-branches { display: grid; grid-template-columns: repeat(var(--lane-count, 2), minmax(0,1fr)); gap: 24px; position: relative; }
+.ev-graph-branches::before { content: ''; position: absolute; top: 0; left: var(--branch-start); right: var(--branch-start); border-top: 1px solid #cbc7c1; }
+.ev-graph-single { grid-template-columns: minmax(0,1fr); max-width: 820px; margin: auto; }
+.ev-graph-single::before { display: none; }
+.ev-graph-branch { min-width: 0; padding-top: 24px; position: relative; }
+.ev-graph-branch::before { content: ''; position: absolute; top: 0; left: 50%; height: 24px; border-left: 1px solid #cbc7c1; }
+.ev-graph-branch h4 { margin: 0 0 0 12px; padding: 10px 14px; border: 1px solid #cbc7c1; border-radius: 6px; font-size: 12px; background: #faf9f7; }
+.ev-graph-nodes { display: grid; gap: 12px; padding: 12px 0 0 16px; margin-left: 12px; border-left: 1px solid #cbc7c1; }
+.ev-graph-node { position: relative; background: white; border: 1px solid #cbc7c1; border-radius: 8px; padding: 14px; overflow-wrap: anywhere; text-align: left; width: 100%; color: #374151; }
+.ev-graph-node::before { content: ''; position: absolute; width: 17px; top: 50%; right: 100%; border-top: 1px solid #cbc7c1; }
+.ev-graph-node:hover { background: #fff8f3; border-color: #F26B21; }
+.ev-graph-node span, .ev-graph-node small { display: block; margin-top: 6px; font-size: 11px; }
+.ev-graph-node small { color: #6b7280; }
+.ev-graph-node .ev-preview { display: -webkit-box; }
+.ev-graph-retained { border-style: dashed; background: #faf9f7; }
+.ev-jump { scroll-margin-top: 20px; }
+.ev-jump:focus { outline: none; }
+.ev-workspace input, .ev-workspace select { font: inherit; border: 1px solid #e5e3df; border-radius: 6px; padding: 8px 10px; background: white; color: #374151; }
+.ev-workspace :is(input, select):focus-visible { outline: 2px solid #b7470b; outline-offset: 3px; }
+@media (max-width: 1000px) { .ev-summary-fields { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 700px) { .ev-graph-branches { grid-template-columns: minmax(0,1fr); border-left: 1px solid #cbc7c1; padding-left: 12px; } .ev-graph-branches::before { left: 0; right: 50%; } .ev-graph-branch::before { left: -13px; top: 44px; height: 0; width: 25px; border-top: 1px solid #cbc7c1; } }
+@media print { .ev-graph { break-inside: avoid; } .ev-button, .ev-back, .ev-segments { display: none; } }

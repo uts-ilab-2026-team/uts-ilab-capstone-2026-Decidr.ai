@@ -9,6 +9,7 @@ export default function CorpusScreen(props: { claim: string; onBack: () => void 
 }
 
 function CorpusClaimScreen({ claim, onBack }: { claim: string; onBack: () => void }) {
+  const [assessmentReady, setAssessmentReady] = useState(false);
   const [scopeAnswer, setScopeAnswer] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [selected, setSelected] = useState<CorpusGroup | null>(null);
@@ -29,17 +30,17 @@ function CorpusClaimScreen({ claim, onBack }: { claim: string; onBack: () => voi
       onOpen={() => open(group)} />;
   })}</div>;
   return <main className="ev-workspace" style={{ flex: 1, minWidth: 0, overflowY: "auto", padding: "36px 48px" }}>
-    <div hidden={!!selected || assessmentDetail}>
+    <div hidden={!!selected || assessmentDetail || assessmentReady}>
       <div className="ev-toolbar"><div><span className="ev-kicker">Claims / Corpus evidence</span><h1>Evidence for your claim</h1></div>
         <button className="ev-button" onClick={onBack}>New search</button></div>
       <section className="ev-card"><span className="ev-kicker">Your submitted claim</span>
         <p className="ev-claim">{claim}</p><Badge>Retrieval candidates · Unassessed</Badge>
         <p className="ev-muted">Retrieval does not establish support, contradiction, credibility or temporal applicability.</p>
       </section>
-      {data?.scope_context && <ScopeClarification key={scopeAnswer ?? "unanswered"} context={data.scope_context} onAnswer={answer => { setScopeAnswer(answer); setSelected(null); setAssessmentDetail(false); }} />}
+      {data?.scope_context && <ScopeClarification key={scopeAnswer ?? "unanswered"} context={data.scope_context} onAnswer={answer => { setAssessmentReady(false); setScopeAnswer(answer); setSelected(null); setAssessmentDetail(false); }} />}
     </div>
-    <div hidden={!!selected}>{(scopeAnswer === null || data?.scope_context?.answer === scopeAnswer) && <AutomaticAssessment key={`${claim}:${scopeAnswer}`} claim={claim} expectedFacet={scopeAnswer === null ? undefined : data?.scope_context?.facet} onDetailChange={setAssessmentDetail} />}</div>
-    <div hidden={!!selected || assessmentDetail}>
+    <div hidden={!!selected}>{(scopeAnswer === null || data?.scope_context?.answer === scopeAnswer) && <AutomaticAssessment key={`${claim}:${scopeAnswer}`} claim={claim} expectedFacet={scopeAnswer === null ? undefined : data?.scope_context?.facet} onDetailChange={setAssessmentDetail} onResultChange={setAssessmentReady} />}</div>
+    <div hidden={!!selected || assessmentDetail || assessmentReady}>
       {!data && !error && <p role="status">Searching the corpus…</p>}
       {error && <section className="ev-card" role="alert"><h2>Corpus search unavailable</h2><p>{error}</p>
         <button className="ev-button" onClick={() => setAttempt(v => v + 1)}>Retry</button></section>}

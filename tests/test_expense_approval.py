@@ -1,5 +1,6 @@
 """Expense thresholds, context, and explicit unsupported-family evaluation."""
 
+from decimal import Decimal
 import json
 from pathlib import Path
 
@@ -72,3 +73,29 @@ def test_corpus_shaped_evaluation_set():
             else "unresolved_difference"
         )
         assert outcome == case["expected_wording"], case["id"]
+
+
+@pytest.mark.parametrize("amount", ["725", "1200.50", "83"])
+@pytest.mark.parametrize(
+    "verb", ["need approval from", "must be approved by", "require approval from"]
+)
+def test_equivalent_expense_wording_preserves_arbitrary_values(amount, verb):
+    claim = f"Expense claims above €{amount} {verb} Regional Finance and Operations before reimbursement is processed."
+    evidence = f"Expense claims over €{amount} require approval from Regional Finance & Operations before reimbursement is processed."
+    comparison = compare_approval_rules(claim, evidence)
+    assert comparison["evidence_entails_claim"]
+    assert Decimal(comparison["claim_fields"]["amount"]) == Decimal(amount)
+    assert not compare_approval_rules(claim.replace("before", "after"), evidence)[
+        "evidence_entails_claim"
+    ]
+
+
+def test_thousands_format_and_percentage_words():
+    assert parse_expense_rule(RULE.replace("$500", "$1,200.50"))["amount"] == "1200.5"
+    assert parse_expense_rule(RULE.replace("$500", "$1,20")) is None
+    claim = "Any discount of at least 27 per cent off list price on a renewal deal requires written approval from Regional Finance and Operations before the deal is marked accepted."
+    evidence = claim.replace("per cent", "%").replace(" and ", " & ")
+    assert compare_approval_rules(claim, evidence)["evidence_entails_claim"]
+    assert not compare_approval_rules(claim.replace("27", "26"), evidence)[
+        "evidence_entails_claim"
+    ]

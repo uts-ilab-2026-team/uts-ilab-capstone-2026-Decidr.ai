@@ -77,10 +77,22 @@ def build_automatic_assessment(request: InterpretationProposalRequest) -> dict:
         )
         if not supported:
             item["stance"] = "context" if item["stance"] == "context" else "unresolved"
-            item["rationale"] = (
-                "No supported complete approval-rule comparison establishes this relationship. "
-                "Field differences and surrounding qualifications require review."
-            )
+            if comparison is not None and not comparison["evidence_entails_claim"]:
+                item["rationale"] = (
+                    "The rule comparison does not establish support. Different fields: "
+                    + ", ".join(comparison["differences"])
+                    + ". A difference alone does not prove contradiction."
+                )
+            elif comparison is not None and not context["compatible"]:
+                item["rationale"] = (
+                    "Rule wording matches, but surrounding conditions require review: "
+                    + " ".join(c["reason"] for c in context["clauses"] if not c["compatible"])
+                )
+            elif comparison is None and item["stance"] != "context":
+                item["rationale"] = (
+                    "This passage does not contain a complete approval rule in a supported form. "
+                    "It is retained for review; similarity alone does not establish support or contradiction."
+                )
         item.update(
             directness=1.0 if supported else 0.0,
             specificity=1.0 if supported else 0.0,

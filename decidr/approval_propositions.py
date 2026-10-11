@@ -57,11 +57,25 @@ UNSUPPORTED = re.compile(
 PHRASE = re.compile(r"[\w][\w &/'()-]*")
 
 
-def parse_approval_rule(text: str) -> ApprovalRule | None:
-    """Return all fields or abstain; never invent omitted conditions or actors."""
-    text = text.casefold().strip()
+def normalise_rule_text(text: str) -> str:
+    """Equivalent typography only; no omitted scope, currency or actor inference."""
+    text = text.casefold().strip().replace("’", "'").replace("–", "-").replace("—", "-")
     text = re.sub(r"^\d+[.)]\s+", "", text)
     text = " ".join(text.replace("**", "").replace("`", "").rstrip(".").split())
+    text = re.sub(r"(?<=\d)\s+(?:percent|per cent)\b", "%", text)
+    text = re.sub(
+        r"(?<=[$£€])\d{1,3}(?:,\d{3})+(?:\.\d+)?(?![\d.,])", lambda m: m[0].replace(",", ""), text
+    )
+    return text
+
+
+def normalise_role(text: str) -> str:
+    return text.replace(" & ", " and ")
+
+
+def parse_approval_rule(text: str) -> ApprovalRule | None:
+    """Return all fields or abstain; never invent omitted conditions or actors."""
+    text = normalise_rule_text(text)
     match = next((m for p in PATTERNS if (m := p.fullmatch(text))), None)
     if match is None:
         return None
@@ -95,7 +109,7 @@ def parse_approval_rule(text: str) -> ApprovalRule | None:
     if boundary is None:
         return None
     return ApprovalRule(
-        approver=match["approver"],
+        approver=normalise_role(match["approver"]),
         deal_scope=match["scope"],
         percentage=format(percentage.normalize(), "f"),
         boundary=boundary,

@@ -3,19 +3,27 @@
 from decimal import Decimal
 import re
 
-from decidr.approval_propositions import NUMBER, PHRASE, UNSUPPORTED
+from decidr.approval_propositions import (
+    NUMBER,
+    PHRASE,
+    UNSUPPORTED,
+    normalise_role,
+    normalise_rule_text,
+)
 
 PATTERN = re.compile(
     rf"expense claims (?:of )?(?P<prefix>over |above |at least |exactly |below |at most )?"
     rf"(?P<currency>[$£€])(?P<amount>{NUMBER})(?P<suffix> or greater| or more| or less)? "
-    r"require (?P<written>written )?approval from (?P<approver>.+?) "
+    r"(?:require|need) (?P<written>written )?approval from (?P<approver>.+?) "
     r"(?P<timing>before|after) (?P<event>reimbursement is processed)"
 )
 
 
 def parse_expense_rule(text: str) -> dict | None:
-    text = re.sub(r"^\d+[.)]\s+", "", text.casefold().strip())
-    text = " ".join(text.replace("**", "").replace("`", "").rstrip(".").split())
+    text = normalise_rule_text(text)
+    # Passive mandatory approval preserves the actor and event explicitly supplied.
+    text = re.sub(r" must be approved in writing by ", " require written approval from ", text)
+    text = re.sub(r" must be approved by ", " require approval from ", text)
     m = PATTERN.fullmatch(text)
     if not m or not PHRASE.fullmatch(m["approver"]) or UNSUPPORTED.search(m["approver"]):
         return None
@@ -38,7 +46,7 @@ def parse_expense_rule(text: str) -> dict | None:
         "currency": m["currency"],
         "amount": format(Decimal(m["amount"]).normalize(), "f"),
         "boundary": boundary,
-        "approver": m["approver"],
+        "approver": normalise_role(m["approver"]),
         "written": bool(m["written"]),
         "timing": m["timing"],
         "event": m["event"],

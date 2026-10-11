@@ -231,14 +231,13 @@ def test_matching_rule_with_compatible_surroundings_is_explained_and_frozen(setu
 
 @pytest.mark.parametrize("structured", [False, True, "expense", "renewal"])
 def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup, structured):
-    from test_authority_resolution import chain
     import os
     from pathlib import Path
 
-    from test_structured_adoption import structured_chain
-
+    from test_authority_resolution import chain
     from test_expense_authority import expense_chain
     from test_renewal_cap import renewal_chain
+    from test_structured_adoption import structured_chain
 
     sources, passages = (
         expense_chain()
@@ -308,7 +307,8 @@ def test_expense_api_preserves_citations_and_abstains_on_authority(setup):
 
 @pytest.mark.parametrize("curly", [False, True])
 def test_renewal_cap_saved_with_exact_context_and_unresolved_authority(setup, curly):
-    from test_renewal_cap import RULE as CAP, CONTEXT
+    from test_renewal_cap import CONTEXT
+    from test_renewal_cap import RULE as CAP
 
     client, _, passage, store = setup
     passage.text = "1. " + CAP + CONTEXT
@@ -338,7 +338,8 @@ def test_renewal_cap_saved_with_exact_context_and_unresolved_authority(setup, cu
 
 @pytest.mark.parametrize("padding", ["", "\n\n"])
 def test_deployment_rule_role_context_and_frozen_event_gap(setup, padding):
-    from test_deployment_signoff import RULE as DEPLOY, EVENT, audit
+    from test_deployment_signoff import EVENT, audit
+    from test_deployment_signoff import RULE as DEPLOY
 
     client, source, passage, store = setup
     source.source_type = "organisational_information"
@@ -367,3 +368,31 @@ def test_deployment_rule_role_context_and_frozen_event_gap(setup, padding):
     passage.text = "Changed record."
     store()
     assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
+
+
+@pytest.mark.parametrize("verb", ["need approval from", "must be approved by"])
+def test_automatic_paraphrase_keeps_original_citation_and_authority_gate(setup, verb):
+    client, _, passage, store = setup
+    passage.text = "Expense claims over €725 require approval from Regional Finance & Operations before reimbursement is processed."
+    store()
+    claim = passage.text.replace("require approval from", verb).replace(" & ", " and ")
+    response = client.post(URL, json=body(claim=claim))
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["claim_text"] == claim
+    item = result["inputs"][0]
+    assert item["interpretation"]["mode"] == "formal"
+    assert item["interpretation"]["stance"] == "support"
+    citation = item["interpretation"]["citations"][0]
+    assert passage.text[citation["start"] : citation["end"]] == citation["quotation"]
+    assert not item["admitted_to_framework"]
+    assert result["assessment"]["overall_outcome"] == "Insufficient evidence"
+
+
+def test_automatic_difference_explains_field_without_inventing_contradiction(setup):
+    client, _, _, _ = setup
+    result = client.post(URL, json=body(claim=RULE.replace("Finance", "Sales"))).json()
+    item = result["inputs"][0]
+    assert item["interpretation"]["stance"] == "unresolved"
+    assert "approver" in item["interpretation"]["rationale"]
+    assert "does not prove contradiction" in item["interpretation"]["rationale"]

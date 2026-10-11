@@ -214,6 +214,10 @@ export function useApi<T>(load: () => Promise<T>, deps: unknown[]) {
 
 /** Corpus retrieval records are separate from assessed graph evidence. */
 export interface CorpusSource {
+  predecessor_source_id?: string | null;
+  successor_source_id?: string | null;
+  derived_from_source_id?: string | null;
+  duplicate_group?: string | null;
   source_id: string;
   title: string;
   source_type: string;
