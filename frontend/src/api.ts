@@ -302,3 +302,12 @@ export const getCorpusEvidence = (evidenceId: string, sourceId: string) =>
 // Supplied assessments stay separate from retrieved candidates and register facts.
 export const assessSupplied = (body: import("./suppliedAssessmentContract").SuppliedRequest) =>
   post<import("./suppliedAssessmentContract").SuppliedResult>("/corpus/assess-supplied", body);
+
+
+export const saveAutomatic = (body: { claim: string; facet: string; as_of: string; request_id: string }) =>
+  post<import("./AutomaticAssessment").AssessmentSnapshot>("/assessments/automatic", body);
+
+export const saveAssessmentRevision = (body: {
+  assessment: import("./suppliedAssessmentContract").SuppliedRequest;
+  parent_run_id: string; revision_reason: string; request_id: string;
+}) => post<import("./AutomaticAssessment").AssessmentSnapshot>("/assessments", body);

@@ -220,7 +220,11 @@ def append_run(path: Path, owner_id: int, request: dict, bundle: dict) -> tuple[
                 "save_request": request,
                 "review_status": "not_established",
                 "revision_reason": request.get("revision_reason"),
-                "record_type": "conditional_supplied_assessment",
+                "record_type": (
+                    "automatic_assessment"
+                    if bundle["response"]["status"] == "assessed_automatically"
+                    else "conditional_supplied_assessment"
+                ),
             }
         )
         payload["response"].update(persisted=True, index_scope="frozen")

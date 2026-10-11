@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import SuppliedAssessment from "./SuppliedAssessment";
+import AutomaticAssessment from "./AutomaticAssessment";
 import ScopeClarification from "./ScopeClarification";
 import { searchCorpus, getCorpusEvidence, useApi, type CorpusGroup, type CorpusSource } from "./api";
 import { Badge, DetailFrame, EvidenceRow, PassageView, SourceMetadata, passagePreview } from "./EvidenceUI";
@@ -38,7 +38,7 @@ function CorpusClaimScreen({ claim, onBack }: { claim: string; onBack: () => voi
       </section>
       {data?.scope_context && <ScopeClarification key={scopeAnswer ?? "unanswered"} context={data.scope_context} onAnswer={answer => { setScopeAnswer(answer); setSelected(null); setAssessmentDetail(false); }} />}
     </div>
-    <div hidden={!!selected}>{(scopeAnswer === null || data?.scope_context?.answer === scopeAnswer) && <SuppliedAssessment key={`${claim}:${scopeAnswer}`} claim={claim} expectedFacet={scopeAnswer === null ? undefined : data?.scope_context?.facet} onDetailChange={setAssessmentDetail} />}</div>
+    <div hidden={!!selected}>{(scopeAnswer === null || data?.scope_context?.answer === scopeAnswer) && <AutomaticAssessment key={`${claim}:${scopeAnswer}`} claim={claim} expectedFacet={scopeAnswer === null ? undefined : data?.scope_context?.facet} onDetailChange={setAssessmentDetail} />}</div>
     <div hidden={!!selected || assessmentDetail}>
       {!data && !error && <p role="status">Searching the corpus…</p>}
       {error && <section className="ev-card" role="alert"><h2>Corpus search unavailable</h2><p>{error}</p>

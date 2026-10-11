@@ -80,6 +80,15 @@ def implementation_manifest() -> dict:
     """Record source-file hashes as build provenance, not a signed executable identity."""
     root = Path(__file__).resolve().parents[2]
     names = [
+        "decidr/api/automatic_assessment.py",
+        "decidr/api/interpretation.py",
+        "decidr/interpretation_engine.py",
+        "decidr/approval_propositions.py",
+        "decidr/approval_context.py",
+        "decidr/authority_context.py",
+        "decidr/authority_resolution.py",
+        "decidr/authority_links.py",
+        "decidr/source_metadata.py",
         "decidr/assessment_adapter.py",
         "decidr/assessment_targets.py",
         "decidr/assessment_response.py",

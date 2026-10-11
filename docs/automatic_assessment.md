@@ -1,0 +1,121 @@
+# Automatic approval-rule assessment
+
+Built against `review/corpus-assessment-frontend` at
+`f944a29d4c52450849d99bfb18882e54e2024399` (the supplied Git archive).
+
+The corpus screen now accepts a claim and an explicit assessment date, with the
+existing optional scope clarification. “Assess claim and save result” generates
+the interpretations and runs the existing credibility adapter. No prepared
+judgement JSON, model service, paid model, new dependency or network inference
+is required. Existing cards, typography, colours, evidence details and scope UI
+are reused. The prepared-input API and component remain available for existing
+clients, but are no longer the primary corpus screen entry.
+
+## Contract
+
+- `POST /api/corpus/assess-automatic` accepts the existing interpretation request
+  (`claim`, optional `facet`/target, required `as_of`, bounded retrieval limits).
+  It returns an unsaved automatic facet assessment.
+- `POST /api/assessments/automatic` additionally accepts `request_id`. It saves
+  the automatic result, exact evidence and source snapshots, interpretation and
+  authority context, configuration and implementation hashes. The frontend uses
+  this endpoint. Configure `DECIDR_CORPUS_DB`, authentication and a separate
+  `DECIDR_ASSESSMENT_DB` as documented in `assessment_history.md`.
+- Human review comes after the automatic result. The form exposes relationship,
+  scope, time, authority, quality and rationale fields from the generated packet.
+  It saves a reasoned parent-linked revision via the existing history endpoint.
+  Independence is conservatively left unverified. Review submissions still
+  remain conditional caller declarations, not authenticated authority proofs.
+- Reviews use the current index, as the existing history contract specifies;
+  the parent snapshot is never recomputed. Changed citation text fails validation.
+  Idempotent retries return the original frozen result even if the corpus changes.
+  Export and owner-scoped history endpoints work for both types of record.
+
+## Automatic boundary
+
+The existing `approval_fields_v2` grammar compares approver, deal scope, discount
+range, written approval, timing and event. A supported rule comparison can supply an automatic support relationship when
+adjacent statements pass bounded context checks. Recognised context includes CRM
+approval recording, an agreeing scope, a non-overlapping lower-discount permission,
+and a renewal-policy reference beside a new-business rule. Unknown clauses,
+exceptions and overlapping permissions remain unresolved. Exact focal and full
+passage citations are retained. These checks do not interpret other document sections.
+The result separately reports “Rule wording matches; authority unresolved”; the
+credibility outcome and all admission gates remain unchanged. Differences alone never mean contradiction. Unsupported
+wording, generic exact-text matches and unsupported targets remain unresolved.
+Original claim text and any separate facet are preserved verbatim.
+
+For supported comparisons, directness, specificity and completeness are 1.0 as
+binary grammar-coverage dimensions, explicitly not calibrated probabilities.
+Other comparisons retain zero dimensions. Retrieval scores never feed credibility.
+All original scope, date, lifecycle, metadata-conflict, target and authority gates
+remain in the existing adapter. Derived-source inputs remain visible but excluded
+until their provenance can be reviewed; the form does not resolve missing parents.
+
+## Bounded authority resolution
+
+`explicit-policy-adoption-v1` resolves documentary authority only when all gates
+pass. This is not source authentication and never sets independence to verified.
+The grammar deliberately accepts only complete statements such as these (values
+are illustrative, not records to add to the corpus):
+
+- `On 2025-02-24, Alex Smith adopted POL-01 version 3.0 for new-business deals, effective 2025-03-01.`
+- `Alex Smith has authority to adopt POL-01 version 3.0 for new-business deals from 2024-01-01 through 2025-12-31.`
+
+The first must be a meeting decision; the second a separate organisational
+information/role-description record under Decision rights. Policy identity,
+version and effective date must match exact stored header citations, with a
+current own-document approval assertion. The named person, version and scope must
+agree. Rights must cover the decision date and be documented by that date;
+the meeting must be recorded by the assessment date. Sources must be ingested,
+current, conflict-free and not derived. Known duplicate groups, identical content
+checksums and same-source chains cannot establish verification. Unsupported
+relevant decisions, qualifications, revocations or ambiguous multiple records
+block resolution. All checks and exact citations are retained in the snapshot.
+
+A complete chain can admit a matched policy to the existing credibility engine;
+other gates and weights remain unchanged. Human review still follows the result.
+Source ownership, titles, transaction-approval rights and general delegation are
+not substitutes for policy-adoption rights. General paraphrases, implicit scope,
+role occupancy, transitive delegation and historical superseded authority sources
+remain unsupported. Do not rewrite corpus records just to fit this grammar.
+
+For the current Phase 2 POL-01 example, header checks pass. MTG-01 contains a
+threshold-change decision and sign-off, but the bounded resolver cannot establish
+an explicit version/scope-bound adoption with dated policy-adoption rights.
+The example therefore still abstains; linked meeting and role records remain
+visible alongside the failed checks. The positive path is validated with synthetic
+complete-chain fixtures, not claimed as validated authority for POL-01.
+
+One corpus read transaction supplies retrieval, interpretation and scoring inputs.
+Saved runs freeze the full validated index so authority-context quotations are
+available after index replacement. This favours reproducibility over storage size;
+large corpora will produce large snapshots. Limits on retrieved groups and inputs
+remain visible and do not imply exhaustive coverage.
+
+## Verification
+
+The supplied baseline reproduced: 748 Python tests and 8 subtests passed.
+Final verification: 797 Python tests plus 8 subtests, 14 frontend tests, TypeScript checking, production build, lint and formatting passed.
+
+Added API tests cover bounded support, abstention, exact citations, original claim
+and facet binding, no matches, draft/non-approved/future/superseded/derived sources,
+authentication, request validation, idempotency, owner isolation, immutable replay
+and parent-linked review. Frontend render tests cover the automatic entry and
+saved-result disclosure. Run:
+
+```sh
+uv run pytest -q
+uv run ruff check .
+uv run ruff format --check .
+cd frontend
+npm ci
+npx tsc --noEmit
+npm run build
+npm run test:supplied
+```
+
+A live browser interaction/visual comparison and evaluation against an external
+production corpus were not performed. No production corpus is in this archive.
+
+The POL-01 regression was also replayed read-only against the local Phase 2 corpus using the exported claim and date: its rule is now support, with authority as its remaining admission blocker. Existing saved runs retain their original results.

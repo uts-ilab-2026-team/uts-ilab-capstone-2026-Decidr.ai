@@ -41,6 +41,15 @@ export interface SuppliedResult {
     edge_id: string | null; admitted_to_framework: boolean; reasons: string[];
   }[];
   limitations: string[];
+  rule_comparison?: { status: string; message: string; notice: string; matching_evidence_ids: string[] };
+  proposals?: {
+    authority_resolution?: { status: string; authority_verified: boolean | null; checks: { name: string; passed: boolean; reason: string }[]; citations: Citation[]; limitations: string[] };
+    passage_context?: { compatible: boolean; limitation: string; citation: Citation; clauses: { text: string; compatible: boolean; reason: string }[] };
+    evidence_id: string;
+    field_comparison: { differences: string[]; evidence_entails_claim: boolean } | null;
+    authority_context: { [key: string]: unknown };
+    authority_links: { [key: string]: unknown };
+  }[];
 }
 
 export function parseSuppliedRequest(text: string, claim: string, expectedFacet?: string): SuppliedRequest {

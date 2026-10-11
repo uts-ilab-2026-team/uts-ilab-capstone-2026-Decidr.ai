@@ -49,14 +49,16 @@ function CitationView({ citation }: { citation: Citation }) {
 type Input = SuppliedResult["inputs"][number];
 export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResult; item: Input }) {
   const edge = result.assessment.evidence.find(value => value.edge_id === item.edge_id);
+  const automatic = result.status === "assessed_automatically";
+  const proposal = result.proposals?.find(value => item.interpretation.citations.some(citation => citation.evidence_id === value.evidence_id));
   return <>
     <div className="ev-chips"><Badge>{humanize(item.interpretation.mode)}</Badge><Badge>{item.interpretation.stance}</Badge>
       <Badge>{item.source.lifecycle_status ?? "unknown"}</Badge></div>
-    <p className="ev-muted">Supplied relationship: {item.interpretation.stance} · Mode: {item.interpretation.mode}</p>
+    <p className="ev-muted">{automatic ? "Automatic relationship" : "Supplied relationship"}: {item.interpretation.stance} · Mode: {item.interpretation.mode}</p>
     <p>{item.admitted_to_framework
       ? edge?.material ? "Admitted and material under supplied judgements." : "Admitted; not material under supplied judgements."
       : "Retained without a scoring edge."}</p>
-    <section className="ev-card"><h3>Supplied interpretation</h3><p className="ev-quote">{item.interpretation.rationale}</p>
+    <section className="ev-card"><h3>{automatic ? "Automatic interpretation" : "Supplied interpretation"}</h3><p className="ev-quote">{item.interpretation.rationale}</p>
       {!!item.reasons.length && <ul>{item.reasons.map((reason, i) => <li key={i}>{reason}</li>)}</ul>}
     </section>
     <section className="ev-card"><h3>Exact citations ({item.interpretation.citations.length})</h3>
@@ -64,7 +66,7 @@ export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResul
     </section>
     <div className="ev-two">
       <section className="ev-card"><h3>Credibility dimensions</h3>
-        <p className="ev-muted">Calculated from supplied judgements; these are not verified probabilities.</p>
+        <p className="ev-muted">{automatic ? "Calculated from automatic judgements; these are not verified probabilities." : "Calculated from supplied judgements; these are not verified probabilities."}</p>
         {edge ? <>
           <p>Materiality: {edge.materiality_score === null ? "Not scored" : edge.materiality_score.toFixed(3)}</p>
           {Object.entries(edge.dimensions).map(([name, value]) => <div className="ev-dimension" key={name}><span>{humanize(name)}</span><span>{value.toFixed(2)}</span></div>)}
@@ -75,9 +77,32 @@ export function SuppliedEvidenceDetail({ result, item }: { result: SuppliedResul
           : <p className="ev-muted">No framework scoring trace for this input. See the reasons above.</p>}
       </section>
     </div>
+    {proposal && <section className="ev-card"><h3>Approval-rule comparison and authority</h3>
+      <p>{proposal.field_comparison?.evidence_entails_claim ? "The extracted rule covers the claimed discount range." : "No supported field comparison establishes this claim."}</p>
+      {!!proposal.field_comparison?.differences.length && <p>Different fields: {proposal.field_comparison.differences.join(", ")}</p>}
+      {proposal.passage_context && <details><summary>Surrounding policy conditions</summary>
+        <p className="ev-quote">{proposal.passage_context.citation.quotation}</p>
+        <p className="ev-mono">{proposal.passage_context.citation.evidence_id} · {proposal.passage_context.citation.locator}</p>
+        <ul>{proposal.passage_context.clauses.map((clause, index) => <li key={index}>{clause.reason}</li>)}</ul>
+        <p>{proposal.passage_context.limitation}</p>
+      </details>}
+      <p>{proposal.authority_resolution?.authority_verified
+        ? "Documented authority resolved from dated adoption and person-specific decision rights. This is not independent authentication."
+        : "Authority remains unresolved. Document ownership, approval labels and transaction approval rights do not establish policy adoption rights."}</p>
+      {proposal.authority_resolution && <details><summary>Authority checks and citations</summary>
+        <ul>{proposal.authority_resolution.checks.map(check => <li key={check.name}>
+          <strong>{check.passed ? "Passed" : "Unresolved"}: </strong>{check.reason}
+        </li>)}</ul>
+        {proposal.authority_resolution.citations.map((citation, i) => <CitationView key={i} citation={citation} />)}
+        <ul>{proposal.authority_resolution.limitations.map((limit, i) => <li key={i}>{limit}</li>)}</ul>
+      </details>}
+      <details><summary>Authority context and exact supporting quotations</summary>
+        <pre>{JSON.stringify({ context: proposal.authority_context, references: proposal.authority_links }, null, 2)}</pre>
+      </details>
+    </section>}
     <SourceMetadata source={item.source} />
     <details className="ev-card"><summary>Technical details: supplied judgements and scoring</summary>
-      <p className="ev-muted">Authority and independence flags are caller declarations. Quality scores are supplied assumptions.</p>
+      <p className="ev-muted">{automatic ? "Authority is subject to the cited checks above; independence remains unverified. Quality dimensions are bounded grammar checks." : "Authority and independence flags are caller declarations. Quality scores are supplied assumptions."}</p>
       <pre>{JSON.stringify({ source: item.source, supplied_judgements: item.supplied_judgements, scoring: edge ?? null }, null, 2)}</pre>
     </details>
   </>;
@@ -94,10 +119,13 @@ export function SuppliedResultView({ result, onDetailChange }: { result: Supplie
   return <section className="ev-workspace" aria-label="Supplied assessment result">
     <div hidden={!!item}>
       <article className="ev-card">
-        <span className="ev-kicker">Facet assessment · Supplied judgements</span>
+        <span className="ev-kicker">Facet assessment · {result.status === "assessed_automatically" ? "Automatic result · Review pending" : "Supplied judgements"}</span>
         <p className="ev-claim">{result.facet}</p>
         {result.claim_text !== result.facet && <p className="ev-muted">Original claim: {result.claim_text}</p>}
-        <div className="ev-chips"><Badge>Target: {humanize(result.assessment_target)}</Badge><Badge>As of: {result.as_of}</Badge><Badge>Not saved</Badge></div>
+        <div className="ev-chips"><Badge>Target: {humanize(result.assessment_target)}</Badge><Badge>As of: {result.as_of}</Badge><Badge>{result.persisted ? "Saved snapshot" : "Not saved"}</Badge></div>
+        {result.status === "assessed_automatically" && result.rule_comparison && <section className="ev-notice">
+          <strong>{result.rule_comparison.message}</strong><p>{result.rule_comparison.notice}</p>
+        </section>}
         <p><strong>Conditional outcome: {assessment.overall_outcome}</strong></p>
         <p className="ev-muted">{result.assurance.notice}</p>
       </article>
@@ -110,8 +138,8 @@ export function SuppliedResultView({ result, onDetailChange }: { result: Supplie
       </div>
       <section className="ev-card"><div className="ev-toolbar" style={{ marginBottom: 0 }}><div>
         <span className="ev-kicker">Conditional confidence</span><strong>{assessment.confidence}</strong>
-      </div><span className="ev-muted">{result.inputs.length} supplied inputs · {sources} unique sources</span></div>
-        <p className="ev-muted">Human review is not established by this request. This assesses the stated facet, not every assertion in the claim. Result is not saved.</p>
+      </div><span className="ev-muted">{result.inputs.length} assessment inputs · {sources} unique sources</span></div>
+        <p className="ev-muted">Human review is not established by this request. This assesses the stated facet, not every assertion in the claim. {result.persisted ? "Result is saved as an immutable snapshot." : "Result is not saved."}</p>
       </section>
       <h3>Evidence used in this assessment</h3>
       <p className="ev-muted">Includes retained context and excluded inputs. Other retrieved candidates have not been assessed.</p>

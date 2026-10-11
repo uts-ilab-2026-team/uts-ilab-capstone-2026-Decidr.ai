@@ -49,3 +49,8 @@
 .ev-detail:focus { outline: none; }
 .ev-dimension { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid #f0eee9; padding: 10px 0; font-size: 12.5px; }
 @media (max-width: 800px) { .ev-two, .ev-fields { grid-template-columns: 1fr; } .ev-toolbar { flex-wrap: wrap; } }
+
+.ev-automatic label { display: block; margin: 12px 0; }
+.ev-automatic input, .ev-automatic select { font: inherit; border: 1px solid #e5e3df; border-radius: 6px; padding: 8px; margin-left: 8px; max-width: 100%; }
+.ev-automatic :is(input, select):focus-visible { outline: 2px solid #b7470b; outline-offset: 3px; }
+.ev-automatic fieldset { border: 1px solid #e5e3df; border-radius: 6px; padding: 16px; margin: 16px 0; min-width: 0; }

@@ -90,3 +90,60 @@ test("structured record presentation retains zero, false, and literal markup", (
   assert.ok(html.includes("Exact stored record"));
   assert.equal(recordFields({ ...evidence, locator: "heading:Policy#block:001" }), null);
 });
+
+import AutomaticAssessment from "../src/AutomaticAssessment";
+test("automatic entry uses existing cards, explicit date and no prepared JSON", () => {
+  const html = renderToStaticMarkup(<AutomaticAssessment claim="Approval rule" />);
+  assert.ok(html.includes("ev-card"));
+  assert.ok(html.includes('type="date"'));
+  assert.ok(html.includes("Assess claim and save result"));
+  assert.ok(!html.includes("Prepared assessment request"));
+  assert.ok(!html.includes("Review this result"));
+});
+
+test("automatic saved result is clearly distinguished from supplied judgements", () => {
+  const result = {
+    status: "assessed_automatically", persisted: true, claim_text: "Original", facet: "Facet",
+    as_of: "2026-06-17", assessment_target: "formal_rule", assurance: { notice: "Human review pending." },
+    inputs: [], limitations: [], assessment: { overall_outcome: "Insufficient evidence",
+      formal_outcome: "Insufficient evidence", observed_outcome: "Insufficient evidence",
+      confidence: "Low", evidence: [], gaps: [], rules_applied: [], summary: "No admitted evidence." },
+  } as unknown as SuppliedResult;
+  const html = renderToStaticMarkup(<SuppliedResultView result={result} />);
+  for (const text of ["Automatic result", "Review pending", "Saved snapshot", "Original", "Insufficient evidence"])
+    assert.ok(html.includes(text));
+  assert.ok(!html.includes("Not saved"));
+});
+
+test("wording match is shown separately from the credibility outcome", () => {
+  const result = {
+    status: "assessed_automatically", persisted: true, claim_text: "Original", facet: "Facet",
+    as_of: "2026-06-17", assessment_target: "formal_rule", assurance: { notice: "Human review pending." },
+    rule_comparison: { message: "Rule wording matches; authority unresolved", notice: "Not a verified verdict." },
+    inputs: [], limitations: [], assessment: { overall_outcome: "Insufficient evidence",
+      formal_outcome: "Insufficient evidence", observed_outcome: "Insufficient evidence",
+      confidence: "Low", evidence: [], gaps: [], rules_applied: [], summary: "Authority unresolved." },
+  } as unknown as SuppliedResult;
+  const html = renderToStaticMarkup(<SuppliedResultView result={result} />);
+  assert.ok(html.includes("Rule wording matches; authority unresolved"));
+  assert.ok(html.includes("Conditional outcome: Insufficient evidence"));
+  assert.ok(html.includes("Not a verified verdict."));
+});
+
+test("documented authority checks distinguish resolved evidence from missing proof", () => {
+  const item = {
+    input_id: "one", source: { title: "Policy", source_id: "p" },
+    interpretation: { stance: "support", mode: "formal", rationale: "Matched rule", citations: [] },
+    supplied_judgements: {}, admitted_to_framework: false, edge_id: null, reasons: [],
+  } as unknown as SuppliedResult["inputs"][number];
+  item.interpretation.citations = [{ evidence_id: "rule", source_id: "p", locator: "rule", quotation: "Rule", start: 0, end: 4 }];
+  const result = { status: "assessed_automatically", inputs: [item], assessment: { evidence: [] },
+    proposals: [{ evidence_id: "rule", field_comparison: null,
+      authority_resolution: { authority_verified: true, checks: [{ name: "rights", passed: true, reason: "Dated adoption rights match." }],
+        citations: [], limitations: ["Not independent authentication."] }, authority_context: {}, authority_links: {} }],
+  } as unknown as SuppliedResult;
+  const html = renderToStaticMarkup(<SuppliedEvidenceDetail result={result} item={item} />);
+  assert.ok(html.includes("Documented authority resolved"));
+  assert.ok(html.includes("Dated adoption rights match."));
+  assert.ok(!html.includes("Authority remains unresolved."));
+});

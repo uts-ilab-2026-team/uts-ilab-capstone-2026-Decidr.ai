@@ -66,6 +66,10 @@ def interpret_retrieved_evidence(request: InterpretationProposalRequest) -> dict
     ``assessment_request`` can be edited and then submitted to
     ``/api/corpus/assess-supplied`` after explicit review.
     """
+    return build_interpretation(request)
+
+
+def build_interpretation(request: InterpretationProposalRequest, *, capture: bool = False) -> dict:
     facet = request.facet or request.claim
     path = corpus_database_path()
     try:
@@ -95,7 +99,7 @@ def interpret_retrieved_evidence(request: InterpretationProposalRequest) -> dict
                 facet,
                 limit=request.ranked_group_limit,
             )
-    except sqlite3.Error as error:
+    except (sqlite3.Error, ValueError) as error:
         raise HTTPException(
             status_code=503,
             detail="The corpus index could not be read; check its configuration and schema.",
@@ -195,7 +199,7 @@ def interpret_retrieved_evidence(request: InterpretationProposalRequest) -> dict
     if not proposals:
         draft_blockers.append("No matching evidence was retrieved; there is no assessment draft.")
 
-    return {
+    payload = {
         "status": "interpretation_proposed_review_required",
         "persisted": False,
         "interpreter_version": "bounded-proposals-v2",
@@ -229,3 +233,7 @@ def interpret_retrieved_evidence(request: InterpretationProposalRequest) -> dict
             "No proposal is persisted or promoted to the facts register automatically.",
         ],
     }
+
+    if capture:
+        payload["corpus_snapshot"] = {"sources": sources, "evidence": evidence}
+    return payload
