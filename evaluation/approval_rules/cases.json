@@ -45,13 +45,34 @@
     "id": "renewal-cap",
     "claim": "Renewal discounts are capped at 10% off the account's current contracted rate.",
     "evidence": "Renewal discounts are capped at 10% off the account's current contracted rate.",
-    "expected_wording": "unsupported",
+    "expected_wording": "match",
     "authority": "not_established_by_wording"
   },
   {
     "id": "deployment-signoff",
     "claim": "Production deployments touching customer billing require Head of Engineering sign-off before release.",
     "evidence": "Production deployments touching customer billing require Head of Engineering sign-off before release.",
+    "expected_wording": "unsupported",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "renewal-cap-difference",
+    "claim": "Renewal discounts are capped at 15% off the account's current contracted rate.",
+    "evidence": "Renewal discounts are capped at 10% off the account's current contracted rate.",
+    "expected_wording": "unresolved_difference",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "renewal-basis",
+    "claim": "Renewal discounts are capped at 10% off list price.",
+    "evidence": "Renewal discounts are capped at 10% off the account's current contracted rate.",
+    "expected_wording": "unsupported",
+    "authority": "not_established_by_wording"
+  },
+  {
+    "id": "renewal-exception",
+    "claim": "Renewal discounts are capped at 10% off the account's current contracted rate. Except strategic accounts.",
+    "evidence": "Renewal discounts are capped at 10% off the account's current contracted rate.",
     "expected_wording": "unsupported",
     "authority": "not_established_by_wording"
   }

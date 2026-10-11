@@ -15,6 +15,7 @@ from typing import Literal
 from decidr.approval_propositions import compare_approval_rules
 from decidr.assessment_targets import AssessmentTarget, validate_target
 from decidr.interpretation_models import InterpretationCitation
+from decidr.renewal_cap import parse_renewal_cap
 from decidr.retrieval_models import Evidence, Source
 from decidr.source_metadata import approval_signals
 
@@ -215,6 +216,8 @@ def infer_mode(text: str) -> Mode:
     lowered = _lower(text)
     if re.search(r"\b(reported|said|told|stated|wrote|asked|according to)\b", lowered):
         return "observed"
+    if parse_renewal_cap(text):
+        return "formal"
     if re.search(r"\b(must|shall|required|requires|require|prohibited)\b|\bmay only\b", lowered):
         return "formal"
     if re.search(r"\b(" + "|".join(OBSERVED_CUES) + r")\b", lowered):

@@ -229,7 +229,7 @@ def test_matching_rule_with_compatible_surroundings_is_explained_and_frozen(setu
     assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
 
 
-@pytest.mark.parametrize("structured", [False, True, "expense"])
+@pytest.mark.parametrize("structured", [False, True, "expense", "renewal"])
 def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup, structured):
     from test_authority_resolution import chain
     import os
@@ -238,6 +238,7 @@ def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup, stru
     from test_structured_adoption import structured_chain
 
     from test_expense_authority import expense_chain
+    from test_renewal_cap import renewal_chain
 
     sources, passages = (
         expense_chain()
@@ -246,6 +247,8 @@ def test_automatic_authority_chain_can_reach_supported_and_is_frozen(setup, stru
         if structured
         else chain()
     )
+    if structured == "renewal":
+        sources, passages = renewal_chain()
     client, _, _, _ = setup
     with closing(connect(Path(os.environ["DECIDR_CORPUS_DB"]))) as connection, connection:
         for source in sources.values():
@@ -301,3 +304,30 @@ def test_expense_api_preserves_citations_and_abstains_on_authority(setup):
     assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved
     fresh = client.post(URL, json=body(claim=rule)).json()
     assert fresh["inputs"][0]["interpretation"]["stance"] == "unresolved"
+
+
+def test_renewal_cap_saved_with_exact_context_and_unresolved_authority(setup):
+    from test_renewal_cap import RULE as CAP, CONTEXT
+
+    client, _, passage, store = setup
+    passage.text = "1. " + CAP + CONTEXT
+    store()
+    response = client.post(SAVE, json=body(claim=CAP, request_id="renewal-cap"))
+    assert response.status_code == 201, response.text
+    saved = response.json()
+    r = saved["snapshot"]["response"]
+    item = r["inputs"][0]
+    assert item["interpretation"]["stance"] == "support"
+    assert item["interpretation"]["mode"] == "formal"
+    assert item["supplied_judgements"]["authority_verified"] is None
+    assert not item["admitted_to_framework"]
+    c = item["interpretation"]["citations"][0]
+    assert passage.text[c["start"] : c["end"]] == c["quotation"]
+    assert r["proposals"][0]["passage_context"]["compatible"]
+    passage.text += " Exceptions may be approved by Sales."
+    store()
+    assert (
+        client.post(URL, json=body(claim=CAP)).json()["inputs"][0]["interpretation"]["stance"]
+        == "unresolved"
+    )
+    assert client.get("/api/assessments/" + saved["snapshot"]["run_id"]).json() == saved

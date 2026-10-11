@@ -109,7 +109,7 @@ remain visible and do not imply exhaustive coverage.
 ## Verification
 
 The supplied baseline reproduced: 748 Python tests and 8 subtests passed.
-Current verification: 852 Python tests plus 8 subtests, 15 frontend tests, TypeScript checking, production build, lint and formatting passed.
+Current verification: 869 Python tests plus 8 subtests, 15 frontend tests, TypeScript checking, production build, lint and formatting passed.
 
 Added API tests cover bounded support, abstention, exact citations, original claim
 and facet binding, no matches, draft/non-approved/future/superseded/derived sources,
@@ -169,11 +169,11 @@ available. Expense policies use the same explicit, dated adoption-and-rights che
 
 `evaluation/approval_rules/cases.json` is a small, corpus-shaped development set,
 not an independent benchmark or a human-approved truth set. It includes discount
-and expense matches, boundary/actor/currency differences, and renewal-cap and
+and expense matches, boundary/actor/currency differences, and renewal-cap cases plus
 deployment-signoff cases that must remain unsupported. Run it with
 `pytest tests/test_expense_approval.py`. API coverage also verifies saved expense
 results, exact citations, authority abstention, exception handling and immutable
-history. The next rule families remain renewal caps and deployment sign-off.
+history. Deployment sign-off remains a future rule family.
 
 ## Expense-policy authority follow-up
 
@@ -203,3 +203,27 @@ apply to the displayed page. The previous graph-register dashboard remains under
 “Register results (recalculated)” with its existing CSV export. Those results are
 recomputed register assessments, not saved automatic verdicts. History loading
 failures are shown rather than silently falling back to register results.
+
+## Renewal discount caps
+
+`renewal_cap_fields_v1` recognises complete statements of the renewal discount cap
+against the account's current contracted rate, including “Renewal discounts are
+capped at 10% off the account's current contracted rate.” It compares the stated
+cap exactly: a different numerical cap is unresolved, not a contradiction or an
+inferred equivalent. List-price bases, incomplete scopes, negation, and appended
+exceptions are not silently accepted. This does not assess a compound claim that
+adds “with no exceptions”; that extra assertion requires separate interpretation.
+
+Adjacent explicit policy no-exceptions wording and the specified Account Executive /
+Customer Success consultation requirement are retained as compatible context.
+Unknown or qualifying adjacent clauses block automatic support. Exact focal and
+full passage citations are preserved. Policy-rule matching does not prove that
+renewal transactions complied in practice.
+
+Explicit adoption and rights statements can use `for renewal discounts` and must
+pass the same actor, version, dates, source eligibility and conflict checks. The
+local POL-06 replay matches the cap and passes policy version/date checks but
+cannot establish a complete adoption-and-rights chain. Its automatic outcome stays
+insufficient evidence. Synthetic complete-chain tests validate the positive path.
+The development evaluation set now contains 11 cases across four rule families;
+it is not a held-out or human-validated benchmark.

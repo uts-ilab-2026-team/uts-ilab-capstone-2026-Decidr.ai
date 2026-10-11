@@ -89,6 +89,7 @@ def implementation_manifest() -> dict:
         "decidr/authority_resolution.py",
         "decidr/policy_adoption.py",
         "decidr/expense_approval.py",
+        "decidr/renewal_cap.py",
         "decidr/authority_links.py",
         "decidr/source_metadata.py",
         "decidr/assessment_adapter.py",

@@ -8,6 +8,7 @@ from decidr.authority_context import _header_citations, authority_context
 from decidr.expense_approval import parse_expense_rule
 from decidr.interpretation_models import InterpretationCitation
 from decidr.policy_adoption import structured_adoptions
+from decidr.renewal_cap import parse_renewal_cap
 from decidr.retrieval_models import Evidence, Source
 
 NAME = r"[\w]+(?:[ '-][\w]+)*"
@@ -25,12 +26,16 @@ RIGHT = re.compile(
     rf"from (?P<start>{DAY}) through (?P<end>{DAY})\."
 )
 
-# The same explicit rights contract with an expense scope, never inferred from a title.
-EXPENSE_ADOPTION = re.compile(
-    ADOPTION.pattern.replace(rf"(?P<scope>{SCOPE}) deals", r"(?P<scope>expense claims)")
+# Explicit non-deal scopes use the same dated authority contract.
+SCOPED_ADOPTION = re.compile(
+    ADOPTION.pattern.replace(
+        rf"(?P<scope>{SCOPE}) deals", r"(?P<scope>expense claims|renewal discounts)"
+    )
 )
-EXPENSE_RIGHT = re.compile(
-    RIGHT.pattern.replace(rf"(?P<scope>{SCOPE}) deals", r"(?P<scope>expense claims)")
+SCOPED_RIGHT = re.compile(
+    RIGHT.pattern.replace(
+        rf"(?P<scope>{SCOPE}) deals", r"(?P<scope>expense claims|renewal discounts)"
+    )
 )
 
 
@@ -92,10 +97,11 @@ def resolve_authority(
     code_match = re.match(rf"^({CODE})(?=\s|$)", source.title)
     rule = parse_approval_rule(citation.quotation)
     expense = parse_expense_rule(citation.quotation)
-    scope = rule.deal_scope if rule else "expense claims"
+    renewal = parse_renewal_cap(citation.quotation)
+    scope = rule.deal_scope if rule else "renewal discounts" if renewal else "expense claims"
     scope_label = scope + " deals" if rule else scope
     release, separator, _ = source.source_id.partition(":")
-    if not code_match or not separator or not (rule or expense) or not source.version:
+    if not code_match or not separator or not (rule or expense or renewal) or not source.version:
         check(
             "policy_identity",
             False,
@@ -209,8 +215,8 @@ def resolve_authority(
             "none recorded at the time.",
         }:
             continue
-        adoption_pattern = ADOPTION if rule else EXPENSE_ADOPTION
-        rights_pattern = RIGHT if rule else EXPENSE_RIGHT
+        adoption_pattern = ADOPTION if rule else SCOPED_ADOPTION
+        rights_pattern = RIGHT if rule else SCOPED_RIGHT
         adoption = adoption_pattern.fullmatch(p.text.strip())
         right = rights_pattern.fullmatch(p.text.strip())
         try:

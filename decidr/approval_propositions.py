@@ -134,8 +134,9 @@ def compare_approval_rules(left: str, right: str) -> dict | None:
     claim, evidence = parse_approval_rule(left), parse_approval_rule(right)
     if claim is None or evidence is None:
         from decidr.expense_approval import compare_expense_rules
+        from decidr.renewal_cap import compare_renewal_caps
 
-        return compare_expense_rules(left, right)
+        return compare_expense_rules(left, right) or compare_renewal_caps(left, right)
     a, b = claim.model_dump(), evidence.model_dump()
     differences = [key for key in a if a[key] != b[key]]
     covered = _range_covers(evidence, claim)

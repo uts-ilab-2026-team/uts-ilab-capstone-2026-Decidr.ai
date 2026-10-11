@@ -175,7 +175,7 @@ def build_automatic_assessment(request: InterpretationProposalRequest) -> dict:
     }
     response["assurance"].update(
         outcome_basis="conditional_on_automatic_judgements",
-        semantic_verification="bounded_discount_and_expense_approval_fields",
+        semantic_verification="bounded_discount_expense_and_renewal_fields",
         authority_verification="explicit_dated_adoption_and_person_specific_rights_checked",
         independence_verification="unverified_origins_conservatively_grouped",
         quality_scores="binary_complete_grammar_checks_not_calibrated",
