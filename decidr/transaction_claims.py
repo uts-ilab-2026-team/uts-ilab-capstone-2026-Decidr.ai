@@ -95,9 +95,7 @@ def _date(value):
 def _deal_scope(value):
     value = re.sub(r"[-_\s]+", " ", str(value)).strip().casefold()
     value = re.sub(r" deals?$", "", value)
-    return {"new business": "new business", "renewal": "renewal", "renewals": "renewal"}.get(
-        value
-    )
+    return {"new business": "new business", "renewal": "renewal", "renewals": "renewal"}.get(value)
 
 
 def approval_state(row):
@@ -356,7 +354,9 @@ def assess_transaction_claim(claim, passages, sources, as_of, scope_answer=None)
                         f"selected scope {scope_answer!r} requires review."
                     )
                 else:
-                    scope_status = "supported" if recorded_scope == expected_scope else "contradicted"
+                    scope_status = (
+                        "supported" if recorded_scope == expected_scope else "contradicted"
+                    )
                     reason = (
                         f"The linked record explicitly gives {key} as {value!r}, which "
                         f"{'matches' if scope_status == 'supported' else 'differs from'} "
@@ -533,7 +533,8 @@ def assess_transaction_claim(claim, passages, sources, as_of, scope_answer=None)
             else ""
         )
         + "This compares the claim with linked records. It does not independently verify source authenticity, approver authority or independence. Human review remains pending.",
-        "next_step": " ".join(next_steps) or "Review the linked evidence and any conflicting records.",
+        "next_step": " ".join(next_steps)
+        or "Review the linked evidence and any conflicting records.",
     }
 
 

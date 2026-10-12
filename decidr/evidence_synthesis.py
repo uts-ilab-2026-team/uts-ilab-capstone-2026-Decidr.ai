@@ -458,10 +458,13 @@ def build_evidence_synthesis(claim, passages, sources, as_of, *, resolved_record
         "future_evidence_excluded": len(future),
         "summary": f"{counts['formal']} formal/context passages, {counts['observed']} reported or recorded practice passages, and {counts['documented']} documentation findings connected.",
         "notice": (
-            "The transaction comparison selected " + ", ".join(sorted(identifiers))
+            "The transaction comparison selected "
+            + ", ".join(sorted(identifiers))
             + "; the original claim did not supply a record identifier. "
-            if from_resolution else ""
-        ) + "These connections compare evidence across the same subject. Reports and recorded routes are not automatically policy violations; requiring Finance approval does not mean only Finance can approve. Missing scope, authority, dates and independence remain unresolved.",
+            if from_resolution
+            else ""
+        )
+        + "These connections compare evidence across the same subject. Reports and recorded routes are not automatically policy violations; requiring Finance approval does not mean only Finance can approve. Missing scope, authority, dates and independence remain unresolved.",
         "questions": [
             "Does the stated policy apply to this deal type and event date?",
             "Was required approval obtained, and was any alternative approver authorised?",
