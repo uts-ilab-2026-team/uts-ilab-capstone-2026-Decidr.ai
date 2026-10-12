@@ -93,6 +93,37 @@ def assess(
     )
 
 
+def test_rejected_duplicate_diagnostics_survive_canonical_export_without_scoring():
+    evidence, sources = fixture()
+    rejected = finding(basis="recorded_action", reason="Unverified duplicate interpretation.")
+    evaluated = {
+        "findings": [finding()],
+        "unresolved_questions": [],
+        "semantic_validation": {
+            "status": "validated",
+            "redundant_rejections": [{"original_finding_index": 1, "finding": rejected}],
+        },
+    }
+    result = canonical_assessment(
+        {"target": "formal_requirement", "components": [component()], "ambiguities": []},
+        evaluated,
+        evidence,
+        sources,
+        date(2026, 4, 1),
+    )
+    assert result["overall_outcome"] == "Supported"
+    assert len(result["components"][0]["findings"]) == 1
+    exported = json.loads(json.dumps(result))
+    assert exported["diagnostics"]["evidence_validation"] == evaluated["semantic_validation"]
+    rejected["reason"] = "Changed after assessment"
+    assert (
+        result["diagnostics"]["evidence_validation"]["redundant_rejections"][0]["finding"][
+            "reason"
+        ]
+        == "Unverified duplicate interpretation."
+    )
+
+
 @pytest.mark.parametrize("target", ["formal_requirement", "formal_authority"])
 @pytest.mark.parametrize(
     "approval_status",
@@ -535,7 +566,10 @@ def test_contradiction_retains_unvalidated_counterevidence_and_lowers_disclosed_
     assert result["overall_outcome"] == baseline["overall_outcome"] == "Contradicted"
     assert result["processing"]["status"] == "assessed"
     assert "Contradicting evidence:" in result["summary"]
-    assert "Remaining uncertainty: " + reason in result["summary"]
+    assert (
+        "Remaining uncertainty: The automatic interpretation of this passage could not be verified."
+        in result["summary"]
+    )
     assert result["confidence"]["score"] < baseline["confidence"]["score"]
     factors = result["confidence"]["components"][0]["factors"]
     assert factors["interpretation_clarity"] == 0.5
@@ -544,6 +578,7 @@ def test_contradiction_retains_unvalidated_counterevidence_and_lowers_disclosed_
     )
     retained = result["components"][0]["findings"][1]
     assert retained["semantic_validation"] == rejection
+    assert retained["explanation_provenance"]["original_reason"] == reason
     assert retained["admitted"] is False
     assert result["unresolved_questions"]
     # Repetition of the same unresolved passage does not invent more uncertainty.
@@ -554,6 +589,122 @@ def test_contradiction_retains_unvalidated_counterevidence_and_lowers_disclosed_
         sources=sources,
     )
     assert repeated["confidence"] == result["confidence"]
+
+
+@pytest.mark.parametrize("proposed_relationship", ["supports", "contradicts", "qualifies"])
+def test_context_explanation_does_not_assert_excluded_model_inference(proposed_relationship):
+    explanation = "The absence of an escalation route directly contradicts the claim."
+    limits = ["This proves the claimed collaboration cannot happen."]
+    validation = {
+        "valid": True,
+        "reason": explanation,
+        "expected_relationship": proposed_relationship,
+    }
+    candidate = finding(
+        proposed_relationship,
+        reason=explanation,
+        limitations=limits,
+        basis="contextual",
+        semantic_validation=validation,
+    )
+    result = assess([candidate])
+    retained = result["components"][0]["findings"][0]
+    assert result["overall_outcome"] == "Insufficient evidence"
+    assert retained["relationship"] == "context"
+    assert retained["admitted"] is False
+    assert "Retained as background context" in retained["reason"]
+    assert explanation not in retained["reason"]
+    assert limits[0] not in retained["limitations"]
+    assert result["evidence_relations"][0]["reason"] == retained["reason"]
+    assert explanation not in result["summary"]
+    assert retained["semantic_validation"] == validation
+    assert retained["explanation_provenance"]["original_reason"] == explanation
+    assert retained["explanation_provenance"]["original_limitations"] == limits
+    assert retained["original_relationship"] == proposed_relationship
+    assert retained["citations"][0]["quotation"] == candidate["quotation"]
+
+
+def test_rejected_mismatch_remains_partial_without_repeating_unverified_claims_as_facts():
+    evidence, sources = fixture()
+    text = "No escalation route is documented for a disagreement."
+    evidence["background"] = evidence["e"].model_copy(
+        update={"evidence_id": "background", "text": text}
+    )
+    unsupported_explanation = "The missing route directly proves approval always occurs."
+    mismatch = (
+        "Proposed relationship contradicts differs from independent relationship supports. "
+        + unsupported_explanation
+    )
+    raw_reason = "This evidence interpretation remains unverified: " + mismatch
+    validation = {
+        "valid": False,
+        "reason": mismatch,
+        "expected_relationship": "supports",
+        "original_proposal": {
+            "relationship": "contradicts",
+            "reason": "No route means approval cannot occur.",
+        },
+    }
+    unresolved = finding(
+        "unresolved",
+        evidence_id="background",
+        quotation=text,
+        reason=raw_reason,
+        limitations=[raw_reason],
+        basis="contextual",
+        directness="indirect",
+        scope_fit="unknown",
+        time_fit="unknown",
+        semantic_validation=validation,
+    )
+    raw_question = f"Resolve c1 against background: {raw_reason}"
+    evaluated = {
+        "findings": [finding(), unresolved],
+        "unresolved_questions": [raw_question, "Check the applicable policy date."],
+    }
+    original = deepcopy(evaluated)
+    result = canonical_assessment(
+        {"target": "formal_requirement", "components": [component()], "ambiguities": []},
+        evaluated,
+        evidence,
+        sources,
+        date(2026, 4, 1),
+    )
+    retained = result["components"][0]["findings"][1]
+    assert result["overall_outcome"] == "Partially supported"
+    assert retained["relationship"] == "unresolved"
+    assert retained["admitted"] is False
+    visible = json.dumps(
+        {
+            "summary": result["summary"],
+            "questions": result["unresolved_questions"],
+            "reason": retained["reason"],
+            "limitations": retained["limitations"],
+            "relations": result["evidence_relations"],
+        }
+    )
+    assert unsupported_explanation not in visible
+    assert "Proposed relationship contradicts differs" not in visible
+    assert "could not be verified" in visible
+    assert "Check the applicable policy date." in result["unresolved_questions"]
+    assert retained["semantic_validation"] == validation
+    assert retained["explanation_provenance"]["original_reason"] == raw_reason
+    assert result["diagnostics"]["unresolved_question_revisions"][0]["original"] == raw_question
+    assert evaluated == original
+
+
+def test_genuine_admitted_counterevidence_keeps_its_explanation_and_conflicting_outcome():
+    explanation = "An applicable exception explicitly permits these orders without approval."
+    limits = ["The exception applies only to the defined emergency scope."]
+    result = assess([finding(), finding("contradicts", reason=explanation, limitations=limits)])
+    contradiction = result["components"][0]["findings"][1]
+    assert result["overall_outcome"] == "Conflicting evidence"
+    assert contradiction["admitted"] is True
+    assert contradiction["reason"] == explanation
+    assert contradiction["limitations"] == limits
+    assert explanation in result["summary"]
+    assert result["evidence_relations"][1]["reason"] == explanation
+    assert "explanation_provenance" not in contradiction
 
 
 def test_future_event_timestamp_blocks_support_but_pending_state_can_support_negation():
@@ -648,6 +799,149 @@ def test_exact_formal_headers_resolve_unknown_time_with_trace_and_no_extra_findi
     explicit = assess([finding(time_fit="yes")], evidence=evidence, sources=sources)
     assert explicit["citations"] == result["citations"]
     assert explicit["confidence"] == result["confidence"]
+
+
+def undated_practice_fixture(text):
+    evidence, sources = fixture(text=text)
+    sources["s"].source_type = "organisational_information"
+    sources["s"].creation_date = None
+    sources["s"].metadata_provenance = {
+        "lifecycle_status": "inferred:active_directory_not_proof_of_approval"
+    }
+    evidence["e"].source_type = "organisational_information"
+    return evidence, sources
+
+
+@pytest.mark.parametrize("time_fit", ["yes", "unknown"])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "| Approve discount >15% on new-business deals | Head of Finance | Often Head of Sales, informally, for urgent deals |",
+        "Warehouse supervisors sometimes dispatch sealed loads without the recorded second inspection.",
+    ],
+)
+def test_directory_current_does_not_date_observed_counterevidence(text, time_fit):
+    evidence, sources = undated_practice_fixture(text)
+    proposed = finding("contradicts", quotation=text, time_fit=time_fit)
+    original = deepcopy(proposed)
+    result = assess([proposed], target="observed_practice", evidence=evidence, sources=sources)
+    retained = result["components"][0]["findings"][0]
+    assert result["overall_outcome"] == "Insufficient evidence"
+    assert retained["relationship"] == "unresolved" and not retained["admitted"]
+    assert retained["time_fit"] == "unknown" and retained["original_time_fit"] == time_fit
+    assert retained["citations"][0]["quotation"] == text
+    assert "active directory" in retained["reason"]
+    assert proposed == original
+
+
+def test_directory_current_cannot_make_undated_practice_support_decisive():
+    text = "Supervisors inspect sealed loads before dispatch."
+    evidence, sources = undated_practice_fixture(text)
+    result = assess(
+        [finding(quotation=text)], target="observed_practice", evidence=evidence, sources=sources
+    )
+    retained = result["components"][0]["findings"][0]
+    assert retained["relationship"] == "qualifies"
+    assert retained["time_fit"] == "unknown"
+    assert result["overall_outcome"] == "Insufficient evidence"
+
+
+def test_date_in_another_row_of_whole_table_does_not_date_observed_practice():
+    text = (
+        "| Practice | Observed decision |\n"
+        "| --- | --- |\n"
+        "| Dispatch sealed loads | Supervisors sometimes skip the second inspection |\n"
+        "| Count inventory | Warehouse team counted spare parts on 2025-03-04 |"
+    )
+    evidence, sources = undated_practice_fixture(text)
+    result = assess(
+        [finding("contradicts", quotation=text)],
+        target="observed_practice",
+        evidence=evidence,
+        sources=sources,
+    )
+    retained = result["components"][0]["findings"][0]
+    assert retained["time_fit"] == "unknown"
+    assert retained["relationship"] == "unresolved" and not retained["admitted"]
+    assert retained["citations"][0]["quotation"] == text
+    assert result["overall_outcome"] == "Insufficient evidence"
+
+
+@pytest.mark.parametrize("basis", ["source_date", "passage_date", "own_iso_date", "exact_header"])
+def test_dated_practice_keeps_semantically_checked_temporal_fit(basis):
+    text = "Supervisors sometimes skipped the second inspection."
+    evidence, sources = undated_practice_fixture(text)
+    if basis == "source_date":
+        sources["s"].creation_date = date(2025, 3, 4)
+    elif basis == "passage_date":
+        evidence["e"].relevant_start_date = date(2025, 3, 4)
+    elif basis == "own_iso_date":
+        text = "On 2025-03-04, supervisors skipped the second inspection."
+        evidence["e"].text = text
+    else:
+        quote = "- **Interview date:** 2025-03-04"
+        sources["s"].header_evidence = [
+            {
+                "source_id": "s",
+                "scope": "document_header",
+                "quote": quote,
+            }
+        ]
+        evidence["header"] = evidence["e"].model_copy(
+            update={
+                "evidence_id": "header",
+                "locator": "document:header",
+                "text": quote,
+            }
+        )
+    result = assess(
+        [finding("contradicts", quotation=text)],
+        target="observed_practice",
+        evidence=evidence,
+        sources=sources,
+    )
+    retained = result["components"][0]["findings"][0]
+    assert retained["time_fit"] == "yes" and retained["admitted"]
+    assert result["overall_outcome"] == "Contradicted"
+
+
+@pytest.mark.parametrize("context", ["other_row", "policy_reference", "unbound_header"])
+def test_unrelated_or_unbound_dates_do_not_date_observed_practice(context):
+    text = "Supervisors sometimes skipped the second inspection."
+    evidence, sources = undated_practice_fixture(text)
+    evidence["e"].heading = "Practices"
+    quote = (
+        "- **Date:** 2025-03-04"
+        if context == "unbound_header"
+        else (
+            "- **Related policy:** RULE-417, effective 2025-03-04"
+            if context == "policy_reference"
+            else "On 2025-03-04 the inventory team counted spare parts."
+        )
+    )
+    evidence["other"] = evidence["e"].model_copy(
+        update={
+            "evidence_id": "other",
+            "locator": "section:other",
+            "text": quote,
+        }
+    )
+    if context != "other_row":
+        sources["s"].header_evidence = [
+            {
+                "source_id": "different-source" if context == "unbound_header" else "s",
+                "scope": "document_header",
+                "quote": quote,
+            }
+        ]
+    result = assess(
+        [finding("contradicts", quotation=text)],
+        target="observed_practice",
+        evidence=evidence,
+        sources=sources,
+    )
+    assert result["components"][0]["findings"][0]["time_fit"] == "unknown"
+    assert result["overall_outcome"] == "Insufficient evidence"
 
 
 @pytest.mark.parametrize(

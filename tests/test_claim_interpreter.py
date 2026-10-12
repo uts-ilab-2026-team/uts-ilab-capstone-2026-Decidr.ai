@@ -18,6 +18,7 @@ from decidr.claim_interpreter import (
 )
 
 CLAIM = "CASE-872 was approved by Morgan with a 37% discount."
+OWN_PASSAGE_GROUNDING = "<use the selected finding's own passage>"
 
 
 class MockProvider:
@@ -27,11 +28,57 @@ class MockProvider:
 
     def complete(self, schema, prompt):
         self.prompts.append((schema, prompt))
-        try:
-            self.previous = next(self.responses)
-        except StopIteration:
-            pass
-        return deepcopy(self.previous)
+        data = json.JSONDecoder().raw_decode(prompt.split("\nDATA:\n", 1)[1])[0]
+        scope = data.get("verification_scope")
+        if not scope or scope["batch_start"] or "\nSCHEMA REPAIR:" in prompt:
+            try:
+                self.previous = next(self.responses)
+            except StopIteration:
+                pass
+        result = deepcopy(self.previous)
+        if schema["title"] == "Evaluation":
+            self.selected_ids = {p["evidence_id"] for p in data["selected_passages"]}
+            self.finding_count = len(result.get("findings", []))
+        if scope and isinstance(result.get("finding_checks"), dict):
+            checks = result["finding_checks"]
+            result["finding_checks"] = {
+                str(local): checks[str(original)]
+                for local, original in enumerate(scope["original_finding_indices"])
+                if str(original) in checks
+            }
+            # Unknown selectors must survive fixture partitioning so validation rejects them.
+            result["finding_checks"].update(
+                (key, check)
+                for key, check in checks.items()
+                if key not in {str(i) for i in range(self.finding_count)}
+            )
+        if schema["title"] == "EvidenceVerification":
+            passages = {p["evidence_id"]: p for p in data["selected_passages"]}
+            checks = result.get("finding_checks", {})
+            if isinstance(checks, dict):
+                for i, finding in enumerate(data["proposed_evaluation"]["findings"]):
+                    check = checks.get(str(i), {})
+                    if (
+                        isinstance(check, dict)
+                        and check.get("grounding_quote") == OWN_PASSAGE_GROUNDING
+                    ):
+                        check["grounding_quote"] = passages[finding["evidence_id"]]["text"]
+            if scope and isinstance(result.get("omitted_evidence"), list):
+                result["omitted_evidence"] = [
+                    omission
+                    for omission in result["omitted_evidence"]
+                    if not isinstance(omission, dict)
+                    or omission.get("evidence_id") in passages
+                    or omission.get("evidence_id") not in self.selected_ids
+                ]
+                for omission in result["omitted_evidence"]:
+                    if (
+                        isinstance(omission, dict)
+                        and omission.get("grounding_quote") == OWN_PASSAGE_GROUNDING
+                        and omission.get("evidence_id") in passages
+                    ):
+                        omission["grounding_quote"] = passages[omission["evidence_id"]]["text"]
+        return result
 
 
 def interpreted(claim=CLAIM, **changes):
@@ -119,8 +166,9 @@ def verified_evidence(*findings, **changes):
     result = {
         "finding_checks": {
             str(i): {
-                "valid": True,
+                "fields_valid": True,
                 "expected_relationship": f["relationship"],
+                "grounding_quote": OWN_PASSAGE_GROUNDING,
                 "reason": "The exact quotation establishes only the stated component, with limitations retained.",
             }
             for i, f in enumerate(findings)
@@ -131,7 +179,8 @@ def verified_evidence(*findings, **changes):
     valid = changes.pop("valid", True)
     if (issues or not valid) and result["finding_checks"]:
         result["finding_checks"]["0"].update(
-            valid=False, reason="; ".join(issues) or "The proposed relationship is unsupported."
+            fields_valid=False,
+            reason="; ".join(issues) or "The proposed relationship is unsupported.",
         )
     missing = changes.pop("omitted_material_evidence", [])
     if findings:
@@ -144,6 +193,10 @@ def verified_evidence(*findings, **changes):
             for reason in missing
         ]
     result.update(changes)
+    result["omitted_evidence"] = [
+        {"grounding_quote": OWN_PASSAGE_GROUNDING, **omission}
+        for omission in result["omitted_evidence"]
+    ]
     return result
 
 
@@ -637,7 +690,7 @@ def test_value_recording_is_not_accuracy_validation():
 def test_semantic_evidence_verifier_rejections_cannot_be_bypassed(reason):
     f = finding()
     checked = verified_evidence(f, valid=False)
-    checked["finding_checks"]["0"].update(valid=False, reason=reason)
+    checked["finding_checks"]["0"].update(fields_valid=False, reason=reason)
     assert_error(
         "invalid_model_output",
         lambda: evaluate_evidence(
@@ -661,7 +714,7 @@ def test_ignored_counterevidence_is_rejected():
     )
 
 
-def test_evidence_verifier_references_validated_findings_without_quote_echo():
+def test_evidence_verifier_uses_grounding_quote_without_replacing_server_citation():
     f = finding()
     checked = verified_evidence(f)
     provider = MockProvider(evaluated(f), checked)
@@ -670,6 +723,10 @@ def test_evidence_verifier_references_validated_findings_without_quote_echo():
     assert (
         "quotation" not in provider.prompts[1][0]["$defs"]["_EvidenceMeaningCheck"]["properties"]
     )
+    check_schema = provider.prompts[1][0]["$defs"]["_EvidenceMeaningCheck"]
+    assert "grounding_quote" in check_schema["required"]
+    assert "fields_valid" in check_schema["required"]
+    assert "valid" not in check_schema["properties"]
 
 
 def test_evidence_verifier_must_cover_each_finding():
@@ -1098,11 +1155,24 @@ def test_source_metadata_is_deduplicated_without_losing_context_or_mutating_inpu
     f = finding(one)
     provider = MockProvider(evaluated(f), verified_evidence(f))
     evaluate_evidence(interpreted(), CLAIM, [one, two], "2026-04-01", provider)
-    for _, prompt in provider.prompts:
+    for schema, prompt in provider.prompts:
         data = json.loads(prompt.split("\nDATA:\n", 1)[1])
         assert data["sources_by_id"] == {"record": one["source"]}
         assert all("source" not in p for p in data["selected_passages"])
-        assert len(data["selected_passages"]) == 2
+        assert len(data["selected_passages"]) == (2 if schema["title"] == "Evaluation" else 1)
+    assert [schema["title"] for schema, _ in provider.prompts] == [
+        "Evaluation",
+        "EvidenceVerification",
+        "EvidenceVerification",
+    ]
+    verified_ids = [
+        [
+            p["evidence_id"]
+            for p in json.loads(prompt.split("\nDATA:\n", 1)[1])["selected_passages"]
+        ]
+        for _, prompt in provider.prompts[1:]
+    ]
+    assert verified_ids == [["ev-record"], ["ev-linked"]]
     assert [one, two] == before
 
 
@@ -1467,22 +1537,26 @@ def test_evidence_verifier_keys_and_omission_selectors_are_grounded():
     omission = schema["$defs"]["OmittedEvidence"]["properties"]
     assert omission["component_id"]["enum"] == ["c1", "c2"]
     assert omission["evidence_id"]["enum"] == ["e1", "e2"]
+    assert "grounding_quote" in schema["$defs"]["OmittedEvidence"]["required"]
     candidate = {
         "finding_checks": {
             "0": {
-                "valid": False,
+                "fields_valid": False,
                 "expected_relationship": "unresolved",
+                "grounding_quote": "",
                 "reason": "Unsupported relation.",
             },
             "1": {
-                "valid": True,
+                "fields_valid": True,
                 "expected_relationship": "supports",
+                "grounding_quote": "Supported passage text.",
                 "reason": "Supported relation.",
             },
         },
         "omitted_evidence": [],
     }
     assert model.model_validate(candidate).model_dump(by_alias=True) == candidate
+    assert model.model_validate(candidate).finding_checks.check_0.valid is False
     for checks in [
         {},
         {"0": candidate["finding_checks"]["0"]},
@@ -1496,7 +1570,14 @@ def test_evidence_verifier_keys_and_omission_selectors_are_grounded():
         {"component_id": "c1", "evidence_id": "invented", "reason": "Missing."},
     ]:
         with pytest.raises(ValidationError):
-            model.model_validate({**candidate, "omitted_evidence": [omission]})
+            model.model_validate(
+                {
+                    **candidate,
+                    "omitted_evidence": [
+                        {**omission, "grounding_quote": "A material source qualification."}
+                    ],
+                }
+            )
 
 
 def test_empty_finding_verifier_allows_real_omissions_but_no_invented_check_or_passage():
@@ -1511,6 +1592,7 @@ def test_empty_finding_verifier_allows_real_omissions_but_no_invented_check_or_p
             {
                 "component_id": "c1",
                 "evidence_id": "e1",
+                "grounding_quote": "A material source qualification.",
                 "reason": "Material evidence was not evaluated.",
             }
         ],
@@ -1518,12 +1600,57 @@ def test_empty_finding_verifier_allows_real_omissions_but_no_invented_check_or_p
     assert model.model_validate(candidate).model_dump(by_alias=True) == candidate
     with pytest.raises(ValidationError):
         model.model_validate(
-            {**candidate, "finding_checks": {"0": {"valid": True, "reason": "Invented check."}}}
+            {
+                **candidate,
+                "finding_checks": {
+                    "0": {
+                        "fields_valid": True,
+                        "expected_relationship": "supports",
+                        "grounding_quote": "Invented quotation.",
+                        "reason": "Invented check.",
+                    }
+                },
+            }
         )
     empty = _evidence_verifier_model(["c1"], [], 0)
     assert empty.model_validate({"finding_checks": {}, "omitted_evidence": []})
     with pytest.raises(ValidationError):
         empty.model_validate(candidate)
+
+
+def test_omission_schema_bounds_unique_pairs_without_losing_distinct_relations():
+    from pydantic import ValidationError
+
+    from decidr.claim_interpreter import _evidence_verifier_model
+
+    model = _evidence_verifier_model(["c1", "c2"], ["e1", "e2"], 0)
+    assert model.model_json_schema()["properties"]["omitted_evidence"]["maxItems"] == 4
+    omissions = [
+        {
+            "component_id": component,
+            "evidence_id": evidence,
+            "grounding_quote": "An assertion and its explicit exception.",
+            "reason": "Both the supporting assertion and the contradicting exception were omitted.",
+        }
+        for component in ("c1", "c2")
+        for evidence in ("e1", "e2")
+    ]
+    candidate = {"finding_checks": {}, "omitted_evidence": omissions}
+    assert model.model_validate(candidate).model_dump(by_alias=True) == candidate
+    with pytest.raises(ValidationError, match="one omission per component/passage pair"):
+        model.model_validate(
+            {
+                **candidate,
+                "omitted_evidence": [
+                    omissions[0],
+                    {**omissions[0], "reason": "Another relation."},
+                ],
+            }
+        )
+    with pytest.raises(ValidationError):
+        model.model_validate({**candidate, "omitted_evidence": omissions + [omissions[0]]})
+    empty = _evidence_verifier_model(["c1"], [], 0)
+    assert empty.model_json_schema()["properties"]["omitted_evidence"]["maxItems"] == 0
 
 
 def test_claim_omission_must_quote_an_actual_original_span():
@@ -1766,7 +1893,7 @@ def test_target_specific_verification_retains_common_safeguards_without_unrelate
         "omitted_evidence",
     ]:
         assert required in prompt
-    assert len(prompt) < 2800
+    assert len(prompt) < 3800
 
 
 def checked_interpretation():
@@ -1783,7 +1910,7 @@ def mixed_semantic_responses(valid_relationship="supports", valid_fit="yes"):
     bad = finding(uncertain, relationship="contradicts", time_fit="no")
     checked = verified_evidence(good, bad)
     checked["finding_checks"]["1"].update(
-        valid=False,
+        fields_valid=False,
         reason="time_fit=no is not justified by different dates; the proposed contradiction is unverified.",
     )
     return [p, uncertain], good, bad, checked
@@ -1813,7 +1940,191 @@ def test_verified_contribution_survives_final_semantic_rejection_without_inventi
     assert any("ev-uncertain" in question for question in result["unresolved_questions"])
     assert result["semantic_validation"]["status"] == "partially_validated"
     assert result["semantic_validation"]["complete_repair_attempted"]
-    assert len(provider.prompts) == 4
+    assert len(provider.prompts) == 6
+
+
+@pytest.mark.parametrize("relationship", ["supports", "contradicts", "qualifies"])
+@pytest.mark.parametrize("duplicate_first", [False, True])
+def test_redundant_rejected_relation_preserves_original_diagnostic_without_creating_a_gap(
+    relationship, duplicate_first
+):
+    good = finding(relationship=relationship, time_fit="yes")
+    duplicate = finding(
+        relationship=relationship,
+        time_fit="yes",
+        basis="direct_statement",
+        reason="Original rejected duplicate explanation.",
+        limitations=["Original rejected duplicate limitation."],
+    )
+    findings = [duplicate, good] if duplicate_first else [good, duplicate]
+    rejected_index = 0 if duplicate_first else 1
+    checked = verified_evidence(*findings)
+    checked["finding_checks"][str(rejected_index)].update(
+        fields_valid=False,
+        reason="The relationship is correct, but basis must describe the recorded action.",
+    )
+    provider = OllamaProvider("mocked-local-model")
+    provider.complete = MockProvider(
+        evaluated(*findings), checked, evaluated(*findings), checked
+    ).complete
+    result = evaluate_evidence(
+        checked_interpretation(), CLAIM, [passage()], "2026-04-01", provider
+    )
+    assert len(result["findings"]) == 1
+    retained = result["findings"][0]
+    assert retained["relationship"] == relationship
+    assert retained["basis"] == good["basis"]
+    assert retained["semantic_validation"]["valid"] is True
+    assert result["unresolved_questions"] == []
+    validation = result["semantic_validation"]
+    assert validation["status"] == "validated"
+    assert validation["rejected_findings"] == validation["omitted_passages"] == 0
+    assert validation["verified_contributing_findings"] == 1
+    assert validation["complete_repair_attempted"]
+    archived = validation["redundant_rejections"][0]
+    assert archived["original_finding_index"] == rejected_index
+    assert archived["verified_peer_original_index"] == 1 - rejected_index
+    original = archived["finding"]
+    assert all(original[key] == value for key, value in duplicate.items())
+    assert original["quotation"] == passage()["text"]
+    assert original["source_id"] == passage()["source_id"]
+    assert original["locator"] == passage()["locator"]
+    assert (original["start"], original["end"]) == (0, len(passage()["text"]))
+    assert original["semantic_validation"]["valid"] is False
+    assert original["semantic_validation"]["expected_relationship"] == relationship
+    events = provider.provenance()["validation_attempts"]
+    assert sum(event["stage"] == "evidence_verification" for event in events) == 2
+    assert events[-1] == {
+        "stage": "evidence_evaluation",
+        "code": "invalid_model_output",
+        "repaired": True,
+    }
+
+
+@pytest.mark.parametrize(
+    "relationship,expected_relationship",
+    [("contradicts", "contradicts"), ("supports", "contradicts")],
+)
+def test_redundancy_filter_preserves_opposing_and_mismatched_relations(
+    relationship, expected_relationship
+):
+    good = finding(time_fit="yes")
+    rejected = finding(relationship=relationship, time_fit="yes")
+    checked = verified_evidence(good, rejected)
+    checked["finding_checks"]["1"].update(
+        fields_valid=relationship != expected_relationship,
+        expected_relationship=expected_relationship,
+        reason="This separate relationship remains unverified.",
+    )
+    provider = MockProvider(evaluated(good, rejected), checked, evaluated(good, rejected), checked)
+    result = evaluate_evidence(
+        checked_interpretation(), CLAIM, [passage()], "2026-04-01", provider
+    )
+    assert [f["relationship"] for f in result["findings"]] == ["supports", "unresolved"]
+    assert (
+        result["findings"][1]["semantic_validation"]["expected_relationship"]
+        == expected_relationship
+    )
+    assert result["semantic_validation"]["status"] == "partially_validated"
+    assert result["semantic_validation"]["rejected_findings"] == 1
+    assert not result["semantic_validation"].get("redundant_rejections")
+    assert result["unresolved_questions"]
+
+
+@pytest.mark.parametrize("uncertain_field", ["scope_fit", "time_fit"])
+def test_redundancy_requires_an_applicable_verified_peer(uncertain_field):
+    uncertain = finding(time_fit="yes")
+    uncertain[uncertain_field] = "unknown"
+    duplicate = finding(time_fit="yes", basis="direct_statement")
+    independent_passage = passage(
+        "CASE-872: Morgan confirmed the 37% approval.", evidence_id="independent"
+    )
+    independent = finding(independent_passage, time_fit="yes")
+    checked = verified_evidence(uncertain, duplicate, independent)
+    checked["finding_checks"]["1"].update(fields_valid=False, reason="The basis is incorrect.")
+    findings = evaluated(uncertain, duplicate, independent)
+    provider = MockProvider(findings, checked, findings, checked)
+    result = evaluate_evidence(
+        checked_interpretation(), CLAIM, [passage(), independent_passage], "2026-04-01", provider
+    )
+    assert [f["relationship"] for f in result["findings"]] == [
+        "unresolved",
+        "unresolved",
+        "supports",
+    ]
+    assert result["findings"][0][uncertain_field] == "unknown"
+    assert result["semantic_validation"]["status"] == "partially_validated"
+    assert result["semantic_validation"]["rejected_findings"] == 1
+    assert not result["semantic_validation"].get("redundant_rejections")
+
+
+@pytest.mark.parametrize("different_binding", ["component_id", "evidence_id"])
+def test_redundancy_never_removes_a_unique_component_or_passage_failure(different_binding):
+    claim = CLAIM + " The contract was signed."
+    output = interpreted(claim)
+    output["components"][0].update(text=CLAIM, claim_quote=CLAIM)
+    signing = deepcopy(output["components"][0])
+    signing.update(
+        id="signing",
+        text="The contract was signed.",
+        claim_quote="The contract was signed.",
+        predicate="contract signed",
+        quantities=[],
+    )
+    output["components"].append(signing)
+    interpretation = interpret_claim(
+        claim, "2026-04-01", MockProvider(output, verified_claim(output))
+    )
+    p = passage("CASE-872: Morgan approved a 37% discount. The contract was signed.")
+    good = finding(p, time_fit="yes")
+    failed = finding(p, time_fit="yes", basis="direct_statement")
+    passages = [p]
+    if different_binding == "component_id":
+        failed["component_id"] = "signing"
+    else:
+        other = passage(p["text"], evidence_id="another-passage")
+        passages.append(other)
+        failed["evidence_id"] = other["evidence_id"]
+    checked = verified_evidence(good, failed)
+    checked["finding_checks"]["1"].update(fields_valid=False, reason="The basis is incorrect.")
+    provider = MockProvider(evaluated(good, failed), checked, evaluated(good, failed), checked)
+    result = evaluate_evidence(interpretation, claim, passages, "2026-04-01", provider)
+    assert [f["relationship"] for f in result["findings"]] == ["supports", "unresolved"]
+    assert result["findings"][1][different_binding] == failed[different_binding]
+    assert result["semantic_validation"]["status"] == "partially_validated"
+    assert result["semantic_validation"]["rejected_findings"] == 1
+    assert not result["semantic_validation"].get("redundant_rejections")
+
+
+def test_redundancy_filter_keeps_omissions_even_from_the_same_verified_passage():
+    good = finding(time_fit="yes")
+    duplicate = finding(time_fit="yes", basis="direct_statement")
+    checked = verified_evidence(
+        good,
+        duplicate,
+        omitted_evidence=[
+            {
+                "component_id": "approval",
+                "evidence_id": "ev-record",
+                "reason": "Another material qualification in this passage remains unassessed.",
+            }
+        ],
+    )
+    checked["finding_checks"]["1"].update(fields_valid=False, reason="The basis is incorrect.")
+    provider = MockProvider(
+        evaluated(good, duplicate), checked, evaluated(good, duplicate), checked
+    )
+    result = evaluate_evidence(
+        checked_interpretation(), CLAIM, [passage()], "2026-04-01", provider
+    )
+    assert [f["relationship"] for f in result["findings"]] == ["supports", "unresolved"]
+    assert result["findings"][1]["semantic_validation"]["omitted_evidence"] is True
+    assert result["findings"][1]["quotation"] == passage()["text"]
+    assert result["semantic_validation"]["status"] == "partially_validated"
+    assert result["semantic_validation"]["rejected_findings"] == 0
+    assert result["semantic_validation"]["omitted_passages"] == 1
+    assert len(result["semantic_validation"]["redundant_rejections"]) == 1
+    assert result["unresolved_questions"]
 
 
 def test_final_semantic_omission_is_retained_with_exact_citation_and_no_assumed_relation():
@@ -1844,9 +2155,7 @@ def test_final_semantic_omission_is_retained_with_exact_citation_and_no_assumed_
     [
         ("context", "yes"),
         ("unresolved", "yes"),
-        ("supports", "unknown"),
         ("contradicts", "no"),
-        ("qualifies", "unknown"),
     ],
 )
 def test_only_background_or_inapplicable_verified_findings_cannot_rescue_invalid_output(
@@ -1854,6 +2163,61 @@ def test_only_background_or_inapplicable_verified_findings_cannot_rescue_invalid
 ):
     passages, good, bad, checked = mixed_semantic_responses(relationship, fit)
     provider = MockProvider(evaluated(good, bad), checked, evaluated(good, bad), checked)
+    assert_error(
+        "invalid_model_output",
+        lambda: evaluate_evidence(
+            checked_interpretation(), CLAIM, passages, "2026-04-01", provider
+        ),
+    )
+
+
+@pytest.mark.parametrize("relationship", ["supports", "contradicts", "qualifies"])
+@pytest.mark.parametrize("uncertain_field", ["scope_fit", "time_fit"])
+def test_complete_audit_retains_verified_uncertain_material_as_unresolved(
+    relationship, uncertain_field
+):
+    from decidr.canonical_assessment import canonical_assessment
+
+    passages, good, bad, _ = mixed_semantic_responses(relationship)
+    good[uncertain_field] = "unknown"
+    checked = verified_evidence(good, bad)
+    checked["finding_checks"]["1"].update(fields_valid=False, reason="The action is unverified.")
+    provider = MockProvider(evaluated(good, bad), checked, evaluated(good, bad), checked)
+    interpretation = checked_interpretation()
+    result = evaluate_evidence(interpretation, CLAIM, passages, "2026-04-01", provider)
+    retained = result["findings"][0]
+    assert retained["relationship"] == "unresolved"
+    assert retained[uncertain_field] == "unknown"
+    assert retained["semantic_validation"]["valid"] is True
+    assert retained["semantic_validation"]["original_proposal"]["relationship"] == relationship
+    assert retained["semantic_validation"]["grounding_quote"] == passages[0]["text"]
+    assert retained["quotation"] == passages[0]["text"]
+    validation = result["semantic_validation"]
+    assert validation["status"] == "partially_validated"
+    assert validation["verified_contributing_findings"] == 0
+    assert validation["verified_uncertain_findings"] == 1
+    canonical = canonical_assessment(
+        interpretation,
+        result,
+        {p["evidence_id"]: p for p in passages},
+        {"record": {"source_id": "record", "ingestion_status": "ingested"}},
+        "2026-04-01",
+    )
+    assert canonical["processing"]["status"] == "assessed"
+    assert canonical["overall_outcome"] == "Insufficient evidence"
+    assert not any(f["admitted"] for f in canonical["components"][0]["findings"])
+    assert ("temporal applicability" if uncertain_field == "time_fit" else "scope") in canonical[
+        "summary"
+    ]
+
+
+@pytest.mark.parametrize("uncertain_field", ["scope_fit", "time_fit"])
+def test_malformed_repair_cannot_fall_back_to_only_uncertain_initial_findings(uncertain_field):
+    passages, good, bad, _ = mixed_semantic_responses()
+    good[uncertain_field] = "unknown"
+    checked = verified_evidence(good, bad)
+    checked["finding_checks"]["1"].update(fields_valid=False, reason="The action is unverified.")
+    provider = MockProvider(evaluated(good, bad), checked, evaluated(good, good, good))
     assert_error(
         "invalid_model_output",
         lambda: evaluate_evidence(
@@ -1908,27 +2272,92 @@ def test_partial_retention_requires_independently_verified_whole_claim(claim_val
     )
 
 
-def test_malformed_final_verifier_cannot_use_earlier_verified_findings_as_fallback():
+def test_malformed_final_verifier_retains_only_complete_initial_audit():
     passages, good, bad, checked = mixed_semantic_responses()
     malformed = {
-        "finding_checks": {"invented-index": {"valid": True, "reason": "No."}},
+        "finding_checks": {
+            "invented-index": {
+                "fields_valid": True,
+                "expected_relationship": "supports",
+                "grounding_quote": passages[0]["text"],
+                "reason": "No.",
+            }
+        },
         "omitted_evidence": [],
     }
     provider = MockProvider(
         evaluated(good, bad), checked, evaluated(good, bad), malformed, malformed
     )
-    assert_error(
-        "invalid_model_output",
-        lambda: evaluate_evidence(
-            checked_interpretation(), CLAIM, passages, "2026-04-01", provider
-        ),
-    )
+    result = evaluate_evidence(checked_interpretation(), CLAIM, passages, "2026-04-01", provider)
+    assert [f["relationship"] for f in result["findings"]] == ["supports", "unresolved"]
+    assert result["semantic_validation"]["retained_attempt"] == "initial"
+    assert result["semantic_validation"]["repair_failure"]["code"] == "invalid_model_output"
+    assert "invented-index" not in json.dumps(result["findings"])
 
 
-def test_unknown_final_evidence_selector_cannot_use_semantic_fallback():
+def test_unknown_final_evidence_selector_cannot_enter_retained_initial_audit():
     passages, good, bad, checked = mixed_semantic_responses()
     invalid = evaluated(good, {**bad, "evidence_id": "unselected-id"})
     provider = MockProvider(evaluated(good, bad), checked, invalid, invalid)
+    result = evaluate_evidence(checked_interpretation(), CLAIM, passages, "2026-04-01", provider)
+    assert [f["evidence_id"] for f in result["findings"]] == [p["evidence_id"] for p in passages]
+    assert [f["relationship"] for f in result["findings"]] == ["supports", "unresolved"]
+    assert result["semantic_validation"]["retained_attempt"] == "initial"
+
+
+def test_repetitive_repair_retains_grounded_initial_contribution_and_failed_binding():
+    passages, good, bad, checked = mixed_semantic_responses()
+    checked["finding_checks"]["1"].update(
+        fields_valid=True,
+        grounding_quote="FOREIGN GROUNDING: approval was revoked.",
+    )
+    repeated = {**good, "reason": "UNVERIFIED REPAIR EXPLANATION"}
+    provider = OllamaProvider("mocked-local-model")
+    responses = MockProvider(
+        evaluated(good, bad), checked, evaluated(repeated, repeated, repeated)
+    )
+    provider.complete = responses.complete
+    result = evaluate_evidence(checked_interpretation(), CLAIM, passages, "2026-04-01", provider)
+    retained, failed = result["findings"]
+    assert retained["relationship"] == "supports"
+    assert retained["semantic_validation"]["valid"] is True
+    assert failed["relationship"] == "unresolved"
+    assert failed["semantic_validation"]["grounding_quote"] == ""
+    assert failed["semantic_validation"]["grounding_error"]
+    assert [f["quotation"] for f in result["findings"]] == [p["text"] for p in passages]
+    assert "UNVERIFIED REPAIR EXPLANATION" not in json.dumps(result)
+    assert "FOREIGN GROUNDING" not in json.dumps(result)
+    validation = result["semantic_validation"]
+    assert validation["status"] == "partially_validated"
+    assert validation["retained_attempt"] == "initial"
+    assert validation["complete_repair_attempted"] is True
+    assert validation["repair_failure"] == {
+        "code": "invalid_model_output",
+        "message": "A component/passage pair exceeds the two-relationship representation limit.",
+    }
+    assert provider.validation_attempts[-1] == {
+        "stage": "evidence_evaluation",
+        "code": "invalid_model_output",
+        "repaired": False,
+    }
+    assert len(responses.prompts) == 4
+
+
+@pytest.mark.parametrize("complete_final_audit", [False, True])
+def test_structural_fallback_requires_initial_contributor_and_never_overrides_final_audit(
+    complete_final_audit,
+):
+    passages, good, bad, checked = mixed_semantic_responses()
+    all_bad = deepcopy(checked)
+    all_bad["finding_checks"]["0"].update(
+        fields_valid=False, reason="The original approval assertion is not established."
+    )
+    if complete_final_audit:
+        # The initial contribution cannot override the completed repair's rejection.
+        provider = MockProvider(evaluated(good, bad), checked, evaluated(good, bad), all_bad)
+    else:
+        # A structurally invalid repair cannot rescue an initial audit with no contribution.
+        provider = MockProvider(evaluated(good, bad), all_bad, evaluated(good, good, good))
     assert_error(
         "invalid_model_output",
         lambda: evaluate_evidence(
@@ -1995,7 +2424,7 @@ def test_independent_relation_mismatch_cannot_be_accepted_even_when_verifier_say
     checked = verified_evidence(incorrect)
     checked["finding_checks"]["0"].update(
         expected_relationship="contradicts",
-        valid=True,
+        fields_valid=True,
         reason="The passage establishes the opposite of the original assertion.",
     )
     provider = MockProvider(evaluated(incorrect), checked, evaluated(incorrect), checked)
@@ -2140,3 +2569,470 @@ def test_accuracy_verifier_tests_expected_relation_without_borrowing_linked_reco
     assert "blank notes remain blank" in prompt
     assert "linked record's correction cannot\nbe attributed to this passage" in prompt
     assert "Shared identifiers permit finding another record, not copying its facts" in prompt
+
+
+def test_typography_is_bound_to_original_claim_before_semantic_verification():
+    claim = "The supplier’s inspection must finish within six days."
+    output = interpreted(claim)
+    output["components"][0].update(
+        claim_quote=claim.replace("’", "'"),
+        quantities=[{"value": "6", "unit": "days", "comparator": "lte"}],
+    )
+    provider = MockProvider(output, verified_claim(output))
+    result = interpret_claim(claim, "2026-04-01", provider)
+    assert result["components"][0]["claim_quote"] == claim
+    data = json.loads(provider.prompts[1][1].split("\nDATA:\n", 1)[1])
+    assert data["original_claim"] == claim
+    assert data["proposed_interpretation"]["components"][0]["claim_quote"] == claim
+
+
+def test_semantic_omission_typography_restores_the_original_span():
+    claim = "The supplier’s inspection must finish within six days."
+    output = interpreted(claim)
+    output["components"][0]["quantities"] = [{"value": "6", "unit": "days", "comparator": "lte"}]
+    rejection = verified_claim(
+        output,
+        omitted_claim_spans=[
+            {
+                "claim_quote": "The supplier's inspection",
+                "reason": "Missing responsibility meaning.",
+            }
+        ],
+    )
+    provider = MockProvider(output, rejection, output, verified_claim(output))
+    result = interpret_claim(claim, "2026-04-01", provider)
+    assert result["components"][0]["claim_quote"] == claim
+    assert result["semantic_validation"]["complete_repair_attempted"]
+
+
+def test_conditional_premise_is_repaired_to_one_self_contained_proposition():
+    claim = "If travel is required, staff may use company vehicles provided a supervisor approves."
+    full = interpreted(claim, target="formal_requirement")
+    full["components"][0].update(
+        quantities=[], predicate="may use", scope=["required travel", "supervisor approval"]
+    )
+    split = deepcopy(full)
+    split["components"][0].update(
+        text="Travel is required.", claim_quote="travel is required", scope=[]
+    )
+    provider = MockProvider(split, full, verified_claim(full))
+    result = interpret_claim(claim, "2026-04-01", provider)
+    assert len(result["components"]) == 1
+    assert result["components"][0]["claim_quote"] == claim
+    assert result["components"][0]["scope"] == ["required travel", "supervisor approval"]
+    assert [schema["title"] for schema, _ in provider.prompts] == [
+        "Interpretation",
+        "Interpretation",
+        "InterpretationVerification",
+    ]
+    assert "SCHEMA REPAIR" in provider.prompts[1][1]
+
+
+@pytest.mark.parametrize(
+    "claim,quantities",
+    [
+        (
+            "If a vessel enters protected water, speed must remain below six knots.",
+            [{"value": "6", "unit": "knots", "comparator": "lt"}],
+        ),
+        ("Unless the alarm is cleared, staff must not re-enter the building.", []),
+        ("Visitors may bring equipment provided it is inspected at reception.", []),
+        (
+            "When maintenance is complete, machines may restart provided guards are fitted.",
+            [],
+        ),
+        ("When a customer’s **account is restricted**, exports require approval.", []),
+    ],
+)
+def test_conditional_schema_preserves_whole_claim_and_revalidates_extracted_metadata(
+    claim, quantities
+):
+    output = interpreted(claim, target="formal_requirement")
+    output["components"][0].update(quantities=quantities, modality="conditional rule")
+    provider = MockProvider(output, verified_claim(output))
+    result = interpret_claim(claim, "2026-04-01", provider)
+    schema = provider.prompts[0][0]
+    assert schema["title"] == "Interpretation"
+    assert schema["properties"]["components"]["minItems"] == 1
+    assert schema["properties"]["components"]["maxItems"] == 1
+    fields = schema["$defs"]["ConditionalComponent"]["properties"]
+    assert fields["text"]["const"] == fields["claim_quote"]["const"] == claim
+    assert result["components"] == output["components"]
+    assert result["target"] == output["target"]
+    assert result["search_queries"] == output["search_queries"]
+    assert (
+        result["semantic_validation"]["conditional_claim_method"]
+        == "lexical-cue-verbatim-component-v1"
+    )
+    assert provider.prompts[1][0]["title"] == "InterpretationVerification"
+    verified_data = json.loads(provider.prompts[1][1].split("\nDATA:\n", 1)[1])
+    assert verified_data["original_claim"] == claim
+    assert verified_data["proposed_interpretation"] == output
+
+
+@pytest.mark.parametrize("defect", ["flattened_text", "partial_quote", "multiple_components"])
+def test_conditional_shape_is_rejected_before_even_an_approving_semantic_verifier(defect):
+    claim = "If pressure rises, the pump must stop unless emergency cooling is active."
+    flattened = interpreted(claim, target="formal_requirement")
+    flattened["components"][0]["quantities"] = []
+    if defect == "flattened_text":
+        flattened["components"][0]["text"] = "The pump must stop."
+    elif defect == "partial_quote":
+        flattened["components"][0]["claim_quote"] = "the pump must stop"
+    else:
+        second = deepcopy(flattened["components"][0])
+        second["id"] = "condition"
+        flattened["components"].append(second)
+
+    class ApprovingVerifier(MockProvider):
+        def complete(self, schema, prompt):
+            self.prompts.append((schema, prompt))
+            if schema["title"] == "InterpretationVerification":
+                return verified_claim(flattened)
+            return deepcopy(flattened)
+
+    provider = ApprovingVerifier()
+    assert_error("invalid_model_output", lambda: interpret_claim(claim, "2026-04-01", provider))
+    assert all(schema["title"] == "Interpretation" for schema, _ in provider.prompts)
+
+
+def test_unconditional_independent_assertions_can_still_be_split():
+    claim = "The fan is running and the door is closed."
+    output = interpreted(claim, target="current_state")
+    first = output["components"][0]
+    first.update(
+        id="fan", text="The fan is running", claim_quote="The fan is running", quantities=[]
+    )
+    second = deepcopy(first)
+    second.update(id="door", text="the door is closed", claim_quote="the door is closed")
+    output["components"].append(second)
+    provider = MockProvider(output, verified_claim(output))
+    result = interpret_claim(claim, "2026-04-01", provider)
+    assert result["components"] == output["components"]
+    assert provider.prompts[0][0]["properties"]["components"]["maxItems"] == 20
+    assert "conditional_claim_method" not in result["semantic_validation"]
+
+
+def test_verification_cannot_borrow_a_quote_from_another_retrieved_record():
+    own = passage("CASE-872: Morgan approved a 37% discount. OWN_FACT.")
+    foreign = passage("CASE-872: Approval was withdrawn. FOREIGN_FACT.", evidence_id="other")
+    f = finding(own)
+    check = verified_evidence(f)
+    check["finding_checks"]["0"]["grounding_quote"] = foreign["text"]
+    provider = MockProvider(evaluated(f), check, evaluated(f), check)
+    assert_error(
+        "invalid_model_output",
+        lambda: evaluate_evidence(interpreted(), CLAIM, [own, foreign], "2026-04-01", provider),
+    )
+    for schema, prompt in provider.prompts:
+        if schema["title"] == "EvidenceVerification":
+            data = json.loads(prompt.split("\nDATA:\n", 1)[1])
+            if data["verification_scope"]["purpose"] == "bound_passage":
+                assert [p["evidence_id"] for p in data["selected_passages"]] == ["ev-record"]
+                assert "FOREIGN_FACT" not in prompt
+            else:
+                assert data["proposed_evaluation"]["findings"] == []
+                assert [p["evidence_id"] for p in data["selected_passages"]] == ["other"]
+
+
+@pytest.mark.parametrize("grounding_quote", ["Revision status: unapproved pilot.", ""])
+@pytest.mark.parametrize("invalid_first", [False, True])
+def test_material_grounding_failure_is_isolated_without_losing_verified_other_passages(
+    grounding_quote, invalid_first
+):
+    own = passage(
+        "CASE-872: The exceptions procedure describes an emergency escalation path.",
+        evidence_id="exceptions",
+        source_id="procedure",
+        source={"source_type": "policy", "approval_status": "Revision status: unapproved pilot."},
+    )
+    good = finding(time_fit="yes")
+    invalid = finding(own, relationship="contradicts", time_fit="yes")
+    findings = [invalid, good] if invalid_first else [good, invalid]
+    invalid_index = 0 if invalid_first else 1
+    checked = verified_evidence(*findings)
+    checked["finding_checks"][str(invalid_index)]["grounding_quote"] = grounding_quote
+    provider = OllamaProvider("mocked-local-model")
+    responses = MockProvider(evaluated(*findings), checked, evaluated(*findings), checked)
+    provider.complete = responses.complete
+    result = evaluate_evidence(
+        checked_interpretation(), CLAIM, [passage(), own], "2026-04-01", provider
+    )
+    retained = next(f for f in result["findings"] if f["evidence_id"] == "ev-record")
+    unresolved = next(f for f in result["findings"] if f["evidence_id"] == "exceptions")
+    assert retained["relationship"] == "supports"
+    assert retained["semantic_validation"]["valid"] is True
+    assert unresolved["relationship"] == "unresolved"
+    assert unresolved["semantic_validation"]["valid"] is False
+    assert unresolved["semantic_validation"]["grounding_quote"] == ""
+    assert unresolved["semantic_validation"]["grounding_error"]
+    assert unresolved["semantic_validation"]["expected_relationship"] == "contradicts"
+    assert unresolved["quotation"] == own["text"]
+    assert unresolved["source_id"] == own["source_id"]
+    assert (unresolved["start"], unresolved["end"]) == (0, len(own["text"]))
+    assert result["semantic_validation"]["status"] == "partially_validated"
+    assert result["semantic_validation"]["complete_repair_attempted"]
+    assert len(responses.prompts) == 6
+    diagnostics = [
+        event for event in provider.validation_attempts if event["stage"] == "evidence_grounding"
+    ]
+    assert len(diagnostics) == 2
+    assert all(
+        event["field_errors"][0]["grounding_quote"] == grounding_quote for event in diagnostics
+    )
+
+
+@pytest.mark.parametrize("grounding_quote", ["A statement only present in another source.", ""])
+def test_material_grounding_failures_without_verified_contributors_still_fail(grounding_quote):
+    candidate = finding(time_fit="yes")
+    checked = verified_evidence(candidate)
+    checked["finding_checks"]["0"]["grounding_quote"] = grounding_quote
+    provider = MockProvider(evaluated(candidate), checked, evaluated(candidate), checked)
+    assert_error(
+        "invalid_model_output",
+        lambda: evaluate_evidence(
+            checked_interpretation(), CLAIM, [passage()], "2026-04-01", provider
+        ),
+    )
+    assert len(provider.prompts) == 4
+
+
+@pytest.mark.parametrize("grounding_quote", ["A statement only present in another source.", ""])
+def test_ungrounded_duplicate_cannot_count_as_independent_agreement(grounding_quote):
+    good = finding(time_fit="yes")
+    invalid = finding(time_fit="yes", basis="direct_statement")
+    checked = verified_evidence(good, invalid)
+    checked["finding_checks"]["1"]["grounding_quote"] = grounding_quote
+    provider = MockProvider(evaluated(good, invalid), checked, evaluated(good, invalid), checked)
+    result = evaluate_evidence(
+        checked_interpretation(), CLAIM, [passage()], "2026-04-01", provider
+    )
+    assert [f["relationship"] for f in result["findings"]] == ["supports", "unresolved"]
+    assert result["findings"][1]["semantic_validation"]["grounding_error"]
+    assert result["findings"][1]["semantic_validation"]["grounding_quote"] == ""
+    assert result["findings"][1]["quotation"] == passage()["text"]
+    assert result["semantic_validation"]["status"] == "partially_validated"
+    assert not result["semantic_validation"].get("redundant_rejections")
+
+
+@pytest.mark.parametrize(
+    "grounding_quote", ["", "CASE-872: Approval was withdrawn. FOREIGN_FACT."]
+)
+def test_omission_requires_grounding_from_its_own_selected_passage(grounding_quote):
+    good = finding(time_fit="yes")
+    own = passage("CASE-872: No further approval notes. OWN_FACT.", evidence_id="own-omission")
+    foreign = passage(
+        "CASE-872: Approval was withdrawn. FOREIGN_FACT.", evidence_id="foreign-omission"
+    )
+    checked = verified_evidence(
+        good,
+        omitted_evidence=[
+            {
+                "component_id": "approval",
+                "evidence_id": own["evidence_id"],
+                "grounding_quote": grounding_quote,
+                "reason": "The approval withdrawal is a material omission.",
+            }
+        ],
+    )
+    provider = MockProvider(evaluated(good), checked, evaluated(good), checked)
+    assert_error(
+        "invalid_model_output",
+        lambda: evaluate_evidence(
+            checked_interpretation(), CLAIM, [passage(), own, foreign], "2026-04-01", provider
+        ),
+    )
+    audits = [
+        json.JSONDecoder().raw_decode(prompt.split("\nDATA:\n", 1)[1])[0]
+        for schema, prompt in provider.prompts
+        if schema["title"] == "EvidenceVerification" and '"omission_audit_only"' in prompt
+    ]
+    assert audits
+    assert all(
+        {p["evidence_id"] for p in audit["selected_passages"]}
+        == {own["evidence_id"], foreign["evidence_id"]}
+        for audit in audits
+    )
+
+
+@pytest.mark.parametrize("relation", ["supports", "contradicts", "qualifies"])
+def test_material_verifier_relationship_requires_exact_grounding(relation):
+    f = finding(relationship=relation)
+    check = verified_evidence(f)
+    check["finding_checks"]["0"]["grounding_quote"] = ""
+    provider = MockProvider(evaluated(f), check, evaluated(f), check)
+    assert_error(
+        "invalid_model_output",
+        lambda: evaluate_evidence(interpreted(), CLAIM, [passage()], "2026-04-01", provider),
+    )
+
+
+@pytest.mark.parametrize("relationship", ["context", "unresolved"])
+def test_nonmaterial_invalid_quote_preserves_material_finding_and_original_citations(relationship):
+    good = finding(time_fit="yes")
+    background = passage("CASE-872: Approval procedures are available.", evidence_id="background")
+    neutral = finding(
+        background, relationship=relationship, directness="indirect", basis="contextual"
+    )
+    checks = verified_evidence(good, neutral)
+    invented = "INVENTED_GROUNDING " * 40
+    checks["finding_checks"]["1"]["grounding_quote"] = invented
+    provider = OllamaProvider("mocked-local-model")
+    provider.complete = MockProvider(evaluated(good, neutral), checks).complete
+    result = evaluate_evidence(
+        checked_interpretation(), CLAIM, [passage(), background], "2026-04-01", provider
+    )
+    supported, retained = result["findings"]
+    assert supported["relationship"] == "supports"
+    assert supported["semantic_validation"]["valid"] is True
+    assert retained["relationship"] == relationship
+    assert retained["semantic_validation"]["valid"] is True
+    assert retained["semantic_validation"]["grounding_quote"] == ""
+    assert retained["quotation"] == background["text"]
+    assert (retained["start"], retained["end"]) == (0, len(background["text"]))
+    assert "INVENTED_GROUNDING" not in json.dumps(result)
+    diagnostics = [
+        event for event in provider.validation_attempts if event["stage"] == "evidence_grounding"
+    ]
+    assert diagnostics == [
+        {
+            "stage": "evidence_grounding",
+            "field_errors": [
+                {
+                    "evidence_id": "background",
+                    "expected_relationship": relationship,
+                    "grounding_quote": invented[:500],
+                }
+            ],
+        }
+    ]
+
+
+def test_discarded_nonmaterial_quote_does_not_hide_a_relationship_mismatch():
+    good = finding(time_fit="yes")
+    background = passage("CASE-872: Approval procedures are available.", evidence_id="background")
+    wrong = finding(background, time_fit="yes")
+    checks = verified_evidence(good, wrong)
+    checks["finding_checks"]["1"].update(
+        expected_relationship="context", grounding_quote="An invented approval assertion."
+    )
+    provider = MockProvider(evaluated(good, wrong), checks, evaluated(good, wrong), checks)
+    result = evaluate_evidence(
+        checked_interpretation(), CLAIM, [passage(), background], "2026-04-01", provider
+    )
+    supported, rejected = result["findings"]
+    assert supported["relationship"] == "supports"
+    assert rejected["relationship"] == "unresolved"
+    assert rejected["semantic_validation"]["valid"] is False
+    assert rejected["semantic_validation"]["original_proposal"]["relationship"] == "supports"
+    assert "differs from independent relationship context" in rejected["reason"]
+    assert rejected["quotation"] == background["text"]
+    assert rejected["semantic_validation"]["grounding_quote"] == ""
+
+
+def test_verifier_isolates_sources_and_stores_its_exact_grounding():
+    one = passage("CASE-872: Morgan approved a 37% discount. FIRST_FACT.")
+    one["source"]["author_or_system"] = "FIRST_SOURCE"
+    two = passage(
+        "CASE-872: Morgan approved the 37% discount in writing. SECOND_FACT.",
+        evidence_id="second",
+        source_id="second-source",
+    )
+    two["source"]["author_or_system"] = "SECOND_SOURCE"
+    first, second = finding(one), finding(two)
+    checks = verified_evidence(first, second)
+    provider = MockProvider(evaluated(first, second), checks)
+    output = evaluate_evidence(interpreted(), CLAIM, [one, two], "2026-04-01", provider)
+    calls = [
+        json.loads(prompt.split("\nDATA:\n", 1)[1])
+        for schema, prompt in provider.prompts
+        if schema["title"] == "EvidenceVerification"
+    ]
+    assert len(calls) == 2
+    assert len(calls[0]["selected_passages"]) == len(calls[1]["selected_passages"]) == 1
+    assert set(calls[0]["sources_by_id"]) == {"record"}
+    assert set(calls[1]["sources_by_id"]) == {"second-source"}
+    assert "SECOND_FACT" not in json.dumps(calls[0])
+    assert "FIRST_FACT" not in json.dumps(calls[1])
+    for f, p in zip(output["findings"], [one, two]):
+        assert f["semantic_validation"]["grounding_quote"] == p["text"]
+        assert f["semantic_validation"]["isolation"] == "bound-passage-v1"
+        assert f["quotation"] == p["text"]
+
+
+def test_evidence_grounding_restores_original_bold_label_without_rewriting_citation():
+    p = passage(
+        "- **Record:** CASE-872: Morgan approved a 37% discount.",
+        source={"original_file_path": "records.md"},
+    )
+    f = finding(p)
+    check = verified_evidence(f)
+    check["finding_checks"]["0"]["grounding_quote"] = (
+        "Record: CASE-872: Morgan approved a 37% discount."
+    )
+    result = evaluate_evidence(
+        interpreted(), CLAIM, [p], "2026-04-01", MockProvider(evaluated(f), check)
+    )
+    out = result["findings"][0]
+    assert out["semantic_validation"]["grounding_quote"] == p["text"][2:]
+    assert out["quotation"] == p["text"]
+    assert (out["start"], out["end"]) == (0, len(p["text"]))
+
+
+@pytest.mark.parametrize("path", [None, "rows.csv", "record.json", "notes.txt"])
+def test_non_markdown_sources_keep_literal_asterisks(path):
+    from decidr.claim_interpreter import _grounding_span
+
+    p = passage('The stored value is "**confirmed**".', source={"original_file_path": path})
+    assert _grounding_span(p, 'The stored value is "confirmed".') is None
+    assert _grounding_span(p, p["text"]) == p["text"]
+
+
+def test_omission_grounding_restores_original_bold_label():
+    good = finding(time_fit="yes")
+    p = passage(
+        "- **Status:** CASE-872: Approval was withdrawn.",
+        evidence_id="withdrawal",
+        source={"original_file_path": "records.md"},
+    )
+    check = verified_evidence(
+        good,
+        omitted_evidence=[
+            {
+                "component_id": "approval",
+                "evidence_id": "withdrawal",
+                "grounding_quote": "Status: CASE-872: Approval was withdrawn.",
+                "reason": "A withdrawal remains to be evaluated.",
+            }
+        ],
+    )
+    provider = MockProvider(evaluated(good), check, evaluated(good), check)
+    result = evaluate_evidence(
+        checked_interpretation(), CLAIM, [passage(), p], "2026-04-01", provider
+    )
+    omission = result["findings"][-1]
+    assert omission["relationship"] == "unresolved"
+    assert omission["semantic_validation"]["grounding_quote"] == p["text"][2:]
+    assert omission["quotation"] == p["text"]
+
+
+def test_a_permitted_exception_can_refute_an_absolute_prohibition():
+    claim = "The storage policy prohibits moving backups offsite under every circumstance."
+    output = interpreted(claim, target="formal_requirement")
+    output["components"][0].update(
+        quantities=[], scope=["every circumstance"], polarity="negative"
+    )
+    p = passage(
+        "Encrypted backups may be moved offsite during a declared recovery incident.",
+        source_id="backup-policy",
+        source={"source_type": "policy"},
+    )
+    f = finding(p, relationship="contradicts", time_fit="yes", basis="direct_statement")
+    check = verified_evidence(f)
+    check["finding_checks"]["0"].update(
+        grounding_quote=p["text"],
+        reason="The policy explicitly permits an exception; this refutes the asserted absolute prohibition.",
+    )
+    result = evaluate_evidence(output, claim, [p], "2026-04-01", MockProvider(evaluated(f), check))
+    assert result["findings"][0]["relationship"] == "contradicts"
+    assert result["findings"][0]["semantic_validation"]["valid"]

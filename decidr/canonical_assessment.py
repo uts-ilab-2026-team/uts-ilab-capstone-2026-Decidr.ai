@@ -4,11 +4,12 @@ Confidence is a disclosed heuristic of the evidence supporting the assessment,
 not a probability that the claim is true or a statistically calibrated estimate.
 """
 
+from copy import deepcopy
 from datetime import date
 import json
 import re
 
-from decidr.claim_interpreter import approval_boundary_exclusion
+from decidr.claim_interpreter import claim_evidence_exclusion
 from decidr.source_metadata import DOCUMENT_REFERENCE, HEADER, approval_lifecycle, approval_signals
 from decidr.transaction_claims import approval_state
 
@@ -504,7 +505,7 @@ def _guard(finding, component, target, passage, source, as_of):
             reasons.append(
                 "A proposed or unfinished task does not establish a completed event or current implementation."
             )
-    boundary_exclusion = approval_boundary_exclusion(component, finding, target)
+    boundary_exclusion = claim_evidence_exclusion(component, finding, target)
     if boundary_exclusion:
         reasons.append(boundary_exclusion)
     if reasons and relationship in {"supports", "contradicts", "qualifies"}:
@@ -515,6 +516,64 @@ def _guard(finding, component, target, passage, source, as_of):
         relationship = "unresolved" if relationship == "contradicts" else "qualifies"
         reasons.append("Material scope or temporal applicability remains unresolved.")
     return relationship, reasons
+
+
+def _undated_directory_practice(target, passage, source, evidence):
+    """An active folder establishes neither the date nor duration of observed practice."""
+    if (
+        target != "observed_practice"
+        or source.get("lifecycle_status") != "current"
+        or not str(source.get("metadata_provenance", {}).get("lifecycle_status", "")).startswith(
+            "inferred:active_directory"
+        )
+        or any(
+            _day(source.get(key))
+            for key in (
+                "creation_date",
+                "last_updated_date",
+                "effective_start_date",
+                "effective_end_date",
+                "superseded_date",
+            )
+        )
+        or any(_day(passage.get(key)) for key in ("relevant_start_date", "relevant_end_date"))
+    ):
+        return False
+
+    def dated(text):
+        return any(_day(value) for value in re.findall(r"(?<![\w-])\d{4}-\d{2}-\d{2}(?!\d)", text))
+
+    # A date in another table row does not date the cited practice.
+    inline_text = "\n".join(line for line in passage["text"].splitlines() if line.count("|") < 2)
+    if dated(inline_text):
+        return False
+    for context in evidence.values():
+        if context["source_id"] != source["source_id"]:
+            continue
+        for header in source.get("header_evidence", []):
+            quote = header.get("quote")
+            parsed = HEADER.fullmatch(quote.strip()) if isinstance(quote, str) else None
+            if (
+                header.get("source_id") == source["source_id"]
+                and header.get("scope") == "document_header"
+                and parsed
+                and parsed["key"].strip().casefold()
+                in {
+                    "date",
+                    "creation date",
+                    "created",
+                    "created date",
+                    "last updated",
+                    "last updated date",
+                    "updated",
+                    "updated date",
+                    "interview date",
+                }
+                and quote in context["text"]
+                and dated(quote)
+            ):
+                return False
+    return True
 
 
 def _outcome(findings):
@@ -528,6 +587,37 @@ def _outcome(findings):
     if "supports" in relationships:
         return "partially_supported"
     return "insufficient"
+
+
+def _finding_explanation(raw, relationship, reasons):
+    """Display the admission decision without asserting an excluded model conclusion."""
+    validation = raw.get("semantic_validation")
+    unverified = isinstance(validation, dict) and validation.get("valid") is False
+    if relationship == "context":
+        reason = (
+            "Retained as background context. This passage is not used to establish, refute or "
+            "qualify the claim component."
+        )
+    elif relationship == "unresolved" and unverified:
+        reason = (
+            "The automatic interpretation of this passage could not be verified. Its relationship "
+            "to the claim component remains unresolved; it is not used as support or contradiction."
+        )
+    elif relationship != raw["relationship"] and reasons:
+        reason = "The passage's applicability to this claim component remains limited."
+    else:
+        return {}
+    if reasons:
+        reason += " " + " ".join(reasons)
+    return {
+        "reason": reason,
+        "limitations": [reason],
+        "explanation_provenance": {
+            "method": "canonical-admission-explanation-v1",
+            "original_reason": raw["reason"],
+            "original_limitations": raw["limitations"].copy(),
+        },
+    }
 
 
 def _lineage(source_id, sources):
@@ -729,7 +819,7 @@ def canonical_assessment(
         if not isinstance(evaluated, dict) or not isinstance(evaluated.get("findings"), list):
             raise InvalidAssessment("The evaluator must return structured evidence findings.")
         grouped = {key: [] for key in ids}
-        citations, relations = [], []
+        citations, relations, question_revisions = [], [], []
         seen_citations, seen_findings = set(), set()
         by_id = {c["id"]: c for c in components}
         for raw in evaluated["findings"]:
@@ -778,6 +868,14 @@ def canonical_assessment(
                 as_of,
             )
             adjusted = {**raw, "time_fit": "yes"} if temporal_basis else raw
+            undated_practice = raw["time_fit"] != "no" and _undated_directory_practice(
+                interpretation["target"],
+                evidence[raw["evidence_id"]],
+                sources[raw["source_id"]],
+                evidence,
+            )
+            if undated_practice:
+                adjusted = {**adjusted, "time_fit": "unknown"}
             finding_citations = [
                 citation,
                 *(temporal_basis["citations"] if temporal_basis else []),
@@ -790,17 +888,39 @@ def canonical_assessment(
                 sources[raw["source_id"]],
                 as_of,
             )
+            if undated_practice:
+                reasons.append(
+                    "The source's current status is inferred only from its active directory. "
+                    "No source, passage or bound context date establishes when this practice applied."
+                )
             finding = {
                 **adjusted,
+                **_finding_explanation(raw, relation, reasons),
                 "original_relationship": raw["relationship"],
                 "relationship": relation,
                 "admitted": relation in {"supports", "contradicts", "qualifies"},
                 "exclusion_reasons": reasons,
                 "citations": finding_citations,
             }
+            validation = raw.get("semantic_validation")
+            if (
+                relation == "unresolved"
+                and isinstance(validation, dict)
+                and validation.get("valid") is False
+            ):
+                question_revisions.append(
+                    {
+                        "original": f"Resolve {raw['component_id']} against {raw['evidence_id']}: {raw['reason']}",
+                        "replacement": f"Review the cited passage's unresolved relationship to: {component['text']}",
+                        "component_id": raw["component_id"],
+                        "evidence_id": raw["evidence_id"],
+                    }
+                )
             if temporal_basis:
                 finding["original_time_fit"] = raw["time_fit"]
                 finding["temporal_derivation"] = temporal_basis
+            elif undated_practice:
+                finding["original_time_fit"] = raw["time_fit"]
             grouped[raw["component_id"]].append(finding)
             relations.append(
                 {
@@ -808,7 +928,7 @@ def canonical_assessment(
                     "evidence_id": raw["evidence_id"],
                     "source_id": raw["source_id"],
                     "relationship": relation,
-                    "reason": raw["reason"] + (" " + " ".join(reasons) if reasons else ""),
+                    "reason": finding["reason"],
                     "inferential": finding["admitted"],
                     "citations": finding_citations,
                 }
@@ -821,7 +941,11 @@ def canonical_assessment(
         questions = evaluated.get("unresolved_questions", [])
         if not isinstance(questions, list) or any(not isinstance(q, str) for q in questions):
             raise InvalidAssessment("Unresolved questions must be text.")
-        questions = questions.copy()
+        question_replacements = {
+            item["original"]: item["replacement"] for item in question_revisions
+        }
+        revised_questions = [item for item in question_revisions if item["original"] in questions]
+        questions = [question_replacements.get(question, question) for question in questions]
         results, scores = [], []
         for component in components:
             findings = grouped[component["id"]]
@@ -887,6 +1011,8 @@ def canonical_assessment(
                 "component_count": len(results),
                 "evaluated_findings": len(relations),
                 "admitted_findings": sum(r["inferential"] for r in relations),
+                "unresolved_question_revisions": revised_questions,
+                "evidence_validation": deepcopy(evaluated.get("semantic_validation", {})),
                 "components_with_decisive_evidence": sum(
                     c["status"] in {"supported", "contradicted", "conflicting"} for c in results
                 ),

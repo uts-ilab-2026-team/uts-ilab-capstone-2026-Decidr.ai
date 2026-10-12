@@ -104,6 +104,7 @@ def implementation_manifest() -> dict:
         "decidr/practice_assessment.py",
         "decidr/transaction_claims.py",
         "decidr/claim_interpreter.py",
+        "decidr/claim_spans.py",
         "decidr/canonical_assessment.py",
         "decidr/general_assessment.py",
         "decidr/evidence_synthesis.py",

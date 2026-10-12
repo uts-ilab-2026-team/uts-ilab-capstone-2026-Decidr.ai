@@ -100,12 +100,24 @@ def retrieve_context(
 ):
     """One bounded expansion over the same frozen index, never a second corpus version."""
     queries = list(
-        dict.fromkeys([claim, *interpretation.get("search_queries", [])[:3], *questions[:2]])
+        dict.fromkeys(
+            [
+                claim,
+                *questions[:2],
+                *interpretation.get("search_queries", [])[:3],
+                *(c["text"] for c in interpretation.get("components", [])[:4]),
+            ]
+        )
     )
-    seeds, candidates, reasons = [], set(), {}
+    seeds, candidates, reasons, ranks = [], set(), {}, {}
+    practice_target = interpretation.get("target") in {"observed_practice", "current_state"}
+    group_limit = 12 if questions or practice_target else 8
     for query in queries:
-        result = search_corpus(connection, query, limit=4)
+        result = search_corpus(connection, query, limit=group_limit)
         candidates.update(item.evidence_id for item in result.candidates)
+        for item in result.candidates:
+            rank = getattr(item, "rank", len(evidence))
+            ranks[item.evidence_id] = min(rank, ranks.get(item.evidence_id, rank))
         for group in (*result.ranked_groups, *result.additional_linked_groups):
             lead_id = getattr(getattr(group, "lead_result", None), "evidence_id", None)
             for passage in sorted(group.passages, key=lambda p: p.evidence_id != lead_id):
@@ -118,22 +130,94 @@ def retrieve_context(
     seed_groups = defaultdict(list)
     for eid in seeds:
         seed_groups[evidence[eid].source_id].append(eid)
-    ordered, contextual_groups = [], []
+    ordered, contextual_groups, headers = [], [], []
+
+    def is_header(passage):
+        source = sources[passage.source_id]
+        quotes = [
+            item["quote"]
+            for item in source.header_evidence
+            if item.get("quote") and item["quote"] in passage.text
+        ]
+        remainder = passage.text
+        for quote in quotes:
+            remainder = remainder.replace(quote, "")
+        titles = {source.title, passage.heading}
+        return bool(quotes) and all(
+            not line.strip() or re.sub(r"^#{1,6}\s+", "", line.strip()) in titles
+            for line in remainder.splitlines()
+        )
+
+    # A document reference points to that document, not every passage mentioning
+    # its identifier. Its substantive passages may not repeat the document code.
+    documents = defaultdict(list)
+    for source in sources.values():
+        names = {source.source_id.rsplit(":", 1)[-1], source.title.partition(" ")[0]}
+        for name in names:
+            if record_identifiers(name) == [name.upper()]:
+                documents[name.upper()].append(source.source_id)
+    original_groups = dict(seed_groups)
+    seed_groups = {}
+    document_references = set()
+
+    def add_documents(references):
+        for reference in sorted(references):
+            for target in documents.get(reference, []):
+                document_references.add(reference)
+                if target in seed_groups:
+                    continue
+                passages = sorted(
+                    (p for p in by_source[target] if not is_header(p)),
+                    key=lambda p: (ranks.get(p.evidence_id, len(evidence)), p.locator),
+                )
+                seed_groups[target] = list(
+                    dict.fromkeys(
+                        [
+                            *(p.evidence_id for p in passages[:group_limit]),
+                            *original_groups.get(target, []),
+                        ]
+                    )
+                )
+                for passage in passages[:group_limit]:
+                    reasons.setdefault(passage.evidence_id, "explicit_document_reference_context")
+
+    header_references = set()
+    for source_id, ids in original_groups.items():
+        seed_groups.setdefault(source_id, ids)
+        references = set(record_identifiers(claim))
+        for passage in by_source[source_id]:
+            if is_header(passage):
+                header_references.update(record_identifiers(passage.text))
+            elif passage.evidence_id in ids:
+                references.update(record_identifiers(passage.text))
+        add_documents(references)
+    add_documents(header_references)
+    if practice_target:
+        seed_groups = dict(
+            sorted(
+                seed_groups.items(),
+                key=lambda item: sources[item[0]].source_type in {"policy", "procedure"},
+            )
+        )
 
     def append(eid, reason):
         if eid not in ordered:
             ordered.append(eid)
         reasons.setdefault(eid, reason)
 
-    # Give every retrieved source a turn before expanding whole documents. A seed
-    # keeps headers, scope conditions and its short section, including later caveats.
+    # Keep scope and adjacent caveats with each seed. Header metadata already
+    # travels with every passage; header text must not crowd out substantive seeds.
     for row in zip_longest(*seed_groups.values()):
         for eid in row:
             if eid is None:
                 continue
             passage = evidence[eid]
             append(eid, "retrieved_for_claim_or_component")
-            source = sources[passage.source_id]
+            if is_header(passage):
+                ordered.remove(eid)
+                if eid not in headers:
+                    headers.append(eid)
+                continue
             section = [
                 sibling
                 for sibling in by_source[passage.source_id]
@@ -148,10 +232,10 @@ def retrieve_context(
             ):
                 if sibling.row_identifier or sibling.locator.startswith("csv:"):
                     continue
-                header = sibling.heading == source.title or any(
-                    item.get("quote") and item["quote"] in sibling.text
-                    for item in source.header_evidence
-                )
+                if is_header(sibling):
+                    if sibling.evidence_id not in headers:
+                        headers.append(sibling.evidence_id)
+                    continue
                 conditions = re.search(
                     r"\b(?:scope|conditions?|exceptions?|applicability)\b",
                     sibling.heading or "",
@@ -169,7 +253,7 @@ def retrieve_context(
                         )
                     )
                 )
-                if header or conditions or adjacent:
+                if conditions or adjacent:
                     append(sibling.evidence_id, "same_source_context")
 
     for source_id in seed_groups:
@@ -185,10 +269,14 @@ def retrieve_context(
     # Follow exact references from ranked evidence and its necessary context, not
     # references in unrelated optional sections of the same document.
     reference_ids = set()
-    for eid in ordered:
+    for eid in [*ordered, *headers]:
         reference_ids.update(record_identifiers(evidence[eid].text))
-    for link in find_record_references(" ".join(sorted(reference_ids)), list(evidence.values())):
+    for link in find_record_references(
+        " ".join(sorted(reference_ids - document_references)), list(evidence.values())
+    ):
         append(link.evidence_id, "explicit_record_reference_context")
+    for eid in headers:
+        append(eid, "same_source_context")
     for row in zip_longest(*contextual_groups):
         for eid in row:
             if eid is not None:
@@ -216,6 +304,7 @@ def retrieve_context(
     ]
     return payload, {
         "queries": queries,
+        "ranked_group_limit": group_limit,
         "candidate_count": len(candidates),
         "selected_passage_count": len(selected),
         "expanded_candidate_count": len(ordered),
@@ -549,12 +638,14 @@ def build_general_bundle(request, path):
             evaluated = evaluate_evidence(
                 interpretation, request.facet or request.claim, selected, request.as_of, provider
             )
-            covered = {
-                f["component_id"]
-                for f in evaluated["findings"]
-                if f["relationship"] in {"supports", "contradicts", "qualifies"}
-            }
-            missing = [c["text"] for c in interpretation["components"] if c["id"] not in covered]
+            admitted = canonical_assessment(
+                interpretation, evaluated, evidence, sources, request.as_of
+            )
+            missing = [
+                c["text"]
+                for c in admitted["components"]
+                if c["status"] == "insufficient" or not any(f["admitted"] for f in c["findings"])
+            ]
             if missing:
                 additions, retrieval = _retrieve(
                     retrieve_context,

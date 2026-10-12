@@ -400,6 +400,7 @@ def test_retrieval_preserves_ranked_records_and_links_before_optional_sibling_se
         kind="interview",
         heading="interviews",
     )
+    sources["interviews"].header_evidence = [{"quote": evidence["interview-header"].text}]
     add(
         "ranked-record",
         "tasks",
@@ -525,6 +526,240 @@ def test_ranked_section_lead_precedes_earlier_unrelated_paragraphs_and_keeps_adj
         "interview-3",
         "interview-5",
     ]
+
+
+def test_retrieval_searches_material_components_and_bounds_gap_expansion(monkeypatch):
+    sources, evidence, add = frozen_corpus()
+    add(
+        "dispatch",
+        "warehouse",
+        "Warehouse dispatches are scanned before loading.",
+        kind="audit_events",
+    )
+    calls = []
+
+    def search(_connection, query, limit):
+        calls.append((query, limit))
+        passages = (
+            [evidence["dispatch"]] if query == "Dispatches are scanned before loading." else []
+        )
+        return SimpleNamespace(
+            candidates=passages,
+            ranked_groups=[SimpleNamespace(passages=passages)] if passages else [],
+            additional_linked_groups=[],
+        )
+
+    monkeypatch.setattr(general, "search_corpus", search)
+    parsed = {
+        "components": [{"text": "Dispatches are scanned before loading."}],
+        "search_queries": [],
+    }
+    selected, diagnostics = general.retrieve_context(
+        None, "The workflow is followed.", parsed, sources, evidence
+    )
+    assert "dispatch" in {p["evidence_id"] for p in selected}
+    assert all(limit == 8 for _, limit in calls)
+    assert diagnostics["ranked_group_limit"] == 8
+    calls.clear()
+    general.retrieve_context(
+        None,
+        "The workflow is followed.",
+        parsed,
+        sources,
+        evidence,
+        questions=["Which dispatches bypassed scanning?"],
+        exclude={"dispatch"},
+    )
+    assert calls[1][0] == "Which dispatches bypassed scanning?"
+    assert all(limit == 12 for _, limit in calls)
+
+
+@pytest.mark.parametrize("reference_in_header", [False, True])
+def test_document_reference_selects_actual_document_before_unrelated_mentions(
+    monkeypatch, reference_in_header
+):
+    sources, evidence, add = frozen_corpus()
+    add("reference", "shipping", "Loading follows GUIDE-731.", kind="interview", heading="Loading")
+    if reference_in_header:
+        sources["shipping"].header_evidence = [{"quote": evidence["reference"].text}]
+    add(
+        "requirement",
+        "archive:GUIDE-731",
+        "Sealed loads require a second inspection.",
+        heading="Requirements",
+    )
+    add("scope", "archive:GUIDE-731", "Applies to refrigerated loads only.", heading="Scope")
+    add(
+        "metadata",
+        "archive:GUIDE-731",
+        "Effective date: 2025-03-01.",
+        heading="GUIDE-731 — Loading Manual",
+    )
+    sources["archive:GUIDE-731"].title = "GUIDE-731 — Loading Manual"
+    sources["archive:GUIDE-731"].header_evidence = [{"quote": evidence["metadata"].text}]
+    for n in range(12):
+        add(f"mention-{n}", f"other-{n}", "A different team's notes mention GUIDE-731.")
+    result = SimpleNamespace(
+        candidates=[evidence["reference"], evidence["requirement"]],
+        ranked_groups=[SimpleNamespace(passages=[evidence["reference"]])],
+        additional_linked_groups=[],
+    )
+    monkeypatch.setattr(general, "search_corpus", lambda *_a, **_kw: result)
+    monkeypatch.setattr(general, "MAX_PASSAGES", 4)
+    selected, diagnostics = general.retrieve_context(
+        None, "Inspect sealed loads.", {}, sources, evidence
+    )
+    ids = [p["evidence_id"] for p in selected]
+    assert {"requirement", "scope"} <= set(ids)
+    assert not any(eid.startswith("mention-") for eid in ids)
+    assert diagnostics["selection_reasons"]["requirement"] == "explicit_document_reference_context"
+    assert all(p["text"] == evidence[p["evidence_id"]].text for p in selected)
+    assert next(p for p in selected if p["evidence_id"] == "requirement")["source"] == sources[
+        "archive:GUIDE-731"
+    ].model_dump(mode="json")
+
+
+def test_mixed_header_and_policy_body_remains_substantive_priority(monkeypatch):
+    sources, evidence, add = frozen_corpus()
+    text = (
+        "# Inspection Manual\nOwner: Quality Team\n"
+        "When a seal is broken, the shipment requires a second inspection before dispatch."
+    )
+    add("mixed-rule", "inspection", text, heading="Inspection Manual")
+    sources["inspection"].title = "Inspection Manual"
+    sources["inspection"].header_evidence = [{"quote": "Owner: Quality Team"}]
+    add("background", "logistics", "Dispatch volume increased last week.")
+    result = SimpleNamespace(
+        candidates=[evidence[eid] for eid in ("mixed-rule", "background")],
+        ranked_groups=[
+            SimpleNamespace(passages=[evidence[eid]]) for eid in ("mixed-rule", "background")
+        ],
+        additional_linked_groups=[],
+    )
+    monkeypatch.setattr(general, "search_corpus", lambda *_a, **_kw: result)
+    monkeypatch.setattr(general, "MAX_PASSAGES", 1)
+    selected, _ = general.retrieve_context(
+        None, "Broken seals require inspection.", {}, sources, evidence
+    )
+    assert [p["evidence_id"] for p in selected] == ["mixed-rule"]
+    assert selected[0]["text"] == evidence["mixed-rule"].text == text
+    assert selected[0]["source"] == sources["inspection"].model_dump(mode="json")
+
+
+def test_metadata_headers_do_not_displace_substantive_root_level_table(monkeypatch):
+    sources, evidence, add = frozen_corpus()
+    add(
+        "table",
+        "routing",
+        "| Region | Actual route |\n| North | Direct dispatch |",
+        heading="Routing Table",
+    )
+    sources["routing"].title = "Routing Table"
+    add("dated-header", "routing", "Updated: 2026-02-03.", heading="Routing Table")
+    sources["routing"].header_evidence = [{"quote": evidence["dated-header"].text}]
+    add(
+        "dispatch",
+        "warehouse",
+        "North dispatch completed without the intermediate depot.",
+        kind="audit_events",
+    )
+    result = SimpleNamespace(
+        candidates=[evidence[eid] for eid in ("dated-header", "table", "dispatch")],
+        ranked_groups=[
+            SimpleNamespace(passages=[evidence[eid]])
+            for eid in ("dated-header", "table", "dispatch")
+        ],
+        additional_linked_groups=[],
+    )
+    monkeypatch.setattr(general, "search_corpus", lambda *_a, **_kw: result)
+    monkeypatch.setattr(general, "MAX_PASSAGES", 2)
+    selected, _ = general.retrieve_context(
+        None, "North dispatch uses the depot.", {}, sources, evidence
+    )
+    assert {p["evidence_id"] for p in selected} == {"table", "dispatch"}
+    assert (
+        next(p for p in selected if p["evidence_id"] == "table")["source"]["header_evidence"]
+        == sources["routing"].header_evidence
+    )
+
+
+@pytest.mark.parametrize("target", ["observed_practice", "current_state"])
+def test_operational_targets_prioritise_observed_sources_over_policy_context(monkeypatch, target):
+    sources, evidence, add = frozen_corpus()
+    add("event", "dispatch", "A sealed shipment bypassed the depot.", kind="audit_events")
+    result = SimpleNamespace(
+        candidates=[evidence["rule"], evidence["event"]],
+        ranked_groups=[SimpleNamespace(passages=[evidence[eid]]) for eid in ("rule", "event")],
+        additional_linked_groups=[],
+    )
+    monkeypatch.setattr(general, "search_corpus", lambda *_a, **_kw: result)
+    monkeypatch.setattr(general, "MAX_PASSAGES", 1)
+    selected, _ = general.retrieve_context(
+        None, "Shipments use the depot.", {"target": target}, sources, evidence
+    )
+    assert [p["evidence_id"] for p in selected] == ["event"]
+
+
+@pytest.mark.parametrize("exclusion", ["policy_for_practice", "different_scope", "draft_rule"])
+def test_unadmitted_model_support_cannot_suppress_gap_retrieval(
+    configured, monkeypatch, exclusion
+):
+    _, sources, evidence, add = configured
+    parsed = interpretation()
+    if exclusion == "policy_for_practice":
+        parsed["target"] = "observed_practice"
+    elif exclusion == "draft_rule":
+        sources["orders"].lifecycle_status = "draft"
+    actual_text = (
+        "Orders above 42 units received manager approval."
+        if exclusion == "policy_for_practice"
+        else CLAIM
+    )
+    add(
+        "actual",
+        "operations",
+        actual_text,
+        kind="interview" if exclusion == "policy_for_practice" else "policy",
+    )
+    monkeypatch.setattr(general, "interpret_claim", lambda *_a: parsed)
+    retrievals, evaluations = [], []
+
+    def retrieve(*_args, **kwargs):
+        retrievals.append(kwargs)
+        eid = "actual" if kwargs.get("exclude") else "rule"
+        p = evidence[eid]
+        return [
+            {"evidence_id": eid, "source_id": p.source_id, "text": p.text, "locator": p.locator}
+        ], {}
+
+    def evaluate(_interpretation, _claim, selected, *_args):
+        evaluations.append([p["evidence_id"] for p in selected])
+        result = evaluation()
+        if exclusion == "different_scope":
+            result["findings"][0]["scope_fit"] = "no"
+        if len(selected) > 1:
+            result["findings"].append(
+                {
+                    **evaluation()["findings"][0],
+                    "evidence_id": "actual",
+                    "source_id": "operations",
+                    "quotation": actual_text,
+                    "basis": "reported_statement"
+                    if exclusion == "policy_for_practice"
+                    else "direct_statement",
+                }
+            )
+        return result
+
+    monkeypatch.setattr(general, "retrieve_context", retrieve)
+    monkeypatch.setattr(general, "evaluate_evidence", evaluate)
+    request = InterpretationProposalRequest(claim=CLAIM, as_of=date(2026, 4, 1))
+    bundle = general.build_general_bundle(request, Path("/unused.sqlite"))
+    assert evaluations == [["rule"], ["rule", "actual"]]
+    assert retrievals[1]["questions"] == [CLAIM]
+    findings = bundle["response"]["canonical_assessment"]["components"][0]["findings"]
+    assert not next(f for f in findings if f["evidence_id"] == "rule")["admitted"]
+    assert next(f for f in findings if f["evidence_id"] == "actual")["admitted"]
 
 
 def test_target_conflict_is_processing_failure_without_rewriting_claim(configured):

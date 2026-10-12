@@ -13,7 +13,9 @@ from typing import Literal, Protocol
 from urllib.parse import urlsplit
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model, field_validator
+
+from decidr.claim_spans import exact_claim_span, exact_evidence_span
 
 METHOD = "local-semantic-interpretation-v1"
 VALIDATION_METHOD = "exact-spans-and-semantic-verification-v1"
@@ -24,6 +26,8 @@ NUMERIC_VALIDATION_LIMITATIONS = [
     "Explicit approval/authority percentage or money triggers reject an exclusive source boundary claimed as inclusive at the same value; other range containment remains semantic.",
     "Only explicit fixed-duration conversions are used; months, years and business-day calendars are not converted.",
     "Currencies are never exchanged, and an unspecified dollar currency is not silently resolved.",
+    "Quantitative approval-rule contradictions require a comparable quantity or explicit removal of the requirement; unfamiliar units and broader semantic conflicts still require semantic review.",
+    "Explicit scalar approval cutoffs require the same normalized value for support even when followed by an inclusive range; overlap alone is insufficient and never automatically establishes contradiction.",
 ]
 
 
@@ -126,6 +130,9 @@ class OllamaProvider:
             },
             "method": METHOD,
             "validation_method": VALIDATION_METHOD,
+            "evidence_verification_method": "isolated-passages-and-exact-grounding-v1",
+            "claim_span_method": "unique-typography-to-original-v1",
+            "evidence_span_method": "unique-bold-typography-to-original-v1",
             "citation_method": CITATION_METHOD,
             "numeric_validation_method": NUMERIC_VALIDATION_METHOD,
             "numeric_validation_limitations": list(NUMERIC_VALIDATION_LIMITATIONS),
@@ -356,7 +363,11 @@ class Interpretation(_Strict):
         "current_state",
         "historical_state",
     ]
-    components: list[Component] = Field(min_length=1, max_length=20)
+    components: list[Component] = Field(
+        min_length=1,
+        max_length=20,
+        description="Independently asserted propositions joined as logical AND. A conditional permission or obligation is ONE component containing all its conditions. Never assert its premise separately or link components by IDs to express implication.",
+    )
     ambiguities: list[str] = Field(
         description="Actual competing plausible readings or material missing claim meaning, such as unspecified currency or scope. Return [] for unambiguous wording; comparator normalization explanations and evidence gaps are not ambiguities."
     )
@@ -457,6 +468,10 @@ class OmittedEvidence(_Strict):
         min_length=1,
         description="The exact selected passage ID containing omitted material evidence.",
     )
+    grounding_quote: str = Field(
+        min_length=1,
+        description="Exact substring of this omission's OWN selected passage establishing the missing material relation.",
+    )
     reason: str = Field(
         min_length=1,
         description="Explain what material support, contradiction or qualification this specific passage contains that current findings omit.",
@@ -469,6 +484,16 @@ class EvidenceVerification(_Strict):
         description="Specific omitted material passages, with actual component and passage IDs. Return [] if there are no omissions; no free-form success summaries."
     )
 
+    @field_validator("omitted_evidence")
+    @classmethod
+    def unique_omission_bindings(cls, omissions):
+        bindings = [(item.component_id, item.evidence_id) for item in omissions]
+        if len(set(bindings)) != len(bindings):
+            raise ValueError(
+                "Consolidate missing relations into one omission per component/passage pair."
+            )
+        return omissions
+
 
 class _MeaningCheck(_Strict):
     valid: bool
@@ -479,6 +504,13 @@ class _MeaningCheck(_Strict):
 
 
 class _EvidenceMeaningCheck(_MeaningCheck):
+    valid: bool = Field(
+        alias="fields_valid",
+        description="Are the supplied scope_fit, time_fit, directness and basis accurate? This is NOT whether the claim is true or supported. A correct contradiction or context finding has fields_valid=true.",
+    )
+    grounding_quote: str = Field(
+        description="Exact substring of this finding's OWN passage establishing the relationship. Never quote another passage or source metadata. Use an empty string only for context or unresolved where there is no relevant assertion."
+    )
     expected_relationship: Literal[
         "supports", "contradicts", "qualifies", "context", "unresolved"
     ] = Field(
@@ -486,11 +518,16 @@ class _EvidenceMeaningCheck(_MeaningCheck):
     )
 
 
-def _check_map(name: str, keys: list[str], check_model=_MeaningCheck) -> type[_Strict]:
+def _check_map(
+    name: str, keys: list[str], check_model=_MeaningCheck, models=None
+) -> type[_Strict]:
     return create_model(
         name,
         __base__=_Strict,
-        **{f"check_{index}": (check_model, Field(alias=key)) for index, key in enumerate(keys)},
+        **{
+            f"check_{index}": ((models or {}).get(key, check_model), Field(alias=key))
+            for index, key in enumerate(keys)
+        },
     )
 
 
@@ -502,9 +539,90 @@ def _claim_verifier_model(component_ids: list[str]) -> type[_Strict]:
     )
 
 
+def _verbatim_claim_kind(claim: str) -> str | None:
+    if re.search(
+        r"\b(?:if|unless|when|whenever|provided|providing|subject\s+to|as\s+long\s+as|on\s+condition\s+that)\b",
+        claim,
+        re.IGNORECASE,
+    ):
+        return "conditional"
+    if re.search(r"\b(?:all|every|each)\b", claim, re.IGNORECASE):
+        return "quantified"
+
+
+_APPROVAL_WORD = r"(?:approv\w*|authori[sz]\w*|permission|consent|sign[ -]?off)"
+_THRESHOLD_ASSERTION = r"\b(?:threshold|cut[ -]?off|limit)\b[^.!?;]*\b(?:is|was|are|were|equals?|stands? at|stood at)\b"
+
+
+def _normative_threshold_claim(claim: str) -> bool:
+    """Recognize unqualified statements of a rule's scalar approval threshold only."""
+    text = re.sub(r"[*`]", "", claim)
+    if re.search(
+        r"\b(?:in practice|actual(?:ly)?|observed|reported|recorded|said|says|stated|"
+        r"according to|claims? that|told|asserts?|interview|email|message|configuration|configured|setting|"
+        r"stored|database|dashboard|software|system|field|display(?:ed|s)?|accurate|"
+        r"changed|raised|lowered|reduced|increased|adopted|introduced|approved|"
+        r"authori[sz]ed|granted|signed off)\b",
+        text,
+        re.IGNORECASE,
+    ):
+        return False
+    return bool(
+        _quantity_mentions(text)
+        and re.search(r"\b" + _APPROVAL_WORD + r"\b", text, re.IGNORECASE)
+        and re.search(_THRESHOLD_ASSERTION, text, re.IGNORECASE)
+    )
+
+
+def _interpretation_model(claim: str) -> type[_Strict]:
+    # Coarser assessment preserves shared conditions/scope without inventing predicate joins.
+    fields = {}
+    kind = _verbatim_claim_kind(claim)
+    if kind:
+        component = create_model(
+            "ConditionalComponent" if kind == "conditional" else "QuantifiedComponent",
+            __base__=Component,
+            text=(Literal[claim], ...),
+            claim_quote=(Literal[claim], ...),
+        )
+        fields["components"] = (
+            list[component],
+            Field(
+                min_length=1,
+                max_length=1,
+                description="Keep this complete original statement as one proposition. Preserve every condition, quantifier, predicate, shared scope and timing; do not assert conditions or universal conjuncts separately.",
+            ),
+        )
+    if _normative_threshold_claim(claim):
+        fields["target"] = (Literal["formal_requirement"], ...)
+    return (
+        create_model("Interpretation", __base__=Interpretation, **fields)
+        if fields
+        else Interpretation
+    )
+
+
 def _evidence_verifier_model(
-    component_ids: list[str], evidence_ids: list[str], finding_count: int
+    component_ids: list[str],
+    evidence_ids: list[str],
+    finding_count: int,
+    allowed_relationships: dict[int, tuple[str, ...]] | None = None,
 ) -> type[_Strict]:
+    variants = {}
+    checks = {}
+    for index, allowed in (allowed_relationships or {}).items():
+        if allowed not in variants:
+            variants[allowed] = create_model(
+                "ConstrainedEvidenceMeaningCheck" + str(len(variants)),
+                __base__=_EvidenceMeaningCheck,
+                expected_relationship=(
+                    Literal[allowed],
+                    Field(
+                        description="Derive the relationship independently within these admissible options. Support is excluded when the own passage lacks the asserted scalar cutoff, substantive completed approval, or specifically formal approval kind. No other relationship is predetermined."
+                    ),
+                ),
+            )
+        checks[str(index)] = variants[allowed]
     omission = (
         create_model(
             "OmittedEvidence",
@@ -523,14 +641,16 @@ def _evidence_verifier_model(
                 "FindingChecks",
                 [str(index) for index in range(finding_count)],
                 _EvidenceMeaningCheck,
+                checks,
             ),
             ...,
         ),
         omitted_evidence=(
             list[omission],
-            Field(max_length=0)
-            if not evidence_ids
-            else EvidenceVerification.model_fields["omitted_evidence"],
+            Field(
+                max_length=len(component_ids) * len(evidence_ids),
+                description=EvidenceVerification.model_fields["omitted_evidence"].description,
+            ),
         ),
     )
 
@@ -672,9 +792,9 @@ def _boundary(text: str, value: str) -> str | None:
     for op, pattern in before.items():
         if re.search(pattern + r"\s*\$?" + escaped + r"(?![\d.])", text, re.IGNORECASE):
             return op
-    if re.search(escaped + unit + r"\s+or (?:more|greater|above)", text, re.IGNORECASE):
+    if re.search(escaped + unit + r"\s+(?:or|and) (?:more|greater|above)", text, re.IGNORECASE):
         return "gte"
-    if re.search(escaped + unit + r"\s+or (?:less|fewer|below)", text, re.IGNORECASE):
+    if re.search(escaped + unit + r"\s+(?:or|and) (?:less|fewer|below)", text, re.IGNORECASE):
         return "lte"
     return None
 
@@ -694,10 +814,12 @@ def _validate_claim_numbers(claim: str, output: dict) -> None:
         )
     extracted_numbers = set()
     for component in output["components"]:
-        if component["claim_quote"] not in claim:
+        original_span = exact_claim_span(claim, component["claim_quote"])
+        if original_span is None:
             raise ProviderError(
                 "invalid_model_output", "An interpretation quote is not an exact claim span."
             )
+        component["claim_quote"] = original_span
         for quantity in component["quantities"]:
             try:
                 number = Decimal(quantity["value"].replace(",", ""))
@@ -839,6 +961,107 @@ def _scalar_observations(text: str) -> list[tuple[Decimal, str]]:
     return found
 
 
+def _threshold_support_exclusion(component: dict, quotation: str) -> str | None:
+    claim = component.get("claim_quote", component["text"])
+    if not _normative_threshold_claim(claim):
+        return None
+    clause = re.search(_THRESHOLD_ASSERTION, re.sub(r"[*`]", "", claim), re.IGNORECASE)
+    quantities = [
+        (value, dimension)
+        for value, dimension, start, _ in _quantity_mentions(re.sub(r"[*`]", "", claim))
+        if start >= clause.end()
+    ]
+    if not quantities:
+        return None
+    value, dimension = quantities[0]
+    if any(q["comparator"] in {"approx", "range"} for q in component.get("quantities", [])):
+        return None
+    observations = _scalar_observations(quotation)
+    comparable = {number for number, kind in observations if kind == dimension}
+    if comparable and value not in comparable:
+        return (
+            "The passage states different quantities for the asserted scalar approval cutoff. "
+            "An overlapping trigger range does not establish equality of that cutoff. "
+            "This excludes support only; it does not establish a contradiction."
+        )
+    if (
+        not comparable
+        and dimension.startswith("currency:")
+        and dimension != "currency:unspecified"
+    ):
+        currencies = {kind for _, kind in observations if kind.startswith("currency:")}
+        if currencies and "currency:unspecified" not in currencies:
+            return (
+                "The passage supplies only a different explicitly named currency for the scalar "
+                "approval cutoff. Support requires a same-currency basis; no exchange is assumed."
+            )
+    return None
+
+
+def _approval_event_support_exclusion(
+    component: dict, quotation: str, target: str | None
+) -> str | None:
+    if target != "event" or not re.search(
+        r"\b(?:approved|authori[sz]ed|adopted|ratified|signed[ -]?off)\b|"
+        r"\b(?:gave|granted|received|completed)\b.{0,35}\bapproval\b|"
+        r"\bapproval\b.{0,20}\b(?:occurred|completed|given|granted)\b",
+        component.get("predicate", ""),
+        re.IGNORECASE,
+    ):
+        return None
+    text = re.sub(r"[*`]", "", quotation)
+    lines = [
+        re.sub(r"^(?:(?:[-+*]|\d+[.)])\s+|>\s*)+", "", line.strip())
+        for line in text.splitlines()
+        if line.strip()
+    ]
+    if lines and all(
+        re.match(
+            r"^(?:From|To|Cc|Bcc|Sent|Date|Timestamp|Subject|Reply-To|Message-ID|Participants)\s*:",
+            line,
+            re.IGNORECASE,
+        )
+        for line in lines
+    ):
+        return (
+            "Communication headers establish message metadata, not a substantive completed "
+            "approval event. Sender, timestamp, title and subject alone cannot supply the missing approval."
+        )
+    formal_pattern = (
+        r"\b(?:formally|officially)\s+(?:(?:been|was|has|had|not|never)\s+)*"
+        r"(?:approved|adopted|ratified|authori[sz]ed|signed[ -]?off)\b|"
+        r"\b(?:gave|granted|received|completed|obtained|documented|recorded)\s+(?:(?:a|the)\s+)?"
+        r"(?:formal|official)\s+(?:approval|adoption|ratification|authori[sz]ation|sign[ -]?off)\b|"
+        r"\b(?:formal|official)\s+(?:approval|adoption|ratification|authori[sz]ation|sign[ -]?off)\s+"
+        r"(?:(?:of|for)\s+[^.!?;\n]{1,100}?\s+)?"
+        r"(?:was|is|has been|had been|occurred|took place|given|granted|recorded|confirmed)\b|"
+        r"\b(?:adopted|ratified)\b|"
+        r"\b(?:approved|signed[ -]?off)\b[^.!?;\n]{0,60}\bas\s+(?:the\s+)?official\s+"
+        r"(?:process|policy|procedure|rule|standard|protocol)(?=\s*(?:[.,;:]|$))"
+    )
+    formal_claim = re.search(formal_pattern, component["text"], re.IGNORECASE)
+    formal_indication = re.search(formal_pattern, text, re.IGNORECASE)
+    if formal_claim and not formal_indication:
+        return (
+            "The passage does not establish the specifically claimed formal approval or adoption. "
+            "Unspecified sign-off, informal/pilot permission and role titles do not supply that distinction."
+        )
+    return None
+
+
+def _verification_relationship_constraints(components, passages, findings, target=None):
+    return {
+        index: ("contradicts", "qualifies", "context", "unresolved")
+        for index, finding in enumerate(findings)
+        if _threshold_support_exclusion(
+            components[finding["component_id"]], passages[finding["evidence_id"]]["text"]
+        )
+        or _approval_event_support_exclusion(
+            components[finding["component_id"]], passages[finding["evidence_id"]]["text"], target
+        )
+    }
+
+
 def approval_boundary_exclusion(component: dict, finding: dict, target: str | None) -> str | None:
     if finding.get("relationship") != "supports":
         return None
@@ -846,7 +1069,7 @@ def approval_boundary_exclusion(component: dict, finding: dict, target: str | No
         return
     if target != "formal_authority" and not re.search(
         r"\b(?:approv\w*|authorit\w*|authori[sz]\w*|permission|consent|sign.off)\b",
-        component["predicate"],
+        component["predicate"] + " " + component["text"],
         re.IGNORECASE,
     ):
         return
@@ -874,9 +1097,9 @@ def approval_boundary_exclusion(component: dict, finding: dict, target: str | No
             }.items():
                 if re.search(pattern, before, re.IGNORECASE):
                     boundaries.add(comparator)
-            if re.match(r"\s+or (?:more|greater|above)\b", after, re.IGNORECASE):
+            if re.match(r"\s+(?:or|and) (?:more|greater|above)\b", after, re.IGNORECASE):
                 boundaries.add("gte")
-            if re.match(r"\s+or (?:less|fewer|below)\b", after, re.IGNORECASE):
+            if re.match(r"\s+(?:or|and) (?:less|fewer|below)\b", after, re.IGNORECASE):
                 boundaries.add("lte")
         inclusive = quantity["comparator"]
         if {"gte": "gt", "lte": "lt"}[inclusive] in boundaries and inclusive not in boundaries:
@@ -893,8 +1116,160 @@ def approval_boundary_exclusion(component: dict, finding: dict, target: str | No
             )
 
 
+def _uncertainty_only(quote: str) -> bool:
+    uncertainty = r"\b(?:no idea|(?:do|does|did) not know|don['’]t know|doesn['’]t know|didn['’]t know|not sure|uncertain|unclear|cannot confirm|can['’]t confirm|unable to confirm)\b"
+    if not re.search(uncertainty, quote, re.IGNORECASE):
+        return False
+    if not re.match(
+        r"^[\s*\"'“‘]*(?:whether\b|(?:(?:I|we|he|she|they|it)\s+"
+        r"(?:(?:have|has|am|are|is|was|were)\s+)?)?" + uncertainty + r")",
+        quote,
+        re.IGNORECASE,
+    ):
+        return False
+    if re.search(uncertainty + r"\s+(?:why|how)\b", quote, re.IGNORECASE):
+        return False
+    # The exact grounding may contain a separate actual observation as well as uncertainty.
+    clauses = [
+        part.strip()
+        for part in re.split(r"[.;!?]|\bbut\b|\bhowever\b", quote, flags=re.IGNORECASE)
+        if part.strip()
+    ]
+    return not any(
+        not re.search(uncertainty + r"|\b(?:assum\w*|presum\w*|guess\w*)\b", clause, re.IGNORECASE)
+        for clause in clauses
+    )
+
+
+def claim_evidence_exclusion(component: dict, finding: dict, target: str | None) -> str | None:
+    """Shared admission checks; an exclusion never invents the opposite relationship."""
+    if finding.get("relationship") == "supports":
+        support = _threshold_support_exclusion(
+            component, finding["quotation"]
+        ) or _approval_event_support_exclusion(component, finding["quotation"], target)
+        if support:
+            return support
+    boundary = approval_boundary_exclusion(component, finding, target)
+    if boundary:
+        return boundary
+    if finding.get("relationship") not in {"supports", "contradicts", "qualifies"}:
+        return None
+    text = re.sub(r"[*`]", "", finding["quotation"])
+    grounding = finding.get("semantic_validation", {}).get("grounding_quote")
+    if not grounding or exact_evidence_span(finding["quotation"], grounding) is None:
+        grounding = finding["quotation"]
+    if (
+        finding["relationship"] == "contradicts"
+        and target in {"event", "observed_practice", "current_state", "historical_state"}
+        and not re.search(
+            r"\b(?:know\w*|aware\w*|certain\w*|uncertain\w*|unclear|recall\w*|remember\w*)\b",
+            component["text"],
+            re.IGNORECASE,
+        )
+        and _uncertainty_only(grounding)
+    ):
+        return (
+            "The cited grounding expresses uncertainty, not a contrary observation. Lack of "
+            "knowledge does not establish that the claimed event or practice failed to occur."
+        )
+    approval = r"\b" + _APPROVAL_WORD + r"\b"
+    normative = re.search(approval, text, re.IGNORECASE) and re.search(
+        r"\b(?:needs?|requires?|required|must|shall|mandatory|threshold)\b",
+        text,
+        re.IGNORECASE,
+    )
+    action_pattern = (
+        r"\b(?:was|were|is|are|has been|have been|had been|got)\s+"
+        r"(?:(?:not|never|already|formally|informally|actually)\s+)*"
+        r"(?:approved|authori[sz]ed|signed[ -]?off|recorded|granted|denied)\b|"
+        r"\b(?:receiv(?:e[ds]?|ing)|obtain(?:s|ed|ing)?|gave|give[sn]?|withheld)\b"
+        r"[^.!?;\n]{0,60}" + approval + r"|"
+        r"\b(?:I|we|they|he|she)\s+(?:did not |never |actually )?"
+        r"(?:approve[ds]?|authori[sz]e[ds]?|sign(?:ed)?[ -]?off)\b|"
+        r"\b(?:approves|authori[sz]es|signs[ -]?off)\b|"
+        r"\b(?:carried (?:it |this |that )?out|implemented|completed|followed|happened|took place)\b|"
+        r"\b(?:approved|authori[sz]ed|signed[ -]?off)\s+(?:by|the|a|an|this|that)\b"
+    )
+    performed = any(
+        not re.search(
+            r"(?:\b(?:must|shall|should|may|can|to)\s+(?:not\s+)?be\s+|\bto\s+)$",
+            text[: match.start()],
+            re.IGNORECASE,
+        )
+        for match in re.finditer(action_pattern, text, re.IGNORECASE)
+    )
+    practice_context = re.search(
+        r"\b(?:in practice|actually|usually|often|sometimes|not always|despite|"
+        r"bypass\w*|ignor\w*|follow\w*|compl(?:y|ies|ied|iance)|noncompliance|exceptions?)\b",
+        text,
+        re.IGNORECASE,
+    )
+    instruction = re.search(
+        r"\b(?:agreed|decided)\s*(?::|to\b)|\b(?:agreement|decision|instruction)\s+"
+        r"(?:was|is)\s+to\b|\b(?:instructed|directed)\b[^.!?;\n]{0,50}\bto\b",
+        text,
+        re.IGNORECASE,
+    )
+    execution_context = re.search(
+        r"\b(?:in practice|actually|usually|often|sometimes|not always|we did|they did|I did)\b",
+        text,
+        re.IGNORECASE,
+    )
+    if target == "observed_practice" and instruction and not performed and not execution_context:
+        return (
+            "The passage records an agreed instruction or intended procedure, not evidence that "
+            "it was carried out. Relative timing in an instruction does not establish an actual event's timing."
+        )
+    if target == "observed_practice" and normative and not performed and not practice_context:
+        return (
+            "The cited passage states an approval requirement, not a performed approval or observed "
+            "compliance. Its trigger range cannot establish or contradict actual behavior."
+        )
+    claim_text = component.get("claim_quote", component["text"])
+    if (
+        finding["relationship"] != "contradicts"
+        or not re.search(approval, claim_text, re.IGNORECASE)
+        or not _normative_threshold_claim(claim_text)
+    ):
+        return None
+    dimensions = {
+        unit[0]
+        for quantity in component.get("quantities", [])
+        if (unit := _numeric_unit(quantity["unit"])) is not None
+    }
+    if not dimensions or any(kind in dimensions for _, kind in _scalar_observations(text)):
+        return None
+    removal = re.search(
+        approval
+        + r"[^.!?;\n]{0,80}\b(?:not|no longer|never)\s+(?:be\s+)?(?:required|necessary|mandatory)\b|"
+        r"\b(?:do|does|did)\s+not\s+(?:require|need)\b[^.!?;\n]{0,80}" + approval + r"|"
+        r"\bno\s+(?:\w+[ -]){0,5}"
+        + approval
+        + r"[^.!?;\n]{0,80}\b(?:required|necessary|mandatory)\b|"
+        r"\b(?:may|can|permitted to|allowed to)\b[^.!?;\n]{0,80}\bwithout\b[^.!?;\n]{0,60}"
+        + approval
+        + r"|"
+        r"\b(?:requirement|threshold|cut[ -]?off)\b[^.!?;\n]{0,80}"
+        r"\b(?:abolished|removed|withdrawn|revoked|repealed|eliminated)\b",
+        text,
+        re.IGNORECASE,
+    )
+    if removal:
+        return None
+    return (
+        "The cited passage provides neither a comparable threshold quantity nor an explicit "
+        "removal of the claimed approval requirement. A role or document mismatch alone does "
+        "not contradict this quantitative rule."
+    )
+
+
 def _validate_evidence_numbers(component: dict, finding: dict, passage: dict) -> None:
-    if finding["relationship"] != "supports" or finding["directness"] != "direct":
+    if finding["relationship"] != "supports":
+        return
+    threshold = _threshold_support_exclusion(component, finding["quotation"])
+    if threshold:
+        raise ProviderError("invalid_model_output", threshold)
+    if finding["directness"] != "direct":
         return
     observations = _scalar_observations(finding["quotation"])
     for quantity in component["quantities"]:
@@ -938,9 +1313,10 @@ def _interpret_claim_once(
         "assessment_date": str(as_of),
         "validation_feedback": feedback,
     }
+    model = _interpretation_model(claim)
     output = _complete(
         provider,
-        Interpretation,
+        model,
         """Interpret the ENTIRE claim into necessary atomic components, not a verdict.
 Represent what the user asserts without deciding whether it is true: no evidence is evaluated here.
 If the user explicitly asserts that a stored value is accurate, preserve that accuracy assertion as
@@ -965,7 +1341,17 @@ practice. The word 'current' alone never decides the target. event asserts a par
 observed_practice asserts how actions are actually performed; reported_statement asserts what was
 said or recorded; value_accuracy asserts whether a stored value is correct; current_state and
 historical_state describe actual operational conditions at present or in the past, not a rule's text.
-Split independent conjuncts into separate components; a before/after timing assertion is its own
+A generic statement assigning decision responsibility to a role may describe formal_authority even
+without the word 'formal'. Present-tense verbs alone do not establish observed_practice. If both a
+role assignment and actual practice are plausible, retain that target ambiguity explicitly; a formal
+role reading can be the assessed facet but is not proof of actual compliance. Consultation does not
+assert agreement, successful completion, or an exception-free process; never add those assertions.
+Keep conditional permissions/obligations as one proposition with their conditions attached. 'If P,
+X is permitted provided Q' does not separately assert P happens or that X is unconditionally permitted.
+Keep universally quantified statements (all/every/each) as one verbatim proposition, including all
+conjuncts, shared scope and timing. A statement that actions receive approval asserts actual behavior;
+do not replace it with being subject to an approval requirement or process.
+Otherwise split independent conjuncts into separate components; a before/after timing assertion is its own
 component. Shared entities may be repeated. If material wording is ambiguous, preserve alternative
 meanings in ambiguities, never silently choose.
 Ambiguities must be competing plausible readings or material missing meaning, not explanations of
@@ -1018,6 +1404,15 @@ Check ambiguity entries too: they need competing plausible readings or material 
 Mark the relevant component check invalid if an ordinary unambiguous comparator normalization is
 mislabelled ambiguity; explanatory notes and evidence gaps are not ambiguous claim meanings.
 Do not discard genuine unresolved currency, scope or referent details.
+Generic role responsibility may be formal_authority even without the word formal. A present-tense
+verb alone does not settle formal assignment versus actual practice; retain that ambiguity when material.
+Consultation does not promise agreement or successful completion. Reject those added implications.
+Conditions of a permission or obligation must remain attached to its proposition, not be split into
+assertions that the condition occurs and the permission is unconditional.
+Universal statements must preserve all conjuncts under the same quantifier, scope and timing.
+Receiving approval is an action; being subject to a rule does not preserve that asserted action.
+The assessment joins components as logical AND. Component-ID references in scope do not encode
+implication. Reject a separately asserted premise or condition even if another component refers to it.
 Judge only the CURRENT proposed interpretation against the original claim. No earlier candidate
 or generation-repair feedback is part of this independent audit; do not speculate about prior defects.
 There is no global verdict or issues field. Put positive explanations in the relevant check's reason.
@@ -1039,11 +1434,13 @@ Do not create an omission entry to say that nothing is missing; omission entries
         )
     omissions = verification["omitted_claim_spans"]
     for omission in omissions:
-        if omission["claim_quote"] not in claim:
+        original_span = exact_claim_span(claim, omission["claim_quote"])
+        if original_span is None:
             raise ProviderError(
                 "invalid_model_output",
                 "A claimed interpretation omission is not an exact original-claim span.",
             )
+        omission["claim_quote"] = original_span
     if omissions or any(not check["valid"] for check in checks):
         raise ProviderError(
             "interpretation_failure",
@@ -1059,27 +1456,43 @@ Do not create an omission entry to say that nothing is missing; omission entries
         "numeric_validation_method": NUMERIC_VALIDATION_METHOD,
         "numeric_validation_limitations": list(NUMERIC_VALIDATION_LIMITATIONS),
     }
+    kind = _verbatim_claim_kind(claim)
+    if kind:
+        output["semantic_validation"][kind + "_claim_method"] = "lexical-cue-verbatim-component-v1"
+    if _normative_threshold_claim(claim):
+        output["semantic_validation"]["target_constraint_method"] = (
+            "unqualified-normative-approval-threshold-v1"
+        )
     return output
 
 
 _TARGET_VERIFIER_STANDARDS = {
-    "formal_requirement": """Assess what the applicable policy requires, not whether every transaction complies.
-Preserve rule scope, conditions, exceptions and adoption status. Draft/proposed rules are not adopted.
-An exact threshold must retain inclusive/exclusive boundaries. A broader trigger range can entail a
-requirement for a narrower range; that does not establish equality of the exact threshold.
-A scheduled policy review is not expiry. An action or document ownership alone establishes no rule.""",
+    "formal_requirement": """Assess rule content, not transaction compliance. Preserve scope, conditions,
+exceptions and adoption; drafts/proposals are not adopted. Preserve strict/inclusive bounds.
+General requirements can entail narrower trigger ranges, but scalar cutoffs must match:
+'the threshold is N and above' is not supported by a different N through range overlap.
+Review dates are not expiry. Actions or ownership alone establish no rule.""",
     "formal_authority": """Assess the documented right to perform the claimed decision, at the relevant date
 and scope. Distinguish policy-adoption rights from individual transaction approval rights, document
 ownership, role title, participation and performed actions. None alone supplies a missing authority
-grant. Preserve delegation conditions, effective periods and revocations; proposals are not grants.""",
+grant. Preserve delegation conditions, effective periods and revocations; proposals are not grants.
+Assigned decisions are not necessarily final/sole; missing tie-break rights do not refute consultation.""",
     "event": """Assess whether the specific event occurred, with matching record, actor, value and timing.
 Missing, pending, awaiting or not-approved records and approval references do not establish completed
 approval. Same-day dates alone cannot prove before/after order. A policy requirement does not prove
-compliance. A record proves only its stated event, not unstated authority or independent accuracy.""",
+compliance. A record proves only its stated event, not unstated authority or independent accuracy.
+Preserve the claimed approval kind: a pilot, informal permission or trial is not formal adoption.
+Generic 'signed off' does not establish a specifically formal approval when its kind is unstated;
+retain that limitation rather than filling it from another passage. An explicit rejection of formal
+approval can contradict that event even if a pilot was permitted.""",
     "observed_practice": """Assess what actually happens in the relevant operations, distinct from the formal
 procedure. Specific completed records and reports may establish observed examples, not universal
 practice without representative coverage. Preserve exceptions and conflicting observations; do not
-infer completion from pending items or policy instructions. Separate reported practice from direct observation.""",
+infer completion from pending items or policy instructions. Separate reported practice from direct observation.
+An agreed workaround or instruction is not proof that anyone followed it. Uncertainty about whether
+an action happened does not contradict a claim that it happened. Ground counterexamples in actual
+observations within the claimed scope. 'Afterwards' needs its stated reference event; do not invent
+an unstated closing, signing or release milestone.""",
     "reported_statement": """Assess what the identified speaker or source said, with attribution, date and
 scope preserved. A statement may support a reported-statement claim without independently proving
 that the events occurred. Do not silently convert testimony into observed fact or reverse this distinction.""",
@@ -1113,17 +1526,28 @@ Read its OWN passage against the whole component FIRST. Prior verdicts/reasons a
 Supports establishes the ORIGINAL assertion, not your explanation; an incompatible replacement
 state contradicts that assertion. Require its actor, predicate, scope and range. Other passages cannot supply missing
 assertions. Qualifies adds uncertainty/conditions; it does NOT assert inaccuracy or falsity.
+An explicit permitted exception CONTRADICTS an absolute ban ('never', 'every circumstance');
+an exception is not merely a qualification of a claim that explicitly denies every exception.
+Do not add universality, agreement or successful completion where the claim does not assert them.
 Context is background; unresolved cannot settle a relation. Never infer truth from similarity alone.
+Missing or undocumented records do not prove that actions, rights or exceptions do or do not exist.
+A section heading alone establishes no substantive rule or exception. A record-status statement
+without the claimed substantive assertion is context, not support or contradiction of that assertion.
 Check scope, entities, polarity, quantities/units/boundaries, dates and temporal precision.
 time_fit means applicability, including counterevidence, not equal dates or truth; unknown fit stays unknown.
 Reject unsupported cross-record joins and copied or circular corroboration. Same-day dates cannot
 prove event order. Pending/negative approval or a reference alone cannot prove completed approval.
-finding_checks maps every index to expected_relationship/valid/reason. valid judges the supplied
-scope_fit/time_fit/directness/basis, separately from the independently derived relationship.
-Give concise passage-specific reasons. For valid=false name the incorrect field and defect;
-if the reason affirms the fields, use valid=true. Derive limitations from the original passage.
-omitted_evidence identifies actual missing material relations, including counterevidence, with exact
-component/evidence IDs and reasons; else []. Positive explanations are not omissions. Judge the CURRENT
+finding_checks maps every index to expected_relationship/fields_valid/reason. fields_valid judges
+scope_fit/time_fit/directness/basis, NOT claim truth. Contradicting values can be direct statements
+with fields_valid=true: the mismatch is the contradiction, not a basis or applicability defect.
+Context can have fields_valid=true without supporting the claim. Check its contextual fields.
+Return grounding_quote as an exact substring of this finding's OWN original passage supporting
+your relationship. Do not borrow facts from another passage, an example, or the claim itself.
+The reason must explain that quoted text against the component, without inventing actors or events.
+Give concise passage-specific reasons. For fields_valid=false name the incorrect field and defect;
+if the reason affirms the fields, use fields_valid=true. Derive limitations from the original passage.
+omitted_evidence lists missing material relations/counterevidence once per component/passage pair;
+consolidate them in one reason with exact IDs and an own-passage grounding_quote; else []. Positive explanations are not omissions. Judge the CURRENT
 proposal, never previous candidates or repair feedback. No quote echo or global verdict.
 TARGET STANDARD:
 """
@@ -1158,10 +1582,23 @@ procedure cannot borrow another passage's migration to become a contradiction it
 Relationship contradicts asserts incompatible facts. Relationship qualifies adds a condition,
 limitation or uncertainty; it does NOT assert that the claim is false. Relationship context is relevant
 background that does not establish or refute this component. Relationship unresolved means the
-passage cannot settle the relationship. Do not mistake a qualification for a contradiction.
-Preserve exact numerical boundaries (> is not >=), quantities and units, explicit negation, pending
-versus completed, and proposed versus adopted changes. Same-day dates cannot prove temporal order
+passage cannot settle the relationship. Do not mistake a qualification for a contradiction. An explicit permitted exception contradicts
+an absolute claim denying every exception. Do not turn an assertion of consultation into a promise
+of agreement, successful completion or a universally compliant process.
+Assigned decisions are not necessarily final/sole; missing tie-break rights do not refute consultation.
+Missing or undocumented records do not prove that actions, rights or exceptions do or do not exist.
+A section heading alone establishes no substantive rule or exception. A record-status statement
+without the claimed substantive assertion is context, not support or contradiction of that assertion.
+Preserve exact numerical boundaries (> is not >=), quantities and units, explicit negation and scalar
+threshold identity: a claim that the threshold is N asserts that cutoff even if followed
+by 'and above'. A different cutoff does not support it through range overlap. Distinguish a general
+requirement for a narrower range, which can be entailed by a broader requirement.
+Preserve pending versus completed, and proposed versus adopted changes. Same-day dates cannot prove temporal order
 without time precision. Approval references or awaiting sign-off are not completed approval.
+Preserve approval kind: permission for an informal pilot does not establish a specifically claimed
+formal adoption. Unqualified 'signed off' leaves the formal-versus-pilot distinction unresolved.
+Uncertainty or lack of knowledge is not proof an event did not happen. An agreed instruction is not
+proof it was carried out; 'afterwards' refers only to its stated antecedent, not an unstated milestone.
 For formal requirements a policy documents a requirement; don't demand proof of every transaction.
 For formal authority distinguish the documented role from ownership or performed action. For current
 state evaluate completed migration and dated current evidence against stale procedures; a scheduled
@@ -1240,6 +1677,87 @@ def _verification_data(data: dict, findings: list[dict]) -> dict:
     }
 
 
+def _grounding_span(passage, quote):
+    path = passage.get("source", {}).get("original_file_path") or ""
+    bind = exact_evidence_span if path.lower().endswith((".md", ".markdown")) else exact_claim_span
+    return bind(passage["text"], quote)
+
+
+def _verify_passage_findings(provider, interpretation, claim, passages, as_of, findings):
+    """Verify bindings in isolation; audit unrepresented passages only for omissions."""
+    checks, omissions = [], []
+    component_ids = [component["id"] for component in interpretation["components"]]
+    components = {component["id"]: component for component in interpretation["components"]}
+    groups = {}
+    for index, finding in enumerate(findings):
+        groups.setdefault(finding["evidence_id"], []).append(index)
+    represented = {passage["evidence_id"]: passage for passage in passages}
+    batches = [([represented[eid]], indices) for eid, indices in groups.items()]
+    remaining = [p for p in passages if p["evidence_id"] not in groups]
+    if remaining or not batches:
+        batches.append((remaining, []))
+    for batch_index, (selected, indices) in enumerate(batches):
+        proposed = [findings[index] for index in indices]
+        data = _verification_data(_evidence_data(interpretation, claim, selected, as_of), proposed)
+        data["verification_scope"] = {
+            "batch_start": batch_index == 0,
+            "original_finding_indices": indices,
+            "purpose": "bound_passage" if indices else "omission_audit_only",
+        }
+        verified = _complete(
+            provider,
+            _evidence_verifier_model(
+                component_ids,
+                [p["evidence_id"] for p in selected],
+                len(indices),
+                _verification_relationship_constraints(
+                    components, represented, proposed, interpretation["target"]
+                ),
+            ),
+            _evidence_verifier_instruction(interpretation["target"]),
+            data,
+        )
+        for local_index, check in verified["finding_checks"].items():
+            check = {**check, "valid": check["fields_valid"]}
+            del check["fields_valid"]
+            index = indices[int(local_index)]
+            quote = check["grounding_quote"]
+            original = _grounding_span(represented[findings[index]["evidence_id"]], quote)
+            material = check["expected_relationship"] in {"supports", "contradicts", "qualifies"}
+            if original is None and (quote or material):
+                record = getattr(provider, "record_validation_fields", None)
+                if callable(record):
+                    record(
+                        "evidence_grounding",
+                        [
+                            {
+                                "evidence_id": findings[index]["evidence_id"],
+                                "expected_relationship": check["expected_relationship"],
+                                "grounding_quote": quote[:500],
+                            }
+                        ],
+                    )
+                if material:
+                    check["valid"] = False
+                    check["grounding_error"] = (
+                        "A verifier quotation is not from its bound passage."
+                        if quote
+                        else "A material evidence relationship has no grounding quotation."
+                    )
+                    check["reason"] = check["grounding_error"] + " " + check["reason"]
+            checks.append({**check, "finding_index": index, "grounding_quote": original or ""})
+        for omission in verified["omitted_evidence"]:
+            original = _grounding_span(
+                represented[omission["evidence_id"]], omission["grounding_quote"]
+            )
+            if original is None:
+                raise ProviderError(
+                    "invalid_model_output", "An omission quotation is not from its bound passage."
+                )
+            omissions.append({**omission, "grounding_quote": original})
+    return checks, omissions
+
+
 def evidence_input_budget(interpretation, claim, passages, as_of, provider) -> dict | None:
     """Estimate the exact envelopes and reserve later generation before selecting evidence."""
     provenance = getattr(provider, "provenance", None)
@@ -1262,11 +1780,6 @@ def evidence_input_budget(interpretation, claim, passages, as_of, provider) -> d
         {**data, "validation_feedback": ""},
     )
     finding_cap = min(160, 2 * len(components) * len(evidence))
-    verification = cost(
-        _evidence_verifier_model(components, evidence, finding_cap),
-        _evidence_verifier_instruction(interpretation["target"]),
-        _verification_data(data, []),
-    )
     repair_reserve = 3072
     # Only these bounded selector/applicability fields enter the verifier; generated prose is withheld.
     largest_pairs = sorted(
@@ -1286,6 +1799,21 @@ def evidence_input_budget(interpretation, claim, passages, as_of, provider) -> d
         key=lambda finding: len(json.dumps(finding, ensure_ascii=False).encode("utf-8")),
         reverse=True,
     )[:finding_cap]
+    verification = cost(
+        _evidence_verifier_model(
+            components,
+            evidence,
+            finding_cap,
+            _verification_relationship_constraints(
+                {component["id"]: component for component in interpretation["components"]},
+                {passage["evidence_id"]: passage for passage in passages},
+                largest_pairs,
+                interpretation["target"],
+            ),
+        ),
+        _evidence_verifier_instruction(interpretation["target"]),
+        _verification_data(data, []),
+    )
     generated_reserve = (
         len(json.dumps(largest_pairs, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
         + 1
@@ -1355,7 +1883,7 @@ def _evaluate_evidence_once(
             start=0,
             end=len(p["text"]),
         )
-        boundary_exclusion = approval_boundary_exclusion(
+        boundary_exclusion = claim_evidence_exclusion(
             components[finding["component_id"]], finding, interpretation["target"]
         )
         if boundary_exclusion:
@@ -1372,7 +1900,7 @@ def _evaluate_evidence_once(
                 record(adjustment)
             finding["relationship"] = "context"
             finding["reason"] = (
-                "Retained as context after a deterministic boundary check. " + boundary_exclusion
+                "Retained as context after a deterministic admission check. " + boundary_exclusion
             )
             finding["limitations"].append(boundary_exclusion)
         _validate_evidence_numbers(components[finding["component_id"]], finding, p)
@@ -1401,16 +1929,9 @@ def _evaluate_evidence_once(
                     "invalid_model_output",
                     "A finding uses a different record identifier without a documented link.",
                 )
-    verification = _complete(
-        provider,
-        _evidence_verifier_model(list(components), list(evidence), len(output["findings"])),
-        _evidence_verifier_instruction(interpretation["target"]),
-        _verification_data(data, output["findings"]),
+    checks, omissions = _verify_passage_findings(
+        provider, interpretation, claim, passages, as_of, output["findings"]
     )
-    checks = [
-        {"finding_index": int(index), **check}
-        for index, check in verification["finding_checks"].items()
-    ]
     if sorted(check["finding_index"] for check in checks) != list(range(len(output["findings"]))):
         raise ProviderError(
             "invalid_model_output",
@@ -1430,10 +1951,13 @@ def _evaluate_evidence_once(
             "reason": check["reason"],
             "expected_relationship": check["expected_relationship"],
             "proposed_reason": finding["reason"],
+            "grounding_quote": check["grounding_quote"],
+            "isolation": "bound-passage-v1",
         }
+        if check.get("grounding_error"):
+            finding["semantic_validation"]["grounding_error"] = check["grounding_error"]
         if check["valid"]:
             finding["reason"] = check["reason"]
-    omissions = verification["omitted_evidence"]
     for omission in omissions:
         if (
             omission["component_id"] not in component_ids
@@ -1498,7 +2022,9 @@ def _evaluate_evidence_once(
     return output
 
 
-def _retain_verified_evidence(error: _EvidenceMeaningError) -> dict | None:
+def _retain_verified_evidence(
+    error: _EvidenceMeaningError, *, require_applicable: bool = False
+) -> dict | None:
     validation = error.interpretation.get("semantic_validation", {})
     claim_checks = validation.get("component_checks", [])
     ids = [component["id"] for component in error.interpretation["components"]]
@@ -1509,20 +2035,77 @@ def _retain_verified_evidence(error: _EvidenceMeaningError) -> dict | None:
     ):
         return None
     output = error.output
-    contributed = [
+    verified_material = [
         check["finding_index"]
         for check in error.checks
         if check["valid"]
         and output["findings"][check["finding_index"]]["relationship"]
         in {"supports", "contradicts", "qualifies"}
-        and output["findings"][check["finding_index"]]["scope_fit"] == "yes"
-        and output["findings"][check["finding_index"]]["time_fit"] == "yes"
+        and output["findings"][check["finding_index"]]["scope_fit"] != "no"
+        and output["findings"][check["finding_index"]]["time_fit"] != "no"
     ]
-    if not contributed:
+    contributed = [
+        index
+        for index in verified_material
+        if output["findings"][index]["scope_fit"] == "yes"
+        and output["findings"][index]["time_fit"] == "yes"
+    ]
+    if not verified_material or (require_applicable and not contributed):
         return None
+    uncertain = set(verified_material) - set(contributed)
+    for index in sorted(uncertain):
+        finding = output["findings"][index]
+        finding["semantic_validation"]["original_proposal"] = {
+            key: finding[key]
+            for key in (
+                "relationship",
+                "scope_fit",
+                "time_fit",
+                "directness",
+                "basis",
+                "reason",
+                "limitations",
+            )
+        }
+        gaps = [
+            label
+            for field, label in (("scope_fit", "scope"), ("time_fit", "temporal applicability"))
+            if finding[field] == "unknown"
+        ]
+        reason = (
+            "This verified evidence relation remains unresolved because its "
+            + " and ".join(gaps)
+            + " is not established."
+        )
+        finding.update(
+            relationship="unresolved",
+            reason=reason,
+            limitations=[*finding["limitations"], reason],
+        )
+        output["unresolved_questions"].append(
+            f"Establish {' and '.join(gaps)} for {finding['component_id']} against {finding['evidence_id']}."
+        )
+    binding_fields = ("component_id", "evidence_id", "relationship")
+    verified_bindings = {
+        tuple(output["findings"][index][key] for key in binding_fields): index
+        for index in contributed
+    }
     rejected = [check for check in error.checks if not check["valid"]]
+    redundant = {}
     for check in rejected:
         finding = output["findings"][check["finding_index"]]
+        binding = tuple(finding[key] for key in binding_fields)
+        if (
+            binding in verified_bindings
+            and check["expected_relationship"] == finding["relationship"]
+            and not check.get("grounding_error")
+        ):
+            redundant[check["finding_index"]] = {
+                "original_finding_index": check["finding_index"],
+                "verified_peer_original_index": verified_bindings[binding],
+                "finding": finding,
+            }
+            continue
         finding["semantic_validation"]["original_proposal"] = {
             key: finding[key]
             for key in (
@@ -1572,16 +2155,26 @@ def _retain_verified_evidence(error: _EvidenceMeaningError) -> dict | None:
                     "valid": False,
                     "reason": omission["reason"],
                     "omitted_evidence": True,
+                    "grounding_quote": omission["grounding_quote"],
                 },
             }
         )
         output["unresolved_questions"].append(
             f"Resolve {omission['component_id']} against {omission['evidence_id']}: {reason}"
         )
+    if redundant:
+        output["semantic_validation"]["redundant_rejections"] = list(redundant.values())
+        output["findings"] = [
+            finding for index, finding in enumerate(output["findings"]) if index not in redundant
+        ]
+    unresolved_count = len(rejected) - len(redundant)
     output["semantic_validation"].update(
-        status="partially_validated",
+        status="partially_validated"
+        if unresolved_count or error.omissions or uncertain
+        else "validated",
         verified_contributing_findings=len(contributed),
-        rejected_findings=len(rejected),
+        verified_uncertain_findings=len(uncertain),
+        rejected_findings=unresolved_count,
         omitted_passages=len(error.omissions),
     )
     return output
@@ -1613,11 +2206,19 @@ def _validated_retry(stage: str, provider: Provider, operation) -> dict:
         except ProviderError as final:
             if final.code not in {"invalid_model_output", "interpretation_failure"}:
                 raise
-            result = (
-                _retain_verified_evidence(final)
-                if isinstance(final, _EvidenceMeaningError)
-                else None
-            )
+            result = None
+            if isinstance(final, _EvidenceMeaningError):
+                result = _retain_verified_evidence(final)
+            elif final.code == "invalid_model_output" and isinstance(
+                initial, _EvidenceMeaningError
+            ):
+                # A malformed repair supplies no replacement audit; retain only the complete one.
+                result = _retain_verified_evidence(initial, require_applicable=True)
+                if result is not None:
+                    result["semantic_validation"].update(
+                        retained_attempt="initial",
+                        repair_failure={"code": final.code, "message": final.message[:1200]},
+                    )
             if result is None:
                 raise ProviderError(
                     initial.code, "Validation failed after one complete repair: " + final.message
@@ -1626,7 +2227,8 @@ def _validated_retry(stage: str, provider: Provider, operation) -> dict:
             provider,
             stage,
             initial.code,
-            result["semantic_validation"].get("status") != "partially_validated",
+            result["semantic_validation"].get("status") != "partially_validated"
+            and result["semantic_validation"].get("retained_attempt") != "initial",
         )
         result["semantic_validation"]["complete_repair_attempted"] = True
         result["semantic_validation"]["initial_error_code"] = initial.code
