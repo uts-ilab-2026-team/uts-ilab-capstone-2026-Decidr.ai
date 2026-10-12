@@ -116,6 +116,13 @@ class OrganisationalGraph:
                         f"{edge.edge_id}: agrees must be true, false or null"
                     )
 
+                verified = edge.attributes.get("independence_verified", False)
+                basis = edge.attributes.get("independence_basis", "")
+                if type(verified) is not bool or not isinstance(basis, str):
+                    raise GraphValidationError("Invalid independence judgement types")
+                if verified and not basis.strip():
+                    raise GraphValidationError("Verified independence requires a basis")
+
                 for name in ("applicable", "scope_match"):
                     if name in edge.attributes and type(edge.attributes[name]) is not bool:
                         raise GraphValidationError(f"{edge.edge_id}: {name} must be true or false")

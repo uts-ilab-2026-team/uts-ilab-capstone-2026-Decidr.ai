@@ -348,7 +348,7 @@ def test_record_references_preserve_multiple_targets_and_unknowns():
     }
     assert find_record_references("Was the billing release approved?", [passage]) == []
 
-def test_corpus_search_preserves_links_without_displacing_ranked_policy(corpus_store):
+def test_corpus_search_anchors_to_explicit_record_without_unrelated_policy(corpus_store):
     from decidr.hybrid import search_corpus
     from decidr.retrieval_store import replace_source_evidence
 
@@ -368,8 +368,7 @@ def test_corpus_search_preserves_links_without_displacing_ranked_policy(corpus_s
     before = corpus_store.total_changes
     result = search_corpus(corpus_store, "CASE-731 travel approval", limit=1)
 
-    assert len(result.ranked_groups) == 1
-    assert result.ranked_groups[0].lead_result.source_id.startswith("test:POL-")
+    assert len(result.ranked_groups) == 0
     assert len(result.additional_linked_groups) == 2
 
     candidates = {item.evidence_id: item for item in result.candidates}
@@ -491,13 +490,13 @@ def test_corpus_record_priority_preserves_retrieval(corpus_store, monkeypatch, q
 
     has_record = "CASE-731" in query
     expected_order = (
-        ["lead2", "own4", "generic1"]
+        ["lead2", "own4"]
         if has_record else ["generic1", "lead2", "own4"]
     )
     assert [
         group.lead_result.evidence_id for group in result.ranked_groups
     ] == expected_order[:limit]
-    assert [group.rank for group in result.ranked_groups] == list(range(1, limit + 1))
+    assert [group.rank for group in result.ranked_groups] == list(range(1, min(limit, len(expected_order)) + 1))
 
     # Display priority must not rewrite the underlying ranks or scores.
     assert [
@@ -521,3 +520,10 @@ def test_corpus_record_priority_preserves_retrieval(corpus_store, monkeypatch, q
     if has_record:
         assert any(passage.evidence_id == "context3" for passage in displayed)
     assert corpus_store.total_changes == before
+
+
+def test_unknown_identifier_does_not_fall_back_to_keyword_matches(corpus_store):
+    from decidr.hybrid import search_corpus
+    result = search_corpus(corpus_store, "CASE-987654 travel approval", limit=8)
+    assert not result.ranked_groups
+    assert not result.additional_linked_groups

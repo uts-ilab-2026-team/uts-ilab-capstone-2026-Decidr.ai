@@ -1,0 +1,41 @@
+{
+  "case_id": "C01-04--approval_requirement",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "7756574db3b7c207c70d8b1dc7897e5a9db410ce1af2a854ed13b86dfc5bc67c",
+  "method_version": "llama31-facet-pilot-v2",
+  "status": "classified",
+  "relationship": "context",
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_requirement",
+    "stance": "context",
+    "mode": "observed",
+    "rationale": "The focal passage does not establish that the approval is required for the discounts described in the original claim. The passage discusses a workaround for urgent deals, where the AE is told to go ahead and the approval is squared with Harriet after. This suggests that the approval is not always required, but rather a pragmatic approach is taken in certain situations.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "source_id": "phase2:INT-02",
+        "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:002",
+        "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.",
+        "start": 19,
+        "end": 238
+      }
+    ]
+  },
+  "prompt_tokens": 3854,
+  "generated_tokens": 181,
+  "completion_reason": "stop",
+  "raw_model_content": "{\n  \"stance\": \"context\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage does not establish that the approval is required for the discounts described in the original claim. The passage discusses a workaround for urgent deals, where the AE is told to go ahead and the approval is squared with Harriet after. This suggests that the approval is not always required, but rather a pragmatic approach is taken in certain situations.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-31776d09dcfe69a2\",\n      \"quotation\": \"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"\n    }\n  ]\n}",
+  "raw_proposal": {
+    "stance": "context",
+    "mode": "observed",
+    "rationale": "The focal passage does not establish that the approval is required for the discounts described in the original claim. The passage discusses a workaround for urgent deals, where the AE is told to go ahead and the approval is squared with Harriet after. This suggests that the approval is not always required, but rather a pragmatic approach is taken in certain situations.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company."
+      }
+    ]
+  },
+  "elapsed_seconds": 16.96
+}

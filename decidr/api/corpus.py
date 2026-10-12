@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from decidr.api import auth
+from decidr.claim_scope import scope_context
 from decidr.hybrid import search_corpus
 from decidr.retrieval_models import Evidence, Source
 
@@ -24,6 +25,14 @@ class CorpusSearchRequest(BaseModel):
 
     claim: str = Field(min_length=1, max_length=10000)
     limit: int = Field(default=8, ge=1, le=50, strict=True)
+    scope_answer: str | None = Field(default=None, min_length=1, max_length=500, strict=True)
+
+    @field_validator("scope_answer")
+    @classmethod
+    def reject_blank_scope(cls, value):
+        if value is not None and not value.strip():
+            raise ValueError("Scope answer must not be blank")
+        return value
 
     @field_validator("claim")
     @classmethod
@@ -74,7 +83,23 @@ def corpus_search(request: CorpusSearchRequest) -> dict:
                     detail="The corpus index contains no searchable evidence.",
                 )
 
-            result = search_corpus(connection, request.claim, limit=request.limit)
+            scope = scope_context(
+                request.claim,
+                request.scope_answer,
+                sources,
+                [
+                    Evidence.model_validate_json(row[0])
+                    for row in connection.execute(
+                        "SELECT payload_json FROM evidence ORDER BY evidence_id"
+                    )
+                ],
+            )
+            query = (
+                request.claim
+                if request.scope_answer is None
+                else f"{request.claim} {request.scope_answer}"
+            )
+            result = search_corpus(connection, query, limit=request.limit)
             candidates = {item.evidence_id: item for item in result.candidates}
 
             def group_payload(group, position):
@@ -128,6 +153,7 @@ def corpus_search(request: CorpusSearchRequest) -> dict:
 
     return {
         "claim": request.claim,
+        "scope_context": scope,
         "status": "retrieved_unassessed",
         "assessment": None,
         "retrieval_method": "lexical_with_explicit_record_links",
@@ -144,6 +170,7 @@ def corpus_search(request: CorpusSearchRequest) -> dict:
             "Additional linked groups are outside the ranked-group limit.",
             "Temporal applicability and credibility have not been assessed.",
             "Search results are not exhaustive evidence coverage.",
+            "When record identifiers are supplied, displayed groups require explicit identifier links; unrelated keyword matches are omitted.",
         ],
     }
 

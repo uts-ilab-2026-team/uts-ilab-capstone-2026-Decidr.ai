@@ -1,0 +1,40 @@
+{
+  "case_id": "C01-02--approval_timing",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "e680dff6478b610e518fcee104925d323479b227f8e79e0a749767a2b7d8509d",
+  "method_version": "llama31-facet-pilot-v1",
+  "status": "classified",
+  "relationship": "qualify",
+  "prompt_tokens": 3149,
+  "generated_tokens": 100,
+  "completion_reason": "stop",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage does not establish the claimed timing of approval for discounts above 15%.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy."
+      }
+    ]
+  },
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_timing",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage does not establish the claimed timing of approval for discounts above 15%.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "source_id": "phase2:POL-01",
+        "locator": "heading:POL-01 — Discount Approval Policy > Exceptions#block:001",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy.",
+        "start": 0,
+        "end": 121
+      }
+    ]
+  },
+  "elapsed_seconds": 4.24
+}

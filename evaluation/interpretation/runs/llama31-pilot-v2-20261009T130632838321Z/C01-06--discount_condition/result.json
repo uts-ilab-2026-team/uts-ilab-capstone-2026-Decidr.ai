@@ -1,0 +1,41 @@
+{
+  "case_id": "C01-06--discount_condition",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "51f1083730aa2c0439354d223a567afe1c167705cc2e43a37399e06e8dde5804",
+  "method_version": "llama31-facet-pilot-v2",
+  "status": "classified",
+  "relationship": "qualify",
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "discount_condition",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that discounts above 15% require Finance approval. The passage mentions that option 3 (20%) was discussed but not adopted, suggesting that the 15% threshold is the agreed-upon limit. Therefore, the focal passage qualifies the original claim by establishing a lower threshold for Finance approval.",
+    "citations": [
+      {
+        "evidence_id": "EV-a126ba875f4418df",
+        "source_id": "phase2:MTG-01",
+        "locator": "heading:MTG-01 — Discount Policy Review > Final decision#block:001",
+        "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight.",
+        "start": 0,
+        "end": 166
+      }
+    ]
+  },
+  "prompt_tokens": 3695,
+  "generated_tokens": 197,
+  "completion_reason": "stop",
+  "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that discounts above 15% require Finance approval. The passage mentions that option 3 (20%) was discussed but not adopted, suggesting that the 15% threshold is the agreed-upon limit. Therefore, the focal passage qualifies the original claim by establishing a lower threshold for Finance approval.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-a126ba875f4418df\",\n      \"quotation\": \"Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight.\"\n    }\n  ]\n}",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that the Finance approval threshold is being raised from 10% to 15%, effective 2025-03-01. However, it does not explicitly state that discounts above 15% require Finance approval. The passage mentions that option 3 (20%) was discussed but not adopted, suggesting that the 15% threshold is the agreed-upon limit. Therefore, the focal passage qualifies the original claim by establishing a lower threshold for Finance approval.",
+    "citations": [
+      {
+        "evidence_id": "EV-a126ba875f4418df",
+        "quotation": "Raise the Finance approval threshold from 10% to 15%, effective 2025-03-01. Option 3 (20%) was discussed but not adopted — Harriet felt it removed too much oversight."
+      }
+    ]
+  },
+  "elapsed_seconds": 8.14
+}

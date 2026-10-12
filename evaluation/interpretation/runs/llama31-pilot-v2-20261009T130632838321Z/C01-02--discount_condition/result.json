@@ -1,0 +1,41 @@
+{
+  "case_id": "C01-02--discount_condition",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "3f57b66d24c0df944b516442e7a303d8505486ab66aff4cb9a5b38bf57a7731a",
+  "method_version": "llama31-facet-pilot-v2",
+  "status": "classified",
+  "relationship": "qualify",
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "discount_condition",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is a qualification of the original claim, as it introduces an exception to the general rule.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "source_id": "phase2:POL-01",
+        "locator": "heading:POL-01 — Discount Approval Policy > Exceptions#block:001",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy.",
+        "start": 0,
+        "end": 121
+      }
+    ]
+  },
+  "prompt_tokens": 3564,
+  "generated_tokens": 151,
+  "completion_reason": "stop",
+  "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is a qualification of the original claim, as it introduces an exception to the general rule.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-52b47138155c5463\",\n      \"quotation\": \"None are formally documented under this version. Any deviation from the above requires an updated version of this policy.\"\n    }\n  ]\n}",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that any deviation from the discount approval policy requires an updated version of the policy. However, it does not explicitly state that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is a qualification of the original claim, as it introduces an exception to the general rule.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy."
+      }
+    ]
+  },
+  "elapsed_seconds": 5.89
+}

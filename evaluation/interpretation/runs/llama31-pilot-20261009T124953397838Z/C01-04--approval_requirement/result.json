@@ -1,0 +1,40 @@
+{
+  "case_id": "C01-04--approval_requirement",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "7756574db3b7c207c70d8b1dc7897e5a9db410ce1af2a854ed13b86dfc5bc67c",
+  "method_version": "llama31-facet-pilot-v1",
+  "status": "classified",
+  "relationship": "qualify",
+  "prompt_tokens": 3436,
+  "generated_tokens": 225,
+  "completion_reason": "stop",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage does not establish that Finance (Head of Finance & People Ops) approval is required for discounts above 15%. Instead, it suggests that Harriet's approval is required for such discounts. However, the passage also mentions a workaround where Diane Okafor will \"square it with Harriet after\" if Harriet is not around. This implies that there may be some flexibility in the approval process, but it does not provide clear evidence that Finance (Head of Finance & People Ops) approval is required.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "quotation": "On urgent deals: *\"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"*"
+      }
+    ]
+  },
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_requirement",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage does not establish that Finance (Head of Finance & People Ops) approval is required for discounts above 15%. Instead, it suggests that Harriet's approval is required for such discounts. However, the passage also mentions a workaround where Diane Okafor will \"square it with Harriet after\" if Harriet is not around. This implies that there may be some flexibility in the approval process, but it does not provide clear evidence that Finance (Head of Finance & People Ops) approval is required.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "source_id": "phase2:INT-02",
+        "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:002",
+        "quotation": "On urgent deals: *\"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"*",
+        "start": 0,
+        "end": 240
+      }
+    ]
+  },
+  "elapsed_seconds": 8.21
+}

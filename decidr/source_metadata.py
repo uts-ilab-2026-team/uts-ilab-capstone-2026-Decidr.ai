@@ -9,6 +9,24 @@ HEADER = re.compile(r"^- \*\*(?P<key>[^*]+):\*\*\s*(?P<value>.*)$")
 DOCUMENT_REFERENCE = re.compile(r"\b[A-Z][A-Z0-9]*-\d+\b")
 
 
+NEGATIVE_APPROVAL = re.compile(
+    r"\b(?:unapproved|(?:not|never)\s+(?:(?:yet|formally)\s+)*approved)\b",
+    re.IGNORECASE,
+)
+
+
+def approval_signals(text: str) -> tuple[bool, bool]:
+    """Return explicit negative and positive approval signals independently.
+
+    Bounded wording only; this does not resolve document attribution or authority.
+    Removing negative spans prevents their 'approved' token becoming positive.
+    Separate positive and negative assertions remain detectable as a conflict.
+    """
+    negative = bool(NEGATIVE_APPROVAL.search(text))
+    positive = bool(re.search(r"\bapproved\b", NEGATIVE_APPROVAL.sub("", text), re.IGNORECASE))
+    return negative, positive
+
+
 def read_header(path: Path) -> tuple[str, dict, list, list]:
     """Keep exact lines/character offsets; never read metadata from body sections."""
     title = path.stem
@@ -86,14 +104,8 @@ def approval_lifecycle(value: str | None, code: str) -> tuple[str | None, list, 
                 lower = text.casefold()
                 reference_clause = re.match(r"^\s*\(?\s*(?:see|refer to)\b", lower)
                 scope = "referenced_document" if external or reference_clause else "own_document"
-                negative = bool(
-                    re.search(r"\b(?:not\s+(?:formally\s+)?approved|unapproved|draft)\b", lower)
-                )
-                positive = bool(
-                    re.search(
-                        r"\bapproved\b", re.sub(r"\bnot\s+(?:formally\s+)?approved\b", "", lower)
-                    )
-                )
+                denied, positive = approval_signals(lower)
+                negative = denied or bool(re.search(r"\bdraft\b", lower))
                 state = "draft" if negative else "current" if positive else None
                 if re.search(r"\b(?:superseded|no longer in force|withdrawn)\b", lower):
                     state = "superseded" if "withdrawn" not in lower else "withdrawn"

@@ -1,0 +1,41 @@
+{
+  "case_id": "C01-04--approval_timing",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "b27a93517a2ccadf5df8e3fd31a480f7b5b743b84a360b7b19794c9fa1e69536",
+  "method_version": "llama31-facet-pilot-v2",
+  "status": "classified",
+  "relationship": "context",
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_timing",
+    "stance": "context",
+    "mode": "observed",
+    "rationale": "The focal passage does not establish the claimed timing of approval for discounts above 15%. It describes a pragmatic approach to urgent deals, where the AE is allowed to proceed without approval from Harriet, with the understanding that the approval will be squared with her after. This does not imply that approval is required before the deal is closed.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "source_id": "phase2:INT-02",
+        "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:002",
+        "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.",
+        "start": 19,
+        "end": 238
+      }
+    ]
+  },
+  "prompt_tokens": 3848,
+  "generated_tokens": 179,
+  "completion_reason": "stop",
+  "raw_model_content": "{\n  \"stance\": \"context\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage does not establish the claimed timing of approval for discounts above 15%. It describes a pragmatic approach to urgent deals, where the AE is allowed to proceed without approval from Harriet, with the understanding that the approval will be squared with her after. This does not imply that approval is required before the deal is closed.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-31776d09dcfe69a2\",\n      \"quotation\": \"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"\n    }\n  ]\n}",
+  "raw_proposal": {
+    "stance": "context",
+    "mode": "observed",
+    "rationale": "The focal passage does not establish the claimed timing of approval for discounts above 15%. It describes a pragmatic approach to urgent deals, where the AE is allowed to proceed without approval from Harriet, with the understanding that the approval will be squared with her after. This does not imply that approval is required before the deal is closed.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "quotation": "Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company."
+      }
+    ]
+  },
+  "elapsed_seconds": 7.31
+}

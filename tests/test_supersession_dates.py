@@ -42,6 +42,8 @@ def engine(*documents):
                 {
                     "attests_value": "Approval required",
                     "agrees": True,
+                    "independence_verified": True,
+                    "independence_basis": "Synthetic origins stipulated independent of other groups.",
                     "directness": 1.0,
                     "specificity": 1.0,
                     "completeness": 1.0,

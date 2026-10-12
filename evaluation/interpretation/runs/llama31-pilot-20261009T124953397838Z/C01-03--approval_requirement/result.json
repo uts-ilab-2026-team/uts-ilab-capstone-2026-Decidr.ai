@@ -1,0 +1,40 @@
+{
+  "case_id": "C01-03--approval_requirement",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "c607333d5c76f5c4bb0d4c5c024bdca16c58eb1314c2fdf45424b0cc2a0576f9",
+  "method_version": "llama31-facet-pilot-v1",
+  "status": "classified",
+  "relationship": "support",
+  "prompt_tokens": 3436,
+  "generated_tokens": 157,
+  "completion_reason": "stop",
+  "raw_proposal": {
+    "stance": "support",
+    "mode": "formal",
+    "rationale": "The focal evidence supports the selected facet of the original claim. The interview with Diane Okafor states that \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" This indicates that discounts above 15% require approval from Finance (Head of Finance & People Ops), which is in line with the original claim.",
+    "citations": [
+      {
+        "evidence_id": "EV-b3ada77a1695b325",
+        "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year."
+      }
+    ]
+  },
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_requirement",
+    "stance": "support",
+    "mode": "formal",
+    "rationale": "The focal evidence supports the selected facet of the original claim. The interview with Diane Okafor states that \"Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.\" This indicates that discounts above 15% require approval from Finance (Head of Finance & People Ops), which is in line with the original claim.",
+    "citations": [
+      {
+        "evidence_id": "EV-b3ada77a1695b325",
+        "source_id": "phase2:INT-02",
+        "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:001",
+        "quotation": "Anything over 15% goes to Harriet. That's been the rule since we bumped the threshold last year.",
+        "start": 24,
+        "end": 120
+      }
+    ]
+  },
+  "elapsed_seconds": 6.0
+}

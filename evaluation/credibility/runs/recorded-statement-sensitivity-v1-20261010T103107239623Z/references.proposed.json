@@ -1,0 +1,90 @@
+[
+  {
+    "case_id": "reported_practice--narrow",
+    "input_sha256": "bf480ee64bd7a28e1502f065dbcf5f81c0d06f1872080ccf57ab77949bf3a0a7",
+    "review_status": "provisional",
+    "judgement_origin": "assistant_proposed",
+    "expected_direct_support": true,
+    "rationale": "The passage records Diane's self-report. It does not establish a population-wide pattern, discount percentages, new-business scope or completed transactions.",
+    "stance": null,
+    "expected_verdict": null,
+    "origin_independence": "not_adjudicated"
+  },
+  {
+    "case_id": "reported_practice--broader",
+    "input_sha256": "ecdb77c69b999e23cfbfbb5a62c821374becc7b5d72fb8c0476f1dfe273b85c1",
+    "review_status": "provisional",
+    "judgement_origin": "assistant_proposed",
+    "expected_direct_support": false,
+    "rationale": "The passage records Diane's self-report. It does not establish a population-wide pattern, discount percentages, new-business scope or completed transactions.",
+    "stance": null,
+    "expected_verdict": null,
+    "origin_independence": "not_adjudicated"
+  },
+  {
+    "case_id": "limited_visibility--narrow",
+    "input_sha256": "828b493887934215548ec8f205e78ca6d2677d49ac89c22695363e0e7104f0a4",
+    "review_status": "provisional",
+    "judgement_origin": "assistant_proposed",
+    "expected_direct_support": true,
+    "rationale": "Harriet explicitly describes limited visibility. Awareness and reports received from Diane do not establish independent verification of every transaction.",
+    "stance": null,
+    "expected_verdict": null,
+    "origin_independence": "not_adjudicated"
+  },
+  {
+    "case_id": "limited_visibility--broader",
+    "input_sha256": "e584bdb083ba41510ff782aa7021313a0b7a4e1c1c20f384d359ced39cdb6553",
+    "review_status": "provisional",
+    "judgement_origin": "assistant_proposed",
+    "expected_direct_support": false,
+    "rationale": "Harriet explicitly describes limited visibility. Awareness and reports received from Diane do not establish independent verification of every transaction.",
+    "stance": null,
+    "expected_verdict": null,
+    "origin_independence": "not_adjudicated"
+  },
+  {
+    "case_id": "instruction_vs_completion--narrow",
+    "input_sha256": "ae8821763e4f304c31fa3e1e0b214b90eb604604bc1a6302e2f84b34a7797823",
+    "review_status": "provisional",
+    "judgement_origin": "assistant_proposed",
+    "expected_direct_support": true,
+    "rationale": "The thread records an instruction and an expressed intention to close. It does not verify completed closing or establish that no prior Finance approval existed. A missing CRM approval entry is not proof of absent approval.",
+    "stance": null,
+    "expected_verdict": null,
+    "origin_independence": "not_adjudicated"
+  },
+  {
+    "case_id": "instruction_vs_completion--broader",
+    "input_sha256": "be1e42316556df39bb9661aa665405b5e3598b2556071b94ccef9bc23aad9e82",
+    "review_status": "provisional",
+    "judgement_origin": "assistant_proposed",
+    "expected_direct_support": false,
+    "rationale": "The thread records an instruction and an expressed intention to close. It does not verify completed closing or establish that no prior Finance approval existed. A missing CRM approval entry is not proof of absent approval.",
+    "stance": null,
+    "expected_verdict": null,
+    "origin_independence": "not_adjudicated"
+  },
+  {
+    "case_id": "communication_vs_policy--narrow",
+    "input_sha256": "406c7ce1f2309a6e4731e92eadb9fb836db782665e582ebed07bb60a5d986857",
+    "review_status": "provisional",
+    "judgement_origin": "assistant_proposed",
+    "expected_direct_support": true,
+    "rationale": "The exchange directly records what Callum communicated. It does not establish policy authority. The accompanying annotation references a subsequent policy version; that policy must be inspected to assess the formal rule.",
+    "stance": null,
+    "expected_verdict": null,
+    "origin_independence": "not_adjudicated"
+  },
+  {
+    "case_id": "communication_vs_policy--broader",
+    "input_sha256": "9d5352184bb964532f3e980a576bf7fed25b89676df6575de537937b5942a97b",
+    "review_status": "provisional",
+    "judgement_origin": "assistant_proposed",
+    "expected_direct_support": false,
+    "rationale": "The exchange directly records what Callum communicated. It does not establish policy authority. The accompanying annotation references a subsequent policy version; that policy must be inspected to assess the formal rule.",
+    "stance": null,
+    "expected_verdict": null,
+    "origin_independence": "not_adjudicated"
+  }
+]

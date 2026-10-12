@@ -1,0 +1,41 @@
+{
+  "case_id": "C01-04--discount_condition",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "b4803e706726b4d7485ee767674eb5e01994bade84f43570a8f446a9d1152b96",
+  "method_version": "llama31-facet-pilot-v2",
+  "status": "classified",
+  "relationship": "qualify",
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "discount_condition",
+    "stance": "qualify",
+    "mode": "observed",
+    "rationale": "The focal passage establishes that Diane Okafor, the Head of Sales, has a pragmatic approach to urgent deals, stating that she will \"just tell the AE to go ahead and I'll square it with her after\". This suggests that there may be a workaround or exception to the approval requirement for discounts above 15%. However, this is not a formal requirement, but rather a reported practice.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "source_id": "phase2:INT-02",
+        "locator": "heading:INT-02 — Interview: Diane Okafor > Discussion notes#block:002",
+        "quotation": "On urgent deals: *\"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"*",
+        "start": 0,
+        "end": 240
+      }
+    ]
+  },
+  "prompt_tokens": 3845,
+  "generated_tokens": 202,
+  "completion_reason": "stop",
+  "raw_model_content": "{\n  \"stance\": \"qualify\",\n  \"mode\": \"observed\",\n  \"rationale\": \"The focal passage establishes that Diane Okafor, the Head of Sales, has a pragmatic approach to urgent deals, stating that she will \\\"just tell the AE to go ahead and I'll square it with her after\\\". This suggests that there may be a workaround or exception to the approval requirement for discounts above 15%. However, this is not a formal requirement, but rather a reported practice.\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-31776d09dcfe69a2\",\n      \"quotation\": \"On urgent deals: *\\\"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\\\"*\"\n    }\n  ]\n}",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "observed",
+    "rationale": "The focal passage establishes that Diane Okafor, the Head of Sales, has a pragmatic approach to urgent deals, stating that she will \"just tell the AE to go ahead and I'll square it with her after\". This suggests that there may be a workaround or exception to the approval requirement for discounts above 15%. However, this is not a formal requirement, but rather a reported practice.",
+    "citations": [
+      {
+        "evidence_id": "EV-31776d09dcfe69a2",
+        "quotation": "On urgent deals: *\"Look, if something's time-sensitive and Harriet's not around, I'll just tell the AE to go ahead and I'll square it with her after. That's not really bypassing anything, it's just being pragmatic — we're a small company.\"*"
+      }
+    ]
+  },
+  "elapsed_seconds": 7.53
+}

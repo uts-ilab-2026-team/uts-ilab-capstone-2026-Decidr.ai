@@ -4,20 +4,24 @@ from dataclasses import replace
 from datetime import date
 import json
 
-import pytest
-
 from framework import CONFIG_PATH, GraphCredibilityFramework, GraphFactsRegister
 from framework.config import GraphCredibilityConfig
 from framework.graph import OrganisationalGraph
 from framework.models import GraphEdge, GraphNode
+import pytest
 
 AS_OF = date(2026, 7, 31)
 FACT_ID = "fact:duplicate-check"
 
 
 def make_register(
-    mode, repeated_agrees, copies, same_document,
-    *, independent=False, include_opposing=True,
+    mode,
+    repeated_agrees,
+    copies,
+    same_document,
+    *,
+    independent=False,
+    include_opposing=True,
 ):
     nodes = {
         FACT_ID: GraphNode(
@@ -61,10 +65,11 @@ def make_register(
                 relationship=mode,
                 attributes={
                     "attests_value": (
-                        "Approval is required."
-                        if agrees else "Approval is not required."
+                        "Approval is required." if agrees else "Approval is not required."
                     ),
                     "agrees": agrees,
+                    "independence_verified": True,
+                    "independence_basis": "Synthetic origins stipulated independent of other groups.",
                     "directness": 1.0,
                     "specificity": 1.0,
                     "completeness": 1.0,
@@ -72,12 +77,8 @@ def make_register(
             )
         )
 
-    graph = OrganisationalGraph(
-        list(nodes.values()), edges, version="duplicate-check"
-    )
-    engine = GraphCredibilityFramework(
-        graph, GraphCredibilityConfig.load(CONFIG_PATH)
-    )
+    graph = OrganisationalGraph(list(nodes.values()), edges, version="duplicate-check")
+    engine = GraphCredibilityFramework(graph, GraphCredibilityConfig.load(CONFIG_PATH))
     return GraphFactsRegister(engine, as_of=AS_OF)
 
 
@@ -86,9 +87,7 @@ def make_register(
 @pytest.mark.parametrize(
     "same_document", [False, True], ids=["copied-documents", "repeated-edges"]
 )
-def test_repetition_preserves_contested_verdict(
-    mode, repeated_agrees, same_document
-):
+def test_repetition_preserves_contested_verdict(mode, repeated_agrees, same_document):
     baseline = make_register(mode, repeated_agrees, 1, same_document).get(FACT_ID)
     register = make_register(mode, repeated_agrees, 4, same_document)
     repeated = register.get(FACT_ID)
@@ -107,9 +106,7 @@ def test_repetition_preserves_contested_verdict(
 @pytest.mark.parametrize("repeated_agrees", [True, False])
 def test_independent_origins_can_change_the_balance(mode, repeated_agrees):
     copied = make_register(mode, repeated_agrees, 4, False).get(FACT_ID)
-    independent = make_register(
-        mode, repeated_agrees, 4, False, independent=True
-    ).get(FACT_ID)
+    independent = make_register(mode, repeated_agrees, 4, False, independent=True).get(FACT_ID)
 
     assert copied.overall_outcome == "Contested"
     expected = "Supported" if repeated_agrees else "Contradicted"
@@ -143,8 +140,12 @@ def test_repetition_preserves_source_quality(mode, same_document):
 )
 def test_confidence_counts_origins(copies, independent, expected):
     register = make_register(
-        "FORMAL", True, copies, False,
-        independent=independent, include_opposing=False,
+        "FORMAL",
+        True,
+        copies,
+        False,
+        independent=independent,
+        include_opposing=False,
     )
     graph = register.framework.graph
     formal_edges = list(graph.edges.values())
@@ -214,17 +215,14 @@ def test_superseded_source_corroboration(mode, status, approval, can_corroborate
     engine = GraphCredibilityFramework(graph, register.framework.config)
     expanded = GraphFactsRegister(engine, as_of=AS_OF)
     result = expanded.get(FACT_ID)
-    original = next(
-        item for item in result.evidence if item.edge_id == original_edge.edge_id
-    )
-    extra = next(
-        item for item in result.evidence if item.edge_id == extra_edge.edge_id
-    )
+    original = next(item for item in result.evidence if item.edge_id == original_edge.edge_id)
+    extra = next(item for item in result.evidence if item.edge_id == extra_edge.edge_id)
 
     assert len(result.evidence) == 2
     exported = json.loads(expanded.to_json())[0]
     assert {item["edge_id"] for item in exported["evidence"]} == {
-        original_edge.edge_id, extra_edge.edge_id
+        original_edge.edge_id,
+        extra_edge.edge_id,
     }
     assert extra.lifecycle_status == status
 
@@ -235,7 +233,4 @@ def test_superseded_source_corroboration(mode, status, approval, can_corroborate
     else:
         assert original.dimensions == before.dimensions
         assert original.materiality_score == pytest.approx(before.materiality_score)
-        assert any(
-            "excluded from corroboration counts" in reason
-            for reason in extra.limitations
-        )
+        assert any("excluded from corroboration counts" in reason for reason in extra.limitations)

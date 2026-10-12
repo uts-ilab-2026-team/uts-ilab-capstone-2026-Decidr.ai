@@ -9,6 +9,7 @@ from decidr.retrieval import (
     RecordReference,
     find_record_references,
     lexical_search_text,
+    record_identifiers,
 )
 from decidr.retrieval_models import Evidence
 from decidr.semantic import Embedder, semantic_search_text
@@ -200,8 +201,8 @@ def search_corpus(
     limit controls ranked groups, not the number of additional linked groups.
     Every explicit connection is retained in one of the two group collections.
     Full passage rankings are used before grouping for the current small corpus.
-    Retrieved groups with explicit query-record connections are displayed first,
-    preserving retrieval order within each tier and original candidate scores.
+    Queries naming record identifiers display only groups explicitly linked to
+    those identifiers. General queries retain whole-corpus relevance ranking.
     Reference-only groups remain additional linked evidence.
 
     Lexical-only search does not write. Optional semantic search uses the
@@ -271,6 +272,14 @@ def search_corpus(
         )
 
     groups = group_ranked_evidence(candidates, evidence, limit=len(evidence))
+    if record_identifiers(query):
+        # An explicit entity anchors the search. Keyword overlap alone must not
+        # introduce unrelated records; keep section context only for linked groups.
+        groups = [
+            group
+            for group in groups
+            if any(p.evidence_id in references_by_id for p in group.passages)
+        ]
     retrieved_groups = [
         group for group in groups if group.lead_result.evidence_id in retrieval_by_id
     ]

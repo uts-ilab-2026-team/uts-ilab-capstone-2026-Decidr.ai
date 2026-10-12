@@ -1,12 +1,12 @@
 """Isolated facet assessment using explicitly supplied judgements.
 
-Not connected to production routes. Citation validation establishes provenance,
+Citation validation establishes provenance,
 not semantic correctness. Caller-supplied judgements require their own evaluation.
 Version 1 uses source-level origins and accepts one source per interpretation.
 """
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 
 from framework.config import GraphCredibilityConfig
@@ -14,8 +14,10 @@ from framework.credibility import GraphCredibilityFramework
 from framework.graph import OrganisationalGraph
 from framework.models import FactAssessment, GraphEdge, GraphNode
 
+from decidr.assessment_targets import AssessmentTarget, target_exclusion, validate_target
 from decidr.interpretation_models import EvidenceInterpretation, validate_interpretation
 from decidr.retrieval_models import Evidence, Source
+from decidr.source_metadata import DOCUMENT_REFERENCE, approval_lifecycle, approval_signals
 
 
 @dataclass(frozen=True)
@@ -33,6 +35,10 @@ class PreparedAttestation:
     completeness: float
     judgement_basis: str
     origin_basis: str
+    independence_verified: bool = False
+    independence_basis: str = ""
+    evidence_target: AssessmentTarget = "unspecified"
+    target_basis: str = ""
 
 
 @dataclass(frozen=True)
@@ -53,6 +59,75 @@ class FacetAssessmentResult:
     assessment: FactAssessment
     inputs: tuple[InputDisposition, ...]
     limitations: tuple[str, ...]
+    assessment_target: AssessmentTarget = "unspecified"
+
+
+def _apply_policy_precedence(nodes, edges, dispositions, *, as_of, config):
+    """Prefer material applicable policies over contrary role/table summaries.
+
+    All inputs already passed admission. Policy materiality is checked without
+    summaries so a summary cannot bootstrap the policy that displaces it.
+    """
+    policy_ids = set()
+    for item in dispositions:
+        if item.edge_id is None or item.interpretation.mode != "formal":
+            continue
+        source = item.source
+        supplied = item.supplied_judgements
+        code = DOCUMENT_REFERENCE.match(source.title)
+        _, clauses, _ = approval_lifecycle(source.approval_status, code[0] if code else "")
+        negative, positive = approval_signals(
+            " ".join(clause["quote"] for clause in clauses if clause["scope"] == "own_document")
+        )
+        if (
+            source.source_type == "policy"
+            and supplied["source_class"] == "approved_policy"
+            and supplied["approval_key"] == "approved"
+            and source.effective_start_date is not None
+            and positive
+            and not negative
+        ):
+            policy_ids.add(item.edge_id)
+    policy_edges = [edge for edge in edges if edge.edge_id in policy_ids]
+    if not policy_edges:
+        return edges, dispositions, ()
+    policy_graph = OrganisationalGraph(nodes, policy_edges, version="policy-precedence-v1")
+    policy_assessment = GraphCredibilityFramework(policy_graph, config).evaluate_fact(
+        "fact:facet", as_of=as_of
+    )
+    # Competing eligible policies must remain available for conflict reasoning,
+    # even when one is below the materiality threshold.
+    stances = {edge.attributes["agrees"] for edge in policy_edges}
+    material_ids = {item.edge_id for item in policy_assessment.evidence if item.material}
+    if len(stances) != 1 or not material_ids:
+        return edges, dispositions, ()
+    policy_stance = "support" if next(iter(stances)) else "contradict"
+    governing = sorted(
+        item.source.source_id for item in dispositions if item.edge_id in material_ids
+    )
+    excluded = set()
+    updated = []
+    notes = []
+    for item in dispositions:
+        if (
+            item.edge_id is not None
+            and item.interpretation.mode == "formal"
+            and item.interpretation.stance != policy_stance
+            and item.source.source_type == "organisational_information"
+            and item.supplied_judgements["source_class"] in {"role_description", "decision_table"}
+        ):
+            reason = (
+                "Policy precedence: conflicting role/table summary retained as a documentation "
+                "inconsistency; applicable approved policy evidence governs this formal facet: "
+                + ", ".join(governing)
+                + "."
+            )
+            excluded.add(item.edge_id)
+            updated.append(replace(item, edge_id=None, reasons=(*item.reasons, reason)))
+            notes.append(f"{item.source.title}: {reason}")
+        else:
+            updated.append(item)
+    return [edge for edge in edges if edge.edge_id not in excluded], updated, tuple(notes)
 
 
 def assess_prepared_facet(
@@ -63,6 +138,7 @@ def assess_prepared_facet(
     prepared: Iterable[PreparedAttestation],
     evidence: Iterable[Evidence],
     config: GraphCredibilityConfig,
+    assessment_target: AssessmentTarget = "unspecified",
 ) -> FacetAssessmentResult:
     """Assess one facet; never aggregate it into a whole-claim verdict.
 
@@ -77,6 +153,7 @@ def assess_prepared_facet(
     if type(as_of) is not date:
         raise ValueError("as_of must be an explicit date")
 
+    validate_target(assessment_target)
     passages = tuple(evidence)
     if len({p.evidence_id for p in passages}) != len(passages):
         raise ValueError("Duplicate evidence IDs")
@@ -86,7 +163,12 @@ def assess_prepared_facet(
             "fact:facet",
             "fact",
             facet,
-            {"statement": facet, "claim_text": claim_text, "category": "corpus-facet"},
+            {
+                "statement": facet,
+                "claim_text": claim_text,
+                "category": "corpus-facet",
+                "assessment_target": assessment_target,
+            },
         )
     ]
     edges = []
@@ -97,6 +179,17 @@ def assess_prepared_facet(
 
     # Check all source/origin declarations, including non-scoring inputs.
     for item in items:
+        validate_target(item.evidence_target)
+        if not isinstance(item.target_basis, str):
+            raise TypeError("target_basis must be a string")
+        if item.evidence_target != "unspecified" and not item.target_basis.strip():
+            raise ValueError("Explicit evidence target requires a target_basis")
+        if type(item.independence_verified) is not bool or not isinstance(
+            item.independence_basis, str
+        ):
+            raise ValueError("Invalid independence judgement types")
+        if item.independence_verified and not item.independence_basis.strip():
+            raise ValueError("Verified independence requires a basis")
         source = item.source
         source_json = source.model_dump(mode="json")
         for name in (
@@ -152,6 +245,29 @@ def assess_prepared_facet(
 
         source = item.source
         reasons = []
+        if interpretation.mode == "formal":
+            code_match = DOCUMENT_REFERENCE.match(source.title)
+            _, clauses, _ = approval_lifecycle(
+                source.approval_status, code_match[0] if code_match else ""
+            )
+            own_approval = " ".join(
+                clause["quote"] for clause in clauses if clause["scope"] == "own_document"
+            )
+            negative, _ = approval_signals(own_approval)
+            if negative:
+                reasons.append(
+                    "Stored own-document approval explicitly includes non-approval; "
+                    "supplied authority cannot establish an effective formal rule."
+                )
+            if item.approval_key in {"unapproved", "draft"}:
+                reasons.append(
+                    "Supplied approval status does not establish an effective formal rule."
+                )
+        target_reason = target_exclusion(
+            assessment_target, item.evidence_target, interpretation.mode
+        )
+        if target_reason:
+            reasons.append(target_reason)
         if interpretation.stance not in {"support", "contradict"}:
             reasons.append(f"Non-decisive interpretation: {interpretation.stance}.")
         if interpretation.mode == "unresolved":
@@ -199,6 +315,10 @@ def assess_prepared_facet(
                 "completeness",
                 "judgement_basis",
                 "origin_basis",
+                "independence_verified",
+                "independence_basis",
+                "evidence_target",
+                "target_basis",
             )
         }
         edge_id = None
@@ -249,6 +369,10 @@ def assess_prepared_facet(
                         "directness": item.directness,
                         "specificity": item.specificity,
                         "completeness": item.completeness,
+                        "independence_verified": item.independence_verified,
+                        "independence_basis": item.independence_basis,
+                        "evidence_target": item.evidence_target,
+                        "target_basis": item.target_basis,
                         "input_id": input_id,
                         "judgement_basis": item.judgement_basis,
                     },
@@ -265,8 +389,21 @@ def assess_prepared_facet(
             )
         )
 
+    precedence_notes = ()
+    if assessment_target == "formal_rule":
+        edges, dispositions, precedence_notes = _apply_policy_precedence(
+            nodes, edges, dispositions, as_of=as_of, config=config
+        )
     graph = OrganisationalGraph(nodes, edges, version="corpus-facet-adapter-v1")
     assessment = GraphCredibilityFramework(graph, config).evaluate_fact("fact:facet", as_of=as_of)
+    if precedence_notes:
+        assessment = replace(
+            assessment,
+            related_qualifiers=(*assessment.related_qualifiers, *precedence_notes),
+            rules_applied=(*assessment.rules_applied, "CORPUS_POLICY_PRECEDENCE_V1"),
+            summary=assessment.summary
+            + " Conflicting role/table summaries are retained as documentation inconsistencies under policy precedence.",
+        )
     return FacetAssessmentResult(
         claim_text,
         facet,
@@ -275,6 +412,11 @@ def assess_prepared_facet(
         tuple(dispositions),
         (
             "This is a facet assessment, not a whole-claim verdict.",
+            (
+                "Legacy target unspecified; no statement/event/rule target check performed."
+                if assessment_target == "unspecified"
+                else "Target declarations were compared; their semantic correctness is not verified."
+            ),
             (
                 "Relationship, authority and quality judgements are supplied inputs, "
                 "not established by citation validation."
@@ -290,4 +432,5 @@ def assess_prepared_facet(
             "Framework gaps describe admitted attestations, not exhaustive corpus coverage.",
             "Existing framework lifecycle and historical corroboration rules are unchanged.",
         ),
+        assessment_target=assessment_target,
     )

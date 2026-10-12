@@ -1,0 +1,40 @@
+{
+  "case_id": "C01-02--approval_requirement",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "b602a19d1d9877047916fa04143f37341aeafe0125fcf19dad4f8fe51474d2dc",
+  "method_version": "llama31-facet-pilot-v1",
+  "status": "classified",
+  "relationship": "qualify",
+  "prompt_tokens": 3155,
+  "generated_tokens": 146,
+  "completion_reason": "stop",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed, but it also states that any deviation from the policy requires an updated version of the policy. This implies that the policy is subject to change and that the approval requirement may not be absolute.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy."
+      }
+    ]
+  },
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "approval_requirement",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed, but it also states that any deviation from the policy requires an updated version of the policy. This implies that the policy is subject to change and that the approval requirement may not be absolute.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "source_id": "phase2:POL-01",
+        "locator": "heading:POL-01 — Discount Approval Policy > Exceptions#block:001",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy.",
+        "start": 0,
+        "end": 121
+      }
+    ]
+  },
+  "elapsed_seconds": 5.45
+}

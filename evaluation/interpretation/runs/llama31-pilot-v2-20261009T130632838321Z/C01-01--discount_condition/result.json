@@ -1,0 +1,41 @@
+{
+  "case_id": "C01-01--discount_condition",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "370927b6feb2e90f2e4e2fe56c672170bf1c98a28636768bccef9908f166f9d4",
+  "method_version": "llama31-facet-pilot-v2",
+  "status": "classified",
+  "relationship": "support",
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "discount_condition",
+    "stance": "support",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\" The passage also specifies that approval must be recorded in the CRM's `approval_record` field, referencing the approver and date. The business scope is also established as new-business deals, as stated in the passage: \"This policy applies to new-business deals.\"",
+    "citations": [
+      {
+        "evidence_id": "EV-9cbd6c4c8c261136",
+        "source_id": "phase2:POL-01",
+        "locator": "heading:POL-01 — Discount Approval Policy > Formal requirements#block:001",
+        "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+        "start": 0,
+        "end": 188
+      }
+    ]
+  },
+  "prompt_tokens": 3564,
+  "generated_tokens": 232,
+  "completion_reason": "stop",
+  "raw_model_content": "{\n  \"stance\": \"support\",\n  \"mode\": \"formal\",\n  \"rationale\": \"The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: \\\"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\\\" The passage also specifies that approval must be recorded in the CRM's `approval_record` field, referencing the approver and date. The business scope is also established as new-business deals, as stated in the passage: \\\"This policy applies to new-business deals.\\\"\",\n  \"citations\": [\n    {\n      \"evidence_id\": \"EV-9cbd6c4c8c261136\",\n      \"quotation\": \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\"\n    }\n  ]\n}",
+  "raw_proposal": {
+    "stance": "support",
+    "mode": "formal",
+    "rationale": "The focal passage establishes that discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed. This is supported by the text: \"1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.\" The passage also specifies that approval must be recorded in the CRM's `approval_record` field, referencing the approver and date. The business scope is also established as new-business deals, as stated in the passage: \"This policy applies to new-business deals.\"",
+    "citations": [
+      {
+        "evidence_id": "EV-9cbd6c4c8c261136",
+        "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM."
+      }
+    ]
+  },
+  "elapsed_seconds": 7.77
+}

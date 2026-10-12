@@ -21,6 +21,23 @@ api = importlib.import_module("decidr.api.app")
 URL = "/api/corpus/assess-supplied"
 
 
+def test_stored_nonapproval_overrides_positive_supplied_authority(client, packet):
+    path, body = packet
+    with closing(connect(path)) as connection, connection:
+        row = connection.execute("SELECT payload_json FROM sources").fetchone()
+        source = Source.model_validate_json(row[0])
+        source.approval_status = "Never approved"
+        upsert_source(connection, source)
+    before = path.read_bytes()
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["assessment"]["overall_outcome"] == "Insufficient evidence"
+    assert result["inputs"][0]["admitted_to_framework"] is False
+    assert any("Stored own-document approval" in r for r in result["inputs"][0]["reasons"])
+    assert path.read_bytes() == before
+
+
 @pytest.fixture
 def client():
     previous = dict(api.app.dependency_overrides)
@@ -192,3 +209,188 @@ def test_authentication_precedes_assessment(packet, monkeypatch):
     finally:
         api.app.dependency_overrides.clear()
         api.app.dependency_overrides.update(previous)
+
+
+@pytest.mark.parametrize("verified", [False, True])
+def test_independence_judgement_roundtrip(client, packet, verified):
+    path, body = packet
+    before = path.read_bytes()
+    body["inputs"][0].update(
+        independence_verified=verified,
+        independence_basis="Synthetic packet-relative independence judgement.",
+    )
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    saved = response.json()["inputs"][0]["supplied_judgements"]
+    assert saved["independence_verified"] is verified
+    assert saved["independence_basis"] == body["inputs"][0]["independence_basis"]
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"independence_verified": "true"},
+        {"independence_verified": True},
+        {"independence_verified": True, "independence_basis": " "},
+        {"independence_basis": 123},
+    ],
+)
+def test_invalid_independence_judgement(client, packet, fields):
+    _, body = packet
+    body["inputs"][0].update(fields)
+    assert client.post(URL, json=body).status_code == 422
+
+
+def test_legacy_request_defaults_to_unverified(client, packet):
+    _, body = packet
+    response = client.post(URL, json=body)
+    assert response.status_code == 200
+    result = response.json()
+    assert result["inputs"][0]["supplied_judgements"]["independence_verified"] is False
+    assert any(
+        "unverified" in reason for reason in result["assessment"]["evidence"][0]["limitations"]
+    )
+
+
+@pytest.mark.parametrize(
+    "target,mode",
+    [
+        ("recorded_statement", "observed"),
+        ("underlying_event", "observed"),
+        ("formal_rule", "formal"),
+    ],
+)
+def test_targeted_assessment_roundtrip(client, packet, target, mode):
+    path, body = packet
+    before = path.read_bytes()
+    body["assessment_target"] = target
+    body["inputs"][0].update(
+        mode=mode,
+        evidence_target=target,
+        target_basis="Synthetic supplied target; no semantic verification.",
+    )
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["assessment_target"] == target
+    assert result["target_validation"] == "supplied_declarations_checked"
+    assert result["inputs"][0]["admitted_to_framework"] is True
+    assert result["inputs"][0]["supplied_judgements"]["evidence_target"] == target
+    assert path.read_bytes() == before
+
+
+def test_statement_is_not_admitted_as_event(client, packet):
+    _, body = packet
+    body["assessment_target"] = "underlying_event"
+    body["inputs"][0].update(
+        mode="observed",
+        evidence_target="recorded_statement",
+        target_basis="The record establishes only the statement.",
+    )
+    result = client.post(URL, json=body).json()
+    assert result["assessment"]["overall_outcome"] == "Insufficient evidence"
+    assert result["inputs"][0]["admitted_to_framework"] is False
+    assert result["inputs"][0]["interpretation"]["citations"] == body["inputs"][0]["citations"]
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("evidence_target", "invented"),
+        ("evidence_target", None),
+        ("target_basis", 12),
+    ],
+)
+def test_invalid_target_fields(client, packet, field, value):
+    _, body = packet
+    body["inputs"][0][field] = value
+    assert client.post(URL, json=body).status_code == 422
+
+
+def test_explicit_evidence_target_requires_basis(client, packet):
+    _, body = packet
+    body["assessment_target"] = "formal_rule"
+    body["inputs"][0]["evidence_target"] = "formal_rule"
+    assert client.post(URL, json=body).status_code == 422
+
+
+def test_legacy_api_target_is_disclosed(client, packet):
+    _, body = packet
+    result = client.post(URL, json=body).json()
+    assert result["assessment_target"] == "unspecified"
+    assert result["target_validation"] == "not_performed_legacy"
+
+
+def test_valid_quote_does_not_establish_semantic_or_authority_verification(client, packet):
+    path, body = packet
+    before = path.read_bytes()
+    # Deliberately false supplied relationship: the endpoint is not an interpreter.
+    body["claim_text"] = "Written approval is never required."
+    body["facet"] = body["claim_text"]
+    body["inputs"][0].update(
+        independence_verified=True,
+        independence_basis="Caller assertion only; no independent verification.",
+    )
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["assessment"]["formal_outcome"] == "Supported"
+    assurance = result["assurance"]
+    assert assurance["outcome_basis"] == "conditional_on_supplied_judgements"
+    assert assurance["citation_validation"] == "exact_spans_and_identities_checked"
+    assert assurance["semantic_verification"] == "not_performed"
+    assert assurance["authority_verification"] == "caller_declared_not_independently_verified"
+    assert assurance["independence_verification"] == "caller_declared_with_consistency_checks"
+    assert assurance["human_review"] == "not_established_by_this_request"
+    assert result["status"] == "assessed_supplied_judgements"
+    assert result["inputs"][0]["supplied_judgements"]["independence_verified"] is True
+    assert path.read_bytes() == before
+
+
+def test_supplied_class_and_quality_remain_distinct_from_stored_source(client, packet):
+    _, body = packet
+    body["inputs"][0].update(
+        source_class="interview",
+        approval_key="unknown",
+        directness=0.4,
+        specificity=0.5,
+        completeness=0.6,
+    )
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    item = result["inputs"][0]
+    assert item["source"]["source_type"] == "policy"
+    assert item["source"]["approval_status"] == "Approved"
+    assert item["supplied_judgements"]["source_class"] == "interview"
+    assert item["supplied_judgements"]["approval_key"] == "unknown"
+    assert item["supplied_judgements"]["directness"] == 0.4
+    assert item["supplied_judgements"]["specificity"] == 0.5
+    assert item["supplied_judgements"]["completeness"] == 0.6
+    assert (
+        result["assurance"]["source_class_and_approval_key"] == "caller_supplied_configured_keys"
+    )
+    assert (
+        result["assurance"]["quality_scores"] == "caller_supplied_not_calibrated_by_this_endpoint"
+    )
+
+
+@pytest.mark.parametrize("field", ["assurance", "review_status", "config_version"])
+def test_client_cannot_inject_assurance_or_review_status(client, packet, field):
+    _, body = packet
+    body[field] = "verified"
+    response = client.post(URL, json=body)
+    assert response.status_code == 422
+
+
+def test_assurance_present_when_no_input_is_admitted(client, packet):
+    _, body = packet
+    body["inputs"][0].update(stance="qualify", authority_verified=None)
+    response = client.post(URL, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["inputs"][0]["admitted_to_framework"] is False
+    assert result["inputs"][0]["supplied_judgements"]["authority_verified"] is None
+    assert result["assurance"]["semantic_verification"] == "not_performed"
+    assert result["assurance"]["outcome_basis"] == "conditional_on_supplied_judgements"

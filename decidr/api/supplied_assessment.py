@@ -1,7 +1,9 @@
 """Authenticated facet assessment of explicitly supplied judgements."""
 
 from contextlib import closing
+from dataclasses import asdict
 from datetime import date
+import hashlib
 import json
 import re
 import sqlite3
@@ -16,6 +18,7 @@ from decidr.api import auth
 from decidr.api.corpus import corpus_database_path
 from decidr.assessment_adapter import PreparedAttestation, assess_prepared_facet
 from decidr.assessment_response import serialize_facet_assessment
+from decidr.assessment_targets import AssessmentTarget
 from decidr.interpretation_models import EvidenceInterpretation, InterpretationCitation
 from decidr.retrieval_models import Evidence, Source
 
@@ -48,6 +51,10 @@ class SuppliedInput(BaseModel):
     completeness: Score
     judgement_basis: Text
     origin_basis: Text
+    independence_verified: bool = False
+    independence_basis: str = Field(default="", max_length=10000)
+    evidence_target: AssessmentTarget = "unspecified"
+    target_basis: str = Field(default="", max_length=10000)
 
 
 class SuppliedAssessmentRequest(BaseModel):
@@ -55,6 +62,7 @@ class SuppliedAssessmentRequest(BaseModel):
 
     claim_text: Text
     facet: Text
+    assessment_target: AssessmentTarget = "unspecified"
     as_of: date
     inputs: list[SuppliedInput] = Field(min_length=1, max_length=50)
 
@@ -71,6 +79,11 @@ class SuppliedAssessmentRequest(BaseModel):
 @router.post("/assess-supplied")
 def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
     """Assess a supplied packet; never infer relationships or save review records."""
+    return build_supplied_assessment(request)["response"]
+
+
+def build_supplied_assessment(request: SuppliedAssessmentRequest, *, freeze: bool = False) -> dict:
+    """Assess and optionally capture the same evidence/configuration used in that run."""
     for item in request.inputs:
         if len({citation.source_id for citation in item.citations}) != 1:
             raise HTTPException(
@@ -85,6 +98,19 @@ def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
         with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as connection:
             connection.execute("PRAGMA query_only = ON")
             connection.execute("BEGIN")
+            corpus_revision = None
+            if freeze:
+                digest = hashlib.sha256()
+                # Hash exact indexed payloads, including parsed metadata. This is
+                # an index revision, not the ingestion raw-corpus fingerprint.
+                for table, key in (("sources", "source_id"), ("evidence", "evidence_id")):
+                    for row in connection.execute(
+                        f"SELECT {key}, payload_json FROM {table} ORDER BY {key}"
+                    ):
+                        encoded = json.dumps([table, *row], ensure_ascii=False).encode("utf-8")
+                        digest.update(len(encoded).to_bytes(8, "big"))
+                        digest.update(encoded)
+                corpus_revision = digest.hexdigest()
             for item in request.inputs:
                 for citation in item.citations:
                     key = (citation.evidence_id, citation.source_id)
@@ -152,6 +178,10 @@ def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
                 completeness=item.completeness,
                 judgement_basis=item.judgement_basis,
                 origin_basis=item.origin_basis,
+                independence_verified=item.independence_verified,
+                independence_basis=item.independence_basis,
+                evidence_target=item.evidence_target,
+                target_basis=item.target_basis,
             )
         )
 
@@ -159,12 +189,13 @@ def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
         result = assess_prepared_facet(
             claim_text=request.claim_text,
             facet=request.facet,
+            assessment_target=request.assessment_target,
             as_of=request.as_of,
             prepared=prepared,
             evidence=list(evidence.values()),
             config=config,
         )
-    except ValueError as error:
+    except (ValueError, TypeError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
     response = serialize_facet_assessment(result)
@@ -176,4 +207,20 @@ def assess_supplied(request: SuppliedAssessmentRequest) -> dict:
             "config_version": config.config_version,
         }
     )
-    return response
+    bundle = {"response": response}
+    if freeze:
+        bundle.update(
+            {
+                "request": request.model_dump(mode="json"),
+                "evidence": [p.model_dump(mode="json") for p in evidence.values()],
+                "sources": [s.model_dump(mode="json") for s in sources.values()],
+                "configuration": asdict(config),
+                "provenance": {
+                    "corpus_index_sha256": corpus_revision,
+                    "corpus_revision_method": "ordered-index-payloads-v1",
+                    "assessment_method": "supplied-facet-assessment-v1",
+                    "evidence_scope": "cited_passages_only",
+                },
+            }
+        )
+    return bundle

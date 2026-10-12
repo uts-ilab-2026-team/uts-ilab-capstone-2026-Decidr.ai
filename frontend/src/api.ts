@@ -214,6 +214,10 @@ export function useApi<T>(load: () => Promise<T>, deps: unknown[]) {
 
 /** Corpus retrieval records are separate from assessed graph evidence. */
 export interface CorpusSource {
+  predecessor_source_id?: string | null;
+  successor_source_id?: string | null;
+  derived_from_source_id?: string | null;
+  duplicate_group?: string | null;
   source_id: string;
   title: string;
   source_type: string;
@@ -237,6 +241,8 @@ export interface CorpusPassage {
     locator: string;
     text: string;
     source_type: string;
+    row_identifier?: string | null;
+    structured_metadata?: { record?: Record<string, unknown>; [key: string]: unknown };
   };
   interpretation_status: "unassessed";
   relationship: null;
@@ -257,7 +263,14 @@ export interface CorpusGroup {
   passages: CorpusPassage[];
 }
 
+export interface ScopeContext {
+  status: "not_requested" | "clarification_available" | "scope_supplied";
+  question: string | null; options: string[]; answer: string | null; facet: string;
+  basis: { label: string; source_title: string; source_id: string; evidence_id: string; locator: string; quotation: string }[];
+}
+
 export interface CorpusSearchResponse {
+  scope_context?: ScopeContext;
   claim: string;
   status: "retrieved_unassessed";
   assessment: null;
@@ -272,8 +285,8 @@ export interface CorpusSearchResponse {
   limitations: string[];
 }
 
-export const searchCorpus = (claim: string) =>
-  post<CorpusSearchResponse>("/corpus/search", { claim, limit: 8 });
+export const searchCorpus = (claim: string, scopeAnswer: string | null = null) =>
+  post<CorpusSearchResponse>("/corpus/search", { claim, limit: 8, ...(scopeAnswer === null ? {} : { scope_answer: scopeAnswer }) });
 
 
 export interface CorpusCitationResponse {
@@ -288,3 +301,39 @@ export const getCorpusEvidence = (evidenceId: string, sourceId: string) =>
   request<CorpusCitationResponse>(
     `/corpus/evidence/${encodeURIComponent(evidenceId)}?source_id=${encodeURIComponent(sourceId)}`
   );
+
+
+// Supplied assessments stay separate from retrieved candidates and register facts.
+export const assessSupplied = (body: import("./suppliedAssessmentContract").SuppliedRequest) =>
+  post<import("./suppliedAssessmentContract").SuppliedResult>("/corpus/assess-supplied", body);
+
+
+export const saveAutomatic = (body: { claim: string; facet: string; as_of: string; request_id: string }) =>
+  post<import("./AutomaticAssessment").AssessmentSnapshot>("/assessments/automatic", body);
+
+export const saveAssessmentRevision = (body: {
+  assessment: import("./suppliedAssessmentContract").SuppliedRequest;
+  parent_run_id: string; revision_reason: string; request_id: string;
+}) => post<import("./AutomaticAssessment").AssessmentSnapshot>("/assessments", body);
+
+export const saveCanonicalReview = (runId: string, body: {
+  request_id: string; revision_reason: string;
+  findings: import("./suppliedAssessmentContract").CanonicalReviewFinding[];
+}) => post<import("./AutomaticAssessment").AssessmentSnapshot>(`/assessments/${encodeURIComponent(runId)}/review-canonical`, body);
+
+
+export interface SavedAssessmentSummary {
+  processing?: import("./suppliedAssessmentContract").CanonicalAssessment["processing"] | null;
+  confidence?: import("./suppliedAssessmentContract").CanonicalAssessment["confidence"] | null;
+  claim_conclusion?: {status: string; label: string; summary: string; basis: string; notice: string} | null;
+  run_id: string; parent_run_id: string | null; created_at: string;
+  claim_text: string; facet: string; as_of: string; overall_outcome: string;
+  formal_outcome: string; observed_outcome: string; record_type: string;
+  review_status: string; snapshot_sha256: string;
+}
+export const getSavedAssessments = (offset: number) =>
+  request<{items: SavedAssessmentSummary[]}>(`/assessments?limit=20&offset=${offset}`);
+export const getSavedAssessment = (runId: string) =>
+  request<import("./AutomaticAssessment").AssessmentSnapshot & {
+    snapshot: { parent_run_id: string | null; created_at: string; record_type: string; revision_reason: string | null }
+  }>(`/assessments/${encodeURIComponent(runId)}`);

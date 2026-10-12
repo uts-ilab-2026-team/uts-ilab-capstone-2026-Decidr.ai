@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "test:supplied": "vite build --ssr tests/suppliedAssessment.render.tsx --outDir node_modules/.cache/supplied-assessment-tests && node node_modules/.cache/supplied-assessment-tests/suppliedAssessment.render.js"
   },
   "dependencies": {
     "react": "^19.0.0",

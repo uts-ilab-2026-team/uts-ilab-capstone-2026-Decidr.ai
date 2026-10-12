@@ -1,0 +1,14 @@
+{
+  "case_id": "C01-04--approval_requirement",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "7756574db3b7c207c70d8b1dc7897e5a9db410ce1af2a854ed13b86dfc5bc67c",
+  "method_version": "qwen35-facet-pilot-v2",
+  "status": "error",
+  "relationship": null,
+  "interpretation": null,
+  "prompt_tokens": 4048,
+  "generated_tokens": 2048,
+  "completion_reason": "length",
+  "error": "Model output reached its length limit",
+  "elapsed_seconds": 94.01
+}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import CorpusScreen from "./CorpusScreen";
+import { SavedDashboard, SavedAssessmentView } from "./SavedAssessments";
 import {
   changePassword, checkClaim, forgotPassword, getClaim, getClaims, getMe, getSource, getSources, login, logout,
   onUnauthorized, registerCsvUrl, resetPassword, signup, updateProfile, useApi,
@@ -13,6 +14,8 @@ type Screen =
   | "signup"
   | "forgot"
   | "dashboard"
+  | "register"
+  | "saved-assessment"
   | "check"
   | "assessment"
   | "evidence-detail"
@@ -125,12 +128,13 @@ function IcoMerge() {
 // ─── Data helpers ─────────────────────────────────────────────────────────────
 
 // What the assessment screen is showing: a register Fact, or a free-text claim to retrieve.
-type ClaimTarget = { kind: "fact"; factId: string } | { kind: "query"; text: string };
+type ClaimTarget = { kind: "fact"; factId: string } | { kind: "query"; text: string; asOf: string };
 
 type Nav = {
   go: (s: Screen) => void;
   openClaim: (factId: string) => void;
-  checkClaim: (text: string) => void;
+  openSaved: (runId: string) => void;
+  checkClaim: (text: string, asOf?: string) => void;
   openEvidence: (evidence: Evidence) => void;
   openSource: (documentId: string) => void;
 };
@@ -205,7 +209,7 @@ function Sidebar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen)
   ];
 
   const isActive = (target: Screen) => {
-    if (target === "dashboard") return screen === "dashboard";
+    if (target === "dashboard") return ["dashboard", "register", "saved-assessment"].includes(screen);
     if (target === "assessment") return screen === "assessment" || screen === "check" || screen === "evidence-detail";
     if (target === "sources") return screen === "sources" || screen === "source-detail" || screen === "components";
     if (target === "settings") return screen === "settings";
@@ -742,7 +746,7 @@ function GraphPanel({ assessment }: { assessment: Assessment }) {
 
 const VERDICT_FILTERS = ["Supported", "Contested", "Contradicted", "Insufficient evidence"];
 
-function DashboardScreen({ nav, asOf }: { nav: Nav; asOf: string }) {
+function RegisterDashboardScreen({ nav, asOf }: { nav: Nav; asOf: string }) {
   const { data, error } = useApi(() => getClaims(asOf), [asOf]);
   const [verdict, setVerdict] = useState("All");
   const [q, setQ] = useState("");
@@ -750,7 +754,7 @@ function DashboardScreen({ nav, asOf }: { nav: Nav; asOf: string }) {
   if (!data) {
     return (
       <PageShell>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: TEXT, letterSpacing: "-0.02em", margin: "0 0 28px" }}>Dashboard</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: TEXT, letterSpacing: "-0.02em", margin: "0 0 28px" }}>Register results · recalculated</h1>
         <LoadState error={error} />
       </PageShell>
     );
@@ -765,7 +769,7 @@ function DashboardScreen({ nav, asOf }: { nav: Nav; asOf: string }) {
 
   return (
     <PageShell>
-      <h1 style={{ fontSize: 20, fontWeight: 600, color: TEXT, letterSpacing: "-0.02em", margin: "0 0 28px" }}>Dashboard</h1>
+      <h1 style={{ fontSize: 20, fontWeight: 600, color: TEXT, letterSpacing: "-0.02em", margin: "0 0 28px" }}>Register results · recalculated</h1>
 
       {/* Tiles: Contested + Insufficient evidence prominent first, then secondary pair smaller */}
       <div style={{ display: "flex", gap: 12, marginBottom: 40 }}>
@@ -791,7 +795,7 @@ function DashboardScreen({ nav, asOf }: { nav: Nav; asOf: string }) {
         <>
           {/* Recent assessments heading + filters */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>Recent assessments</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>Current register results (not saved snapshots)</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <a href={registerCsvUrl(asOf)} style={{ padding: "6px 10px", background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 12.5, color: TEXT3, textDecoration: "none" }}>
                 Export CSV
@@ -875,9 +879,10 @@ function EmptyDashboardState({ onCheck }: { onCheck: () => void }) {
 
 // ─── Screen 2: Check a claim ──────────────────────────────────────────────────
 
-function CheckScreen({ nav }: { nav: Nav }) {
+export function CheckScreen({ nav }: { nav: Nav }) {
   const [text, setText] = useState("");
-  const ready = text.trim().length > 0 && text.length <= 10000;
+  const [assessmentDate, setAssessmentDate] = useState(todayIso);
+  const ready = text.trim().length > 0 && text.length <= 10000 && /^\d{4}-\d{2}-\d{2}$/.test(assessmentDate);
 
   return (
     <PageShell>
@@ -904,7 +909,11 @@ function CheckScreen({ nav }: { nav: Nav }) {
             resize: "vertical", marginBottom: 16,
           }}
         />
-        <Btn disabled={!ready} onClick={() => nav.checkClaim(text)}>
+        <label htmlFor="claim-date" style={{display: "block", marginBottom: 16}}>
+          Assess as of <input id="claim-date" type="date" required value={assessmentDate} onChange={event => setAssessmentDate(event.target.value)} style={{marginLeft: 12, padding: 8, font: "inherit"}} />
+        </label>
+        <p style={{color: MUTED, fontSize: 12}}>Choose when the claim should hold. Source dates and role authority will still need supporting evidence.</p>
+        <Btn disabled={!ready} onClick={() => nav.checkClaim(text, assessmentDate)}>
           Find evidence
         </Btn>
       </div>
@@ -1851,6 +1860,7 @@ export default function App() {
   const [asOf, setAsOf] = useState(todayIso);
   const [target, setTarget] = useState<ClaimTarget | null>(null);
   const [evidence, setEvidence] = useState<Evidence | null>(null);
+  const [savedRunId, setSavedRunId] = useState<string | null>(null);
   const [sourceId, setSourceId] = useState<string | null>(null);
 
   const signedOut = (message: string | null = null) => {
@@ -1860,6 +1870,7 @@ export default function App() {
     setTarget(null);
     setEvidence(null);
     setSourceId(null);
+    setSavedRunId(null);
   };
 
   useEffect(() => {
@@ -1879,8 +1890,9 @@ export default function App() {
 
   const nav: Nav = {
     go,
+    openSaved: (runId) => { setSavedRunId(runId); setScreen("saved-assessment"); },
     openClaim: (factId) => { setTarget({ kind: "fact", factId }); setScreen("assessment"); },
-    checkClaim: (text) => { setTarget({ kind: "query", text }); setScreen("assessment"); },
+    checkClaim: (text, selectedDate = todayIso()) => { setTarget({ kind: "query", text, asOf: selectedDate }); setScreen("assessment"); },
     openEvidence: (item) => { setEvidence(item); setScreen("evidence-detail"); },
     openSource: (documentId) => { setSourceId(documentId); setScreen("source-detail"); },
   };
@@ -1909,19 +1921,22 @@ export default function App() {
   const view = AUTH_SCREENS.includes(screen) ? "dashboard" : screen;
 
   return (
-    <div style={{ minWidth: 1440, height: "100%", display: "flex", background: PAGE }}>
+    <div style={{ minWidth: 900, height: "100%", display: "flex", background: PAGE }}>
       <Sidebar screen={view} setScreen={go} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TopBar user={user} onSignOut={() => logout().finally(() => signedOut())} />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {view === "dashboard" && <DashboardScreen nav={nav} asOf={asOf} />}
+          {view === "dashboard" && <PageShell><SavedDashboard onOpen={nav.openSaved} onRegister={() => nav.go("register")} onCheck={() => nav.go("check")} /></PageShell>}
+          {view === "register" && <RegisterDashboardScreen nav={nav} asOf={asOf} />}
+          {view === "saved-assessment" && savedRunId && <PageShell><SavedAssessmentView key={savedRunId} runId={savedRunId} onBack={() => nav.go("dashboard")} onOpen={nav.openSaved} onRunAgain={nav.checkClaim} /></PageShell>}
           {view === "check" && <CheckScreen nav={nav} />}
           {view === "assessment" && target?.kind === "query" && (
             <CorpusScreen
-              key={target.text}
+              key={`${target.text}:${target.asOf}`}
               claim={target.text}
+              initialAsOf={target.asOf}
               onBack={() => nav.go("check")}
             />
           )}

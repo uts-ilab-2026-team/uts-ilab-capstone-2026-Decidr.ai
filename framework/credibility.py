@@ -49,7 +49,9 @@ class GraphCredibilityFramework:
             document = self.graph.document(edge.source)
             group = str(document.attributes.get("duplicate_group") or document.node_id)
             duplicate_counts[group] = duplicate_counts.get(group, 0) + 1
-            if not self._corroboration_eligible(document, as_of):
+            if not self._corroboration_eligible(
+                document, as_of
+            ) or not self._independence_established(edge):
                 continue
             key = (edge.relationship.lower(), self._stance(edge))
             corroboration_counts.setdefault(key, set()).add(group)
@@ -162,7 +164,19 @@ class GraphCredibilityFramework:
         group = str(attributes.get("duplicate_group") or document.node_id)
         # Score source quality once per origin; repetition must not change it.
         # _lane_outcome applies the origin cap when combining evidence.
-        independence = 1.0
+        independence = 1.0  # No transmission-quality penalty for unknown independence.
+        established = self._independence_established(edge)
+        trace.append(
+            f"Supplied independence judgement: {edge_attributes.get('independence_verified', False)!r}; "
+            f"basis={edge_attributes.get('independence_basis', '')!r}; "
+            f"origin group established={established}."
+        )
+        if not established:
+            limitations.append("Independence is unverified; no additive corroboration credit.")
+        trace.append(
+            "Independence policy v2: only explicitly established origins add weight; "
+            "otherwise the strongest single assessment is a floor, not an extra vote."
+        )
         trace.append(
             f"Independence: origin {group!r} contributes at most once per stance "
             "in this lane, using its strongest material assessment."
@@ -172,8 +186,10 @@ class GraphCredibilityFramework:
             limitations.append(
                 "Superseded source retained for context; excluded from corroboration counts."
             )
-        corroborating_origins = len(
-            corroboration_counts.get((edge.relationship.lower(), stance), set())
+        corroborating_origins = (
+            len(corroboration_counts.get((edge.relationship.lower(), stance), set()))
+            if established and self._corroboration_eligible(document, as_of)
+            else 0
         )
         corroboration = (
             0.5
@@ -316,14 +332,38 @@ class GraphCredibilityFramework:
         document = self.graph.document(document_id)
         return str(document.attributes.get("duplicate_group") or document.node_id)
 
+    def _independence_established(self, edge: GraphEdge) -> bool:
+        """Require consistent, explicit packet-relative judgements for this origin.
+
+        Origin labels and document IDs alone never establish independence.
+        A conflicting/unknown declaration conservatively prevents group credit.
+        """
+        origin = self._origin_id(edge.source)
+        members = [
+            member
+            for member in self.graph.attestations(edge.target)
+            if member.relationship == edge.relationship
+            and self._origin_id(member.source) == origin
+        ]
+        return bool(members) and all(
+            member.attributes.get("independence_verified") is True
+            and isinstance(member.attributes.get("independence_basis"), str)
+            and member.attributes["independence_basis"].strip()
+            for member in members
+        )
+
     def _lane_outcome(self, reviewed: tuple[EdgeAssessment, ...], mode: str) -> str:
         # Retain every edge, but count only the strongest material assessment
         # from each origin for each stance within this lane.
         contributions: dict[tuple[str, str], float] = {}
+        strongest = {"support": 0.0, "contradict": 0.0}
         for item in reviewed:
             if item.mode != mode or not item.material:
                 continue
             if item.stance not in {"support", "contradict"}:
+                continue
+            strongest[item.stance] = max(strongest[item.stance], item.materiality_score or 0.0)
+            if not self._independence_established(self.graph.edges[item.edge_id]):
                 continue
             key = (self._origin_id(item.document_id), item.stance)
             contributions[key] = max(contributions.get(key, 0.0), item.materiality_score or 0.0)
@@ -331,6 +371,8 @@ class GraphCredibilityFramework:
         contradict = sum(
             score for (_, stance), score in contributions.items() if stance == "contradict"
         )
+        support = max(support, strongest["support"])
+        contradict = max(contradict, strongest["contradict"])
         if not support and not contradict:
             return "Insufficient evidence"
         if support and contradict:
@@ -380,7 +422,11 @@ class GraphCredibilityFramework:
             return "Lower confidence"
         if overall == "Contested" or non_material_divergence or gaps:
             return "Moderate confidence"
-        independent_origins = {self._origin_id(item.document_id) for item in decisive}
+        independent_origins = {
+            self._origin_id(item.document_id)
+            for item in decisive
+            if self._independence_established(self.graph.edges[item.edge_id])
+        }
         return "Higher confidence" if len(independent_origins) >= 2 else "Moderate confidence"
 
     @staticmethod

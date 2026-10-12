@@ -1,0 +1,52 @@
+{
+  "case_id": "C01-02--discount_condition",
+  "dataset_version": "phase2-interpretation-facets-pilot-v1",
+  "input_sha256": "3f57b66d24c0df944b516442e7a303d8505486ab66aff4cb9a5b38bf57a7731a",
+  "method_version": "llama31-facet-pilot-v1",
+  "status": "classified",
+  "relationship": "qualify",
+  "prompt_tokens": 3146,
+  "generated_tokens": 217,
+  "completion_reason": "stop",
+  "raw_proposal": {
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage does not establish the claimed discount condition and business scope for this approval requirement. The policy states that any discount of 15% or greater off list price on a new-business deal requires written approval from the Head of Finance & People Ops, but it does not specify that discounts above 15% require approval.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy."
+      },
+      {
+        "evidence_id": "EV-9cbd6c4c8c261136",
+        "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM."
+      }
+    ]
+  },
+  "interpretation": {
+    "claim_text": "Discounts above 15% require Finance (Head of Finance & People Ops) approval before the deal is closed.",
+    "facet": "discount_condition",
+    "stance": "qualify",
+    "mode": "formal",
+    "rationale": "The focal passage does not establish the claimed discount condition and business scope for this approval requirement. The policy states that any discount of 15% or greater off list price on a new-business deal requires written approval from the Head of Finance & People Ops, but it does not specify that discounts above 15% require approval.",
+    "citations": [
+      {
+        "evidence_id": "EV-52b47138155c5463",
+        "source_id": "phase2:POL-01",
+        "locator": "heading:POL-01 — Discount Approval Policy > Exceptions#block:001",
+        "quotation": "None are formally documented under this version. Any deviation from the above requires an updated version of this policy.",
+        "start": 0,
+        "end": 121
+      },
+      {
+        "evidence_id": "EV-9cbd6c4c8c261136",
+        "source_id": "phase2:POL-01",
+        "locator": "heading:POL-01 — Discount Approval Policy > Formal requirements#block:001",
+        "quotation": "1. Any discount of **15% or greater** off list price on a new-business deal requires written approval from the Head of Finance & People Ops before the deal is marked Closed Won in the CRM.",
+        "start": 0,
+        "end": 188
+      }
+    ]
+  },
+  "elapsed_seconds": 15.47
+}
