@@ -29,6 +29,7 @@ dependencies = [
     "pip",
     "pytest",
     "python-dotenv",
+    "pyvis>=0.3.2",
     "ruff",
     "scikit-learn",
     "tqdm",
