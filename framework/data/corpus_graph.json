@@ -1894,11 +1894,92 @@
       "attributes": {}
     },
     {
+      "id": "related:document:POL-01->document:PROC-02",
+      "source": "document:POL-01",
+      "target": "document:PROC-02",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-01->document:POL-06",
+      "source": "document:POL-01",
+      "target": "document:POL-06",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-03->document:PROC-01",
+      "source": "document:POL-03",
+      "target": "document:PROC-01",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-03->document:PROC-06",
+      "source": "document:POL-03",
+      "target": "document:PROC-06",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-04->document:PROC-05",
+      "source": "document:POL-04",
+      "target": "document:PROC-05",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-06->document:PROC-07",
+      "source": "document:POL-06",
+      "target": "document:PROC-07",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-06->document:POL-01",
+      "source": "document:POL-06",
+      "target": "document:POL-01",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-07->document:PROC-04",
+      "source": "document:POL-07",
+      "target": "document:PROC-04",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
       "id": "superseded_by:document:POL-02->document:POL-01",
       "source": "document:POL-02",
       "target": "document:POL-01",
       "relationship": "SUPERSEDED_BY",
       "attributes": {}
+    },
+    {
+      "id": "related:document:POL-02->document:PROC-02",
+      "source": "document:POL-02",
+      "target": "document:PROC-02",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
     },
     {
       "id": "governs:document:POL-01->process:p1",
@@ -1990,6 +2071,146 @@
       "target": "process:p8",
       "relationship": "GOVERNS",
       "attributes": {}
+    },
+    {
+      "id": "owned_by:document:POL-01->person:harriet-doyle",
+      "source": "document:POL-01",
+      "target": "person:harriet-doyle",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-03->person:helena-cho",
+      "source": "document:POL-03",
+      "target": "person:helena-cho",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-04->person:sam-okonkwo",
+      "source": "document:POL-04",
+      "target": "person:sam-okonkwo",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-05->person:paul-vasquez",
+      "source": "document:POL-05",
+      "target": "person:paul-vasquez",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-06->person:diane-okafor",
+      "source": "document:POL-06",
+      "target": "person:diane-okafor",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-07->person:harriet-doyle",
+      "source": "document:POL-07",
+      "target": "person:harriet-doyle",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-08->person:naomi-kessler",
+      "source": "document:POL-08",
+      "target": "person:naomi-kessler",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-02->person:harriet-doyle",
+      "source": "document:POL-02",
+      "target": "person:harriet-doyle",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-01->person:helena-cho",
+      "source": "document:PROC-01",
+      "target": "person:helena-cho",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-02->person:victor-adeyemi",
+      "source": "document:PROC-02",
+      "target": "person:victor-adeyemi",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-03->person:grace-whitfield",
+      "source": "document:PROC-03",
+      "target": "person:grace-whitfield",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-04->person:harriet-doyle",
+      "source": "document:PROC-04",
+      "target": "person:harriet-doyle",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-05->person:sam-okonkwo",
+      "source": "document:PROC-05",
+      "target": "person:sam-okonkwo",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-06->person:victor-adeyemi",
+      "source": "document:PROC-06",
+      "target": "person:victor-adeyemi",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
     }
   ]
 }

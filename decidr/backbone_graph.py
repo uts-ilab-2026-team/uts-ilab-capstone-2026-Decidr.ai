@@ -181,6 +181,11 @@ def _add_documents(builder: _GraphBuilder, sources: list[Source]) -> dict[str, s
 def _add_supersession_and_related(
     builder: _GraphBuilder, sources: list[Source], id_map: dict[str, str]
 ) -> None:
+    # document code (e.g. "POL-06") -> node id, to resolve stated "Related documents" references.
+    node_by_code = {
+        (source_id.split(":", 1)[1] if ":" in source_id else source_id): node_id
+        for source_id, node_id in id_map.items()
+    }
     for source in sources:
         if source.source_id not in id_map:
             continue
@@ -201,6 +206,16 @@ def _add_supersession_and_related(
                     "RELATED",
                     {"reason": "near-duplicate content (ingestion)"},
                 )
+        # Stated "Related documents:" links, emitted in the direction the document declares them.
+        for related_code in getattr(source, "related_source_codes", []):
+            target_id = node_by_code.get(related_code)
+            if target_id and target_id != old_id:
+                builder.add_edge(
+                    old_id,
+                    target_id,
+                    "RELATED",
+                    {"reason": "stated related document (header metadata)"},
+                )
 
 
 def _add_governs(
@@ -211,6 +226,43 @@ def _add_governs(
         process_code = PROCESS_BY_DOCUMENT_CODE.get(code)
         if process_code and process_code in process_ids:
             builder.add_edge(node_id, process_ids[process_code], "GOVERNS")
+
+
+def _add_owned_by(builder: _GraphBuilder, sources: list[Source], id_map: dict[str, str]) -> None:
+    """Emit OWNED_BY (document -> owning PERSON), stated as-is from the header.
+
+    The owner is the named person in the document header ("Harriet Doyle, Head of Finance & People
+    Ops" -> person:harriet-doyle). This is deliberately a Document->Person edge: the document OWNER
+    is a different thing from the decision-right HOLDER (a role). Documents with no named person
+    owner (e.g. PROC-07 "Jointly maintained by Sales and CS&D") get no edge -- a meaningful absence,
+    not an error. Graph structure only: no scorer reads OWNED_BY.
+    """
+    for source in sources:
+        node_id = id_map.get(source.source_id)
+        owner = source.responsible_person_or_role
+        if node_id is None or not owner:
+            continue
+        name = owner.split(",", 1)[0].strip()
+        person_id = f"person:{_slug(name)}"
+        person = builder.nodes.get(person_id)
+        if person is not None and person.kind == "person":
+            # Record whether the owner is still active: a document owned by someone who has left
+            # may be unmaintained. Graph-structure signal only (no scorer reads it).
+            owner_active = person.attributes.get("status") == "active"
+            builder.add_edge(
+                node_id,
+                person_id,
+                "OWNED_BY",
+                {"reason": "document owner (header metadata)", "owner_active": owner_active},
+            )
+            if not owner_active:
+                builder.warnings.append(
+                    f"document owner no longer active: {source.source_id} -> {name!r}"
+                )
+        elif name:
+            builder.warnings.append(
+                f"document owner not in roster: {source.source_id} -> {name!r}"
+            )
 
 
 # --------------------------------------------------------------------------- #
@@ -382,6 +434,7 @@ def build_corpus_graph(
 
     _add_supersession_and_related(builder, result.sources, id_map)
     _add_governs(builder, id_map, process_ids)
+    _add_owned_by(builder, result.sources, id_map)
 
     version = f"corpus-backbone-v1:{result.dataset_fingerprint[:12]}"
     graph = OrganisationalGraph(
