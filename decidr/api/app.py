@@ -276,10 +276,12 @@ from decidr.api.interpretation import router as interpretation_router
 
 app.include_router(auth.router)
 app.include_router(router)
+from decidr.api.graph_assessment import router as graph_assessment_router
 from decidr.api.supplied_assessment import router as supplied_assessment_router
 
 app.include_router(automatic_assessment_router)
 app.include_router(corpus_router)
+app.include_router(graph_assessment_router)
 app.include_router(history_router)
 app.include_router(interpretation_router)
 app.include_router(supplied_assessment_router)
