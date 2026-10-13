@@ -564,6 +564,35 @@ def _group_evidence(
     return list(grouped.values())
 
 
+def _facet_confidence_score(assessment: FactAssessment | None, outcome: str) -> float:
+    """Confidence-in-evidence for one facet, aligned to the decided outcome (0-1).
+
+    This is a measure of how strongly the evidence backs the STATED outcome, NOT a probability the
+    claim is true (per the system card). It is tied to the outcome so the number can never disagree
+    with the verdict:
+      * Supported   -> strongest MATERIAL support edge,
+      * Contradicted -> strongest MATERIAL contradict edge,
+      * Insufficient evidence / Contested -> 0.0 (no confident single direction; the categorical
+        tier carries the nuance).
+    """
+    if assessment is None:
+        return 0.0
+
+    def strength(stance: str) -> float:
+        scores = [
+            edge.materiality_score
+            for edge in assessment.evidence
+            if edge.material and edge.stance == stance and edge.materiality_score is not None
+        ]
+        return max(scores) if scores else 0.0
+
+    if outcome == "Supported":
+        return round(strength("support"), 3)
+    if outcome == "Contradicted":
+        return round(strength("contradict"), 3)
+    return 0.0
+
+
 def to_payload(result: ClaimAssessment) -> dict:
     """Serialise a ClaimAssessment into the shape a UI consumes (JSON-safe)."""
     predicate_by_id = {c["id"]: c.get("predicate", "") for c in result.split["components"]}
@@ -586,16 +615,23 @@ def to_payload(result: ClaimAssessment) -> dict:
                 "summary": text_by_id.get(facet.facet, ""),
                 "outcome": facet.outcome,
                 "confidence": facet.confidence,
+                "confidence_score": _facet_confidence_score(assessment, facet.outcome),
                 "decisive": decisive_facets.get(facet.facet, True),
                 "evidence": _group_evidence(assessment, via_by_code),
             }
         )
+
+    # Whole-claim confidence score: the weakest DECISIVE facet (a claim is only as sure as its
+    # weakest part, mirroring how the categorical confidence tier is combined). 0.0 if none decisive.
+    decisive_scores = [f["confidence_score"] for f in facets if f["decisive"]]
+    claim_confidence_score = round(min(decisive_scores), 3) if decisive_scores else 0.0
 
     return {
         "claim": result.claim_text,
         "as_of": str(result.as_of),
         "overall_outcome": result.verdict.overall_outcome,
         "confidence": result.verdict.confidence,
+        "confidence_score": claim_confidence_score,
         "target": result.split.get("target"),
         "split_status": result.split["semantic_validation"]["status"],
         "facets": facets,
@@ -639,7 +675,9 @@ def _print_result(result: ClaimAssessment) -> None:
     counts = retrieval.get("counts", {})
     print(
         f"retrieval: process={', '.join(procs)}  governed={retrieval.get('governed_docs') or '[]'}  "
-        f"graph_governed={counts.get('graph_governed', 0)} keyword={counts.get('keyword', 0)}"
+        f"related={retrieval.get('related_docs') or '[]'}  "
+        f"graph_governed={counts.get('graph_governed', 0)} "
+        f"graph_related={counts.get('graph_related', 0)} keyword={counts.get('keyword', 0)}"
     )
     print(
         f"passages considered: {len(result.passages)}   findings: {len(result.reading.get('findings', []))}"
