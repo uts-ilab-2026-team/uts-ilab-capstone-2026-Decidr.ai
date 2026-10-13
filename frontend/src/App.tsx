@@ -141,7 +141,7 @@ function IcoMerge() {
 // ─── Data helpers ─────────────────────────────────────────────────────────────
 
 // What the assessment screen is showing: a register Fact, or a free-text claim to retrieve.
-type ClaimTarget = { kind: "fact"; factId: string } | { kind: "query"; text: string; asOf: string };
+type ClaimTarget = { kind: "fact"; factId: string } | { kind: "query"; text: string; asOf: string; run: number };
 
 type Nav = {
   go: (s: Screen) => void;
@@ -1834,7 +1834,7 @@ export default function App() {
     go,
     openSaved: (runId) => { setSavedRunId(runId); setScreen("saved-assessment"); },
     openClaim: (factId) => { setTarget({ kind: "fact", factId }); setScreen("assessment"); },
-    checkClaim: (text, selectedDate = todayIso()) => { setTarget({ kind: "query", text, asOf: selectedDate }); setScreen("assessment"); },
+    checkClaim: (text, selectedDate = todayIso()) => { setTarget({ kind: "query", text, asOf: selectedDate, run: Date.now() }); setScreen("assessment"); },
     openEvidence: (item) => { setEvidence(item); setScreen("evidence-detail"); },
     openSource: (documentId) => { setSourceId(documentId); setScreen("source-detail"); },
   };
@@ -1870,17 +1870,21 @@ export default function App() {
         <TopBar user={user} onSignOut={() => logout().finally(() => signedOut())} />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {view === "dashboard" && <PageShell><SavedDashboard onOpen={nav.openSaved} onRegister={() => nav.go("register")} onCheck={() => nav.go("check")} /></PageShell>}
+          {view === "dashboard" && <PageShell><SavedDashboard onOpen={nav.openSaved} onCheck={() => nav.go("check")} /></PageShell>}
           {view === "register" && <RegisterDashboardScreen nav={nav} asOf={asOf} />}
           {view === "saved-assessment" && savedRunId && <PageShell><SavedAssessmentView key={savedRunId} runId={savedRunId} onBack={() => nav.go("dashboard")} onOpen={nav.openSaved} onRunAgain={nav.checkClaim} /></PageShell>}
           {view === "check" && <CheckScreen nav={nav} />}
-          {view === "assessment" && target?.kind === "query" && (
-            <CorpusScreen
-              key={`${target.text}:${target.asOf}`}
-              claim={target.text}
-              initialAsOf={target.asOf}
-              onBack={() => nav.go("check")}
-            />
+          {/* A checked claim stays mounted while other pages are open, so coming back to Claims
+              shows the same result instead of assessing it again. Only a new check replaces it. */}
+          {target?.kind === "query" && (
+            <div style={{ display: view === "assessment" ? "contents" : "none" }}>
+              <CorpusScreen
+                key={target.run}
+                claim={target.text}
+                initialAsOf={target.asOf}
+                onBack={() => { setTarget(null); setScreen("check"); }}
+              />
+            </div>
           )}
           {view === "assessment" && target?.kind === "fact" && (
             <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>

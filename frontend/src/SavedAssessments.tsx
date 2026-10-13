@@ -32,7 +32,7 @@ export function SavedRows({items, onOpen}: {items: SavedAssessmentSummary[]; onO
     </button>)}
   </div>;
 }
-export function SavedDashboard({onOpen, onRegister, onCheck}: {onOpen: (id: string) => void; onRegister: () => void; onCheck: () => void}) {
+export function SavedDashboard({onOpen, onCheck}: {onOpen: (id: string) => void; onCheck: () => void}) {
   const [offset, setOffset] = useState(0);
   const [query, setQuery] = useState("");
   const [verdict, setVerdict] = useState("All");
@@ -47,7 +47,6 @@ export function SavedDashboard({onOpen, onRegister, onCheck}: {onOpen: (id: stri
     <div className="ev-filters"><h2>Saved assessments</h2>
       <input aria-label="Search saved claims on this page" placeholder="Search this page…" value={query} onChange={e => setQuery(e.target.value)} />
       <select aria-label="Saved overall outcome" value={verdict} onChange={e => setVerdict(e.target.value)}>{['All','Assessment not completed','Not assessed automatically','Supported','Partially supported','Conflicting evidence','Contested','Contradicted','Insufficient evidence','Supported by the available record','Partially supported by the available records','Contradicted by the available records','Conflicting records','Not established by the available records'].map(v => <option key={v}>{v}</option>)}</select>
-      <button className="ev-button" onClick={onRegister}>Fact register</button>
     </div>
     {error ? <p role="alert">Could not load saved assessments: {error}</p> : !data ? <p role="status">Loading saved assessments…</p> : <>
       {rows.length ? <SavedRows items={rows} onOpen={onOpen} /> : <div className="ev-state">

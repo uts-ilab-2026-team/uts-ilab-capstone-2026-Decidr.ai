@@ -19,7 +19,7 @@ function CorpusClaimScreen({ claim, initialAsOf, onBack }: { claim: string; init
         <p className="ev-claim">{claim}</p>
       </section>
     </div>
-    <AutomaticAssessment claim={claim} initialAsOf={initialAsOf} autoStart={initialAsOf !== undefined} onResultChange={setAssessmentReady} />
+    <AutomaticAssessment claim={claim} initialAsOf={initialAsOf} autoStart={initialAsOf !== undefined} onResultChange={setAssessmentReady} onNewClaim={onBack} />
   </main>;
 }
 

@@ -40,9 +40,9 @@ export function checkAutomaticResponse(value: AssessmentSnapshot, request: {clai
 // With autoStart the assessment runs as soon as `ready` is true (date already chosen on the
 // claim form, no scope question waiting), so the user reaches a result in one step. The form
 // below is then only used for "Run again" or after a failure.
-export default function AutomaticAssessment({ claim, initialAsOf, expectedFacet, autoStart = false, ready = true, onDetailChange, onResultChange }: {
+export default function AutomaticAssessment({ claim, initialAsOf, expectedFacet, autoStart = false, ready = true, onDetailChange, onResultChange, onNewClaim }: {
   claim: string; initialAsOf?: string; expectedFacet?: string; autoStart?: boolean; ready?: boolean;
-  onDetailChange?: (open: boolean) => void; onResultChange?: (ready: boolean) => void;
+  onDetailChange?: (open: boolean) => void; onResultChange?: (ready: boolean) => void; onNewClaim?: () => void;
 }) {
   const [asOf, setAsOf] = useState(() => initialAsOf ?? new Date().toLocaleDateString("en-CA"));
   const [record, setRecord] = useState<AssessmentSnapshot | null>(null);
@@ -93,7 +93,7 @@ export default function AutomaticAssessment({ claim, initialAsOf, expectedFacet,
       </details>
     </section>
     {record && <>
-      <div className="ev-toolbar" hidden={detail}><div><span className="ev-crumb">Claims / Assessment</span><h1>Assessment result</h1></div><div className="ev-chips" style={{ margin: 0 }}>{reviewable && <button className="ev-button" aria-expanded={reviewOpen} onClick={() => setReviewOpen(true)}>Review</button>}<a className="ev-button" href={`/api/assessments/${record.snapshot.run_id}/export`}>Export</a><button className="ev-button ev-button-primary" onClick={() => { setRecord(null); setShowForm(true); onResultChange?.(false); }}>Run again</button></div></div>
+      <div className="ev-toolbar" hidden={detail}><div><span className="ev-crumb">Claims / Assessment</span><h1>Assessment result</h1></div><div className="ev-chips" style={{ margin: 0 }}>{reviewable && <button className="ev-button" aria-expanded={reviewOpen} onClick={() => setReviewOpen(true)}>Review</button>}{onNewClaim && <button className="ev-button" onClick={onNewClaim}>New claim</button>}<a className="ev-button" href={`/api/assessments/${record.snapshot.run_id}/export`}>Export</a><button className="ev-button ev-button-primary" onClick={() => { setRecord(null); setShowForm(true); onResultChange?.(false); }}>Run again</button></div></div>
       {record.snapshot.parent_run_id && <p role="status" hidden={detail}>Review saved as a separate revision. The original assessment is preserved.</p>}
       {isGraphResult(record.snapshot.response) ? <GraphResultView key={record.snapshot.run_id} result={record.snapshot.response} />
         : <SuppliedResultView key={record.snapshot.run_id} result={record.snapshot.response} onDetailChange={open => { setDetail(open); onDetailChange?.(open); }} />}
