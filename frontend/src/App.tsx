@@ -889,8 +889,8 @@ export function CheckScreen({ nav }: { nav: Nav }) {
       <div style={{ maxWidth: 640 }}>
         <h1 style={{ fontSize: 20, fontWeight: 600, color: TEXT }}>Check a claim</h1>
         <p style={{ color: TEXT2, lineHeight: 1.6 }}>
-          Find corpus evidence for your statement. Results preserve your wording
-          and show original passages. A verdict is not generated at this stage.
+          Enter a statement about how the organisation operates. It is assessed against
+          the indexed sources, and every finding links to the original passage.
         </p>
         <label htmlFor="corpus-claim" style={{ display: "block", marginBottom: 8 }}>
           Your claim
@@ -909,12 +909,12 @@ export function CheckScreen({ nav }: { nav: Nav }) {
             resize: "vertical", marginBottom: 16,
           }}
         />
-        <label htmlFor="claim-date" style={{display: "block", marginBottom: 16}}>
-          Assess as of <input id="claim-date" type="date" required value={assessmentDate} onChange={event => setAssessmentDate(event.target.value)} style={{marginLeft: 12, padding: 8, font: "inherit"}} />
-        </label>
-        <p style={{color: MUTED, fontSize: 12}}>Choose when the claim should hold. Source dates and role authority will still need supporting evidence.</p>
+        <label htmlFor="claim-date" style={{display: "block", fontSize: 11.5, color: MUTED, marginBottom: 6}}>Assess as of</label>
+        <input id="claim-date" type="date" required value={assessmentDate} onChange={event => setAssessmentDate(event.target.value)}
+          style={{display: "block", width: 200, padding: "8px 12px", fontSize: 13.5, fontFamily: "Inter, sans-serif", color: TEXT, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 6, outline: "none"}} />
+        <p style={{color: MUTED, fontSize: 12, margin: "8px 0 24px"}}>Choose when the claim should hold. Source dates and role authority will still need supporting evidence.</p>
         <Btn disabled={!ready} onClick={() => nav.checkClaim(text, assessmentDate)}>
-          Find evidence
+          Check claim
         </Btn>
       </div>
     </PageShell>

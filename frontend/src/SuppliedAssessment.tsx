@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import RoleCrossCheck from "./RoleCrossCheck";
 import AssessmentGraph, { evidenceWeight, unifiedGraph } from "./AssessmentGraph";
-import { Badge, DetailFrame, EvidenceRow, SourceMetadata, humanize, outcomeTone } from "./EvidenceUI";
+import { Badge, ConfidenceMeter, ConfidenceRing, Count, MarkdownLite, relationTone, DetailFrame, EvidenceRow, LaneCards, SourceMetadata, humanize, outcomeTone, quotePreview, RecordQuote, stanceTone } from "./EvidenceUI";
 import { assessSupplied, getCorpusEvidence } from "./api";
 import {
   checkSuppliedResponse, parseSuppliedRequest,
@@ -9,9 +9,7 @@ import {
 } from "./suppliedAssessmentContract";
 
 
-const button: CSSProperties = { padding: "9px 14px", border: "1px solid #e5e3df", borderRadius: 6, background: "#fff", color: "#1a1a1a", cursor: "pointer", font: "inherit" };
 const small: CSSProperties = { fontSize: 12, color: "#6b7280", overflowWrap: "anywhere" };
-const prose: CSSProperties = { whiteSpace: "pre-wrap", overflowWrap: "anywhere", lineHeight: 1.65 };
 
 function CitationView({ citation }: { citation: Citation }) {
   const [state, setState] = useState<{ text?: string; error?: string; loading?: boolean }>({});
@@ -34,15 +32,15 @@ function CitationView({ citation }: { citation: Citation }) {
       if (live.current) setState({ error: error instanceof Error ? error.message : "Citation unavailable." });
     }
   }
-  return <div style={{ borderTop: "1px solid #f0eee9", paddingTop: 12, marginTop: 12 }}>
-    <p style={prose}>{citation.quotation}</p>
-    <p style={small}>{citation.evidence_id} · {citation.locator}</p>
-    <button type="button" style={button} disabled={state.loading} onClick={open}>
-      {state.loading ? "Loading citation…" : "Open current citation"}
-    </button>
+  return <div className="ev-cite">
+    <div className="ev-cite-quote">{RecordQuote({ text: citation.quotation }) ?? <MarkdownLite text={citation.quotation} />}</div>
+    <div className="ev-cite-foot"><span className="ev-mono">{citation.evidence_id} · {citation.locator}</span>
+      <button type="button" className="ev-cite-open" disabled={state.loading} onClick={open}>
+        {state.loading ? "Loading citation…" : "Open current citation"}
+      </button></div>
     {state.error && <p role="alert">{state.error}</p>}
     {state.text && <details open style={{ marginTop: 12 }}>
-      <summary>Current stored passage</summary><p style={prose}>{state.text}</p>
+      <summary>Current stored passage</summary><div className="ev-cite-quote">{RecordQuote({ text: state.text }) ?? <MarkdownLite text={state.text} />}</div>
       <p style={small}>Current index lookup; matching text does not verify the supplied relationship.</p>
     </details>}
   </div>;
@@ -52,7 +50,7 @@ type Input = SuppliedResult["inputs"][number];
 function TemporalDerivation({finding}: {finding: CanonicalFinding}) {
   const basis = finding.temporal_derivation;
   if (!basis) return null;
-  return <section aria-label="Document date applicability"><p><strong>Date applicability established from saved document headers.</strong></p>
+  return <section aria-label="Document date applicability" className="ev-datecheck"><p><strong>Date applicability established from saved document headers.</strong></p>
     <p>{basis.reason}</p><p className="ev-muted">Assessed date: {basis.assessed_date} · Effective from: {basis.effective_start_date}{finding.original_time_fit ? ` · Initial date fit: ${humanize(finding.original_time_fit)}` : ""}</p>
   </section>;
 }
@@ -202,19 +200,19 @@ function LegacySuppliedResultView({ result, onDetailChange }: { result: Supplied
   return <section className="ev-workspace" aria-label="Assessment result">
     <div hidden={!!item}>
       <article className="ev-card">
-        <span className="ev-kicker">Facet assessment · {result.status === "assessed_automatically" ? "Automatic result · Review pending" : "Supplied judgements"}</span>
+        <span className="ev-kicker">{result.status === "assessed_automatically" ? "Automatic result · Review pending" : "Supplied judgements"}</span>
         <p className="ev-claim">{result.claim_text}</p>
         {result.claim_text !== result.facet && <p className="ev-muted">Scope being assessed: {result.facet}</p>}
         <div className="ev-chips"><Badge>Target: {humanize(result.assessment_target)}</Badge><Badge>As of: {result.as_of}</Badge><Badge>{result.persisted ? "Saved snapshot" : "Not saved"}</Badge></div>
       </article>
       <section className="ev-card" aria-label="Credibility framework checks">
-        <h3>Credibility framework checks</h3>
+        <h3>Assessment</h3>
         {result.status === "assessed_automatically" && result.rule_comparison && <section className="ev-notice">
           <strong>{result.rule_comparison.message}</strong><p>{result.rule_comparison.notice}</p>
         </section>}
-        {conclusion && <section className="ev-notice" aria-label="Final claim assessment"><h2>{result.assessment.basis ? result.assessment.overall_outcome : conclusion.label}</h2><p>{result.assessment.basis ? result.assessment.summary : conclusion.summary}</p><p className="ev-muted">{conclusion.notice}</p></section>}
-        {!conclusion && <><p><strong>Conditional outcome: {assessment.overall_outcome}</strong></p><p className="ev-muted">{result.assurance.notice}</p></>}
-        {transaction && <dl className="ev-component-summary">{transaction.components.map(component => <div key={component.field}><dt>{component.label}</dt><dd><Badge>{humanize(component.status)}</Badge></dd></div>)}</dl>}
+        {conclusion && <section className={`ev-verdict-panel ev-verdict-${outcomeTone(result.assessment.basis ? result.assessment.overall_outcome : conclusion.label)}`} aria-label="Final claim assessment"><h2>{result.assessment.basis ? result.assessment.overall_outcome : conclusion.label}</h2><p>{result.assessment.basis ? result.assessment.summary : conclusion.summary}</p><p className="ev-muted">{conclusion.notice}</p></section>}
+        {!conclusion && <section className={`ev-verdict-panel ev-verdict-${outcomeTone(assessment.overall_outcome)}`}><p className="ev-verdict-title"><strong>Conditional outcome: {assessment.overall_outcome}</strong></p><p className="ev-muted">{result.assurance.notice}</p></section>}
+        {transaction && <dl className="ev-component-summary">{transaction.components.map(component => <div key={component.field}><dt>{component.label}</dt><dd><Badge tone={outcomeTone(humanize(component.status))}>{humanize(component.status)}</Badge></dd></div>)}</dl>}
         {result.transaction_assessment && <details><summary>Why this assessment · exact supporting records</summary><section className="ev-notice">
           <strong>{result.transaction_assessment.record_id} · {humanize(result.transaction_assessment.status)}</strong>
           <p>{result.transaction_assessment.notice}</p>
@@ -228,18 +226,18 @@ function LegacySuppliedResultView({ result, onDetailChange }: { result: Supplied
             {result.transaction_assessment.citations.map(citation => <div key={citation.evidence_id}><p>{humanize(result.transaction_assessment!.connections.find(link => link.evidence_id === citation.evidence_id)?.relationship ?? "linked record")}</p><CitationView citation={citation} /></div>)}
           </details>
         </section></details>}
-        {!conclusion && <div className="ev-two">
-          {[{ label: "Formally", value: assessment.formal_outcome }, { label: "In practice", value: assessment.observed_outcome }].map(lane =>
-            <section className="ev-card" key={lane.label}><span className="ev-kicker">{lane.label}</span><Badge tone={outcomeTone(lane.value)}>{lane.value}</Badge><p className="ev-muted">Conditional on the inputs admitted to this assessment.</p></section>)}
-        </div>}
+        <LaneCards lanes={[{ label: "Formally", value: assessment.formal_outcome }, { label: "In practice", value: assessment.observed_outcome }]
+          .map(lane => conclusion ? lane : { ...lane, note: "Conditional on the inputs admitted to this assessment." })} />
         <section aria-label="Verification limits">
           <h4>{conclusion ? "Verification limits" : "Conditional confidence"}</h4>
-          <strong>{assessment.confidence}</strong>
-          {conclusion && <><p className="ev-muted">The result above describes the cited records. Verification of those records remains qualified by these checks.</p><ul>{verificationChecks.map(check => <li key={check.label}>{check.label}: {check.status}</li>)}</ul></>}
-          <p className="ev-muted">{usedInputs.length} inputs used in this comparison · {sources} unique sources · {result.inputs.length} inputs examined</p>
-          <p className="ev-muted">{result.status === "assessed_automatically" ? "Human review is pending." : "Human review is not established by this request."} {result.persisted ? "Saved results and their exact citations are preserved." : "This result has not been saved."}</p>
+          <ConfidenceMeter label={assessment.confidence} score={null} note={`${usedInputs.length} of ${result.inputs.length} passages used · ${sources} ${sources === 1 ? "source" : "sources"}`} />
+          {conclusion && <ul className="ev-checks">{verificationChecks.map(check => <li key={check.label}>{check.label}: {check.status}</li>)}</ul>}
+          <details className="ev-notes"><summary>Notes and limits</summary>
+            {conclusion && <p className="ev-muted">The result above describes the cited records. Verification of those records remains qualified by these checks.</p>}
+            <p className="ev-muted">{usedInputs.length} inputs used in this comparison · {sources} unique sources · {result.inputs.length} inputs examined</p>
+            <p className="ev-muted">{result.status === "assessed_automatically" ? "Human review is pending." : "Human review is not established by this request."} {result.persisted ? "Saved results and their exact citations are preserved." : "This result has not been saved."}</p>
+          </details>
         </section>
-        <button className="ev-button" onClick={() => { setGraphOpenSignal(value => value + 1); graphSection.current?.scrollIntoView({block: "start"}); graphSection.current?.focus({preventScroll: true}); }}>View evidence graph</button>
       </section>
       {result.practice_assessment && <section className="ev-card"><h3>Recorded practice compared with the requirement</h3>
         <p>{result.practice_assessment.notice}</p>
@@ -258,11 +256,11 @@ function LegacySuppliedResultView({ result, onDetailChange }: { result: Supplied
       {!usedInputs.length && <p>No passage establishes a component of this claim.</p>}
       <div className="ev-list">{usedInputs.map(input => <EvidenceRow key={input.input_id} title={input.source.title}
         subtitle={`${transaction ? "Used in component comparison" : humanize(input.interpretation.mode)} · ${evidenceWeight(result, input)}`}
-        preview={input.interpretation.citations[0]?.quotation ?? input.interpretation.rationale}
-        badges={<><Badge>{input.interpretation.stance}</Badge><Badge>{input.source.lifecycle_status ?? "unknown"}</Badge></>} onOpen={() => open(input.input_id)} />)}</div>
-      {!!otherInputs.length && <details className="ev-card"><summary>Other retrieved passages · {otherInputs.length}</summary>
+        preview={quotePreview(input.interpretation.citations[0]?.quotation ?? input.interpretation.rationale)}
+        badges={<><Badge tone={stanceTone(input.interpretation.stance)}>{input.interpretation.stance}</Badge><Badge>{input.source.lifecycle_status ?? "unknown"}</Badge></>} onOpen={() => open(input.input_id)} />)}</div>
+      {!!otherInputs.length && <details className="ev-card"><summary>Other retrieved passages <Count>{otherInputs.length}</Count></summary>
         <p className="ev-muted">These passages were not used in the findings above. Their retrieval does not make them supporting or contradictory evidence.</p>
-        <div className="ev-list">{otherInputs.map(input => <EvidenceRow key={input.input_id} title={input.source.title} subtitle="Retained for review" preview={input.interpretation.citations[0]?.quotation ?? input.interpretation.rationale} badges={<Badge>Not used for this claim</Badge>} onOpen={() => open(input.input_id)} />)}</div>
+        <div className="ev-list">{otherInputs.map(input => <EvidenceRow key={input.input_id} title={input.source.title} subtitle="Retained for review" preview={quotePreview(input.interpretation.citations[0]?.quotation ?? input.interpretation.rationale)} badges={<Badge>Not used for this claim</Badge>} onOpen={() => open(input.input_id)} />)}</div>
       </details>}
       {result.deployment_event_findings?.map((finding, i) => <section className="ev-card" key={i}><h3>Deployment sign-off evidence · unresolved</h3><p>{finding.event_id} · {finding.related_record}</p><p>{finding.message}</p><p>{finding.next_step}</p><CitationView citation={finding.citation} /></section>)}
       <div ref={graphSection} className="ev-jump" tabIndex={-1}><AssessmentGraph result={result} onOpen={open} openSignal={graphOpenSignal} /></div>
@@ -296,6 +294,32 @@ export function processingExplanation(code: string | null): string {
   }
 }
 
+// Exclusion reasons and limitations often restate the finding's reason; show each point once.
+export function extraNotes(reason: string, notes: string[]): string[] {
+  const seen = new Set<string>();
+  const key = (text: string) => text.trim().toLowerCase();
+  return notes.filter(note => {
+    const k = key(note);
+    if (!k || seen.has(k) || key(reason).includes(k) || k.includes(key(reason))) return false;
+    seen.add(k); return true;
+  });
+}
+
+const COMPARATOR_WORDS: Record<string, string> = { eq: "exactly", gt: "more than", gte: "at least", lt: "less than", lte: "at most", approx: "about", range: "in the range" };
+// Interpreted claim fields are stored as lists and small records; show them as plain words.
+export function interpretedValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "Not stated";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.length ? value.map(interpretedValue).join(", ") : "Not stated";
+  const record = value as Record<string, unknown>;
+  if (typeof record.value === "string" && typeof record.comparator === "string") {
+    const unit = typeof record.unit === "string" ? record.unit : "";
+    const amount = unit === "%" || unit === "" ? `${record.value}${unit}` : unit === "$" ? `$${record.value}` : `${record.value} ${unit}`;
+    return `${COMPARATOR_WORDS[record.comparator] ?? record.comparator} ${amount}`;
+  }
+  return JSON.stringify(value);
+}
+
 function CanonicalResultView({result, canonical, onDetailChange}: {result: SuppliedResult; canonical: CanonicalAssessment; onDetailChange?: (open: boolean) => void}) {
   const [selected, setSelected] = useState<string | null>(null);
   const [graphOpenSignal, setGraphOpenSignal] = useState(0);
@@ -316,16 +340,17 @@ function CanonicalResultView({result, canonical, onDetailChange}: {result: Suppl
         {result.facet !== result.claim_text && <p className="ev-muted">Scope being assessed: {result.facet}</p>}
         <div className="ev-chips"><Badge>Target: {humanize(interpretedTarget ?? (failed ? "Not established" : result.assessment_target))}</Badge><Badge>As of: {result.as_of}</Badge><Badge>{result.persisted ? "Saved snapshot" : "Not saved"}</Badge></div>
       </article>
-      <section className="ev-card" aria-label="Credibility framework checks"><h3>Credibility framework checks</h3>
+      <section className="ev-card" aria-label="Credibility framework checks"><h3>Assessment</h3>
         {failed ? <section role="alert" aria-label="Assessment processing failure"><h2>Assessment not completed</h2><p>{processingExplanation(canonical.processing.code)}</p>
           <p className="ev-muted">No assessment outcome or confidence score was produced. This is a processing problem, not a finding that the evidence is insufficient.</p>
           <details><summary>Technical details</summary>{canonical.processing.code && <p>Reason: {canonical.processing.code}</p>}<p>{canonical.processing.message}</p></details>
         </section> : <>
-          <section className="ev-notice" aria-label="Final claim assessment"><h2>{canonical.overall_outcome}</h2><p>{canonical.summary}</p></section>
+          <section className={`ev-verdict-panel ev-verdict-${outcomeTone(canonical.overall_outcome ?? "")}`} aria-label="Final claim assessment"><div className="ev-verdict-body"><h2>{canonical.overall_outcome}</h2><p>{canonical.summary}</p></div>
+            {typeof canonical.confidence.score === "number" && <ConfidenceRing score={canonical.confidence.score} tone={outcomeTone(canonical.overall_outcome)} />}</section>
           <dl className="ev-component-summary">{canonical.components.map(component => <div key={component.id}><dt>{component.text}</dt><dd><Badge tone={outcomeTone(component.outcome)}>{component.outcome}</Badge></dd></div>)}</dl>
-          <section aria-label="Assessment confidence"><h4>Assessment confidence</h4><strong>{assessmentConfidence(canonical.confidence.score)}</strong>
-            <p>{canonical.confidence.label}</p><p className="ev-muted">Uncalibrated assessment confidence: confidence in this assessment outcome, not the probability that the claim is true. A contradicted claim can have high assessment confidence.</p>
-            <details><summary>How confidence was calculated</summary><p>{canonical.confidence.meaning}</p><p>Method: {canonical.confidence.method}</p>
+          <section aria-label="Assessment confidence" className="ev-confidence-note">
+            <p className="ev-muted"><strong>Assessment confidence {assessmentConfidence(canonical.confidence.score)}</strong> · based on {used.size} {used.size === 1 ? "passage" : "passages"} from {sources.size} {sources.size === 1 ? "source" : "sources"}. Uncalibrated assessment confidence: confidence in this assessment outcome, not the probability that the claim is true. A contradicted claim can have high assessment confidence.</p>
+            <details><summary>How confidence was calculated</summary><p>{canonical.confidence.label}</p><p>{canonical.confidence.meaning}</p><p>Method: {canonical.confidence.method}</p>
               <ul>{canonical.confidence.basis.map((basis, i) => <li key={i}>{basis}</li>)}</ul>
               <dl>{Object.entries(canonical.confidence.weights).map(([factor, weight]) => <div key={factor}><dt>{humanize(factor)} weight</dt><dd>{Math.round(weight * 100)}%</dd></div>)}</dl>
               {canonical.confidence.components.map(component => <section key={component.component_id}><h4>{canonical.components.find(item => item.id === component.component_id)?.text ?? component.component_id}: {assessmentConfidence(component.score)}</h4>
@@ -335,18 +360,18 @@ function CanonicalResultView({result, canonical, onDetailChange}: {result: Suppl
               <p className="ev-muted">This method has not been statistically calibrated against held-out claims.</p>
             </details>
           </section>
-          <p className="ev-muted">{used.size} passages used in assessment · {sources.size} unique sources. Repeated passages and links are not independent corroboration.</p>
-          <p className="ev-muted">{reviewed ? "This revision uses reviewer judgements; it does not independently verify the sources." : "Human review is pending."} {result.persisted ? "The saved result and exact citations are preserved." : "This result has not been saved."}</p>
+          <details className="ev-notes"><summary>Notes and limits</summary>
+            <p className="ev-muted">{used.size} passages used in assessment · {sources.size} unique sources. Repeated passages and links are not independent corroboration.</p>
+            <p className="ev-muted">{reviewed ? "This revision uses reviewer judgements; it does not independently verify the sources." : "Human review is pending."} {result.persisted ? "The saved result and exact citations are preserved." : "This result has not been saved."}</p>
+          </details>
         </>}
-        <button className="ev-button" onClick={() => { setGraphOpenSignal(value => value + 1); graphSection.current?.scrollIntoView({block: "start"}); graphSection.current?.focus({preventScroll: true}); }}>{failed ? "Inspect retrieved context" : "View evidence graph"}</button>
       </section>
       {!!canonical.unresolved_questions.length && <section className="ev-card"><h3>{failed ? "What is needed to continue" : "What remains unresolved"}</h3><ul>{canonical.unresolved_questions.map((question, i) => <li key={i}>{question}</li>)}</ul></section>}
       {!failed && <section className="ev-card"><h3>Findings and exact evidence</h3>
-        {canonical.components.map(component => <details key={component.id}><summary>{component.text} · {component.outcome}</summary>
-          {component.findings.length ? component.findings.map((finding, i) => <section key={i}>
-            <p><strong>{humanize(finding.relationship)}</strong> · {finding.admitted ? "Used in assessment" : "Context or excluded evidence"}</p><p>{finding.reason}</p>
-            {!!finding.exclusion_reasons.length && <ul>{finding.exclusion_reasons.map((reason, j) => <li key={j}>{reason}</li>)}</ul>}
-            {!!finding.limitations.length && <ul>{finding.limitations.map((limit, j) => <li key={j}>{limit}</li>)}</ul>}
+        {canonical.components.map(component => <details key={component.id} className="ev-finding-group"><summary>{component.text} <Badge tone={outcomeTone(component.outcome)}>{component.outcome}</Badge></summary>
+          {component.findings.length ? component.findings.map((finding, i) => <section key={i} className="ev-finding">
+            <div className="ev-chips" style={{ margin: "0 0 8px" }}><Badge tone={relationTone(finding.relationship)}>{humanize(finding.relationship)}</Badge><span className="ev-muted" style={{ display: "inline" }}>{finding.admitted ? "Used in assessment" : "Context or excluded evidence"}</span></div><p>{finding.reason}</p>
+            {extraNotes(finding.reason, [...finding.exclusion_reasons, ...finding.limitations]).length > 0 && <ul>{extraNotes(finding.reason, [...finding.exclusion_reasons, ...finding.limitations]).map((note, j) => <li key={j}>{note}</li>)}</ul>}
             <TemporalDerivation finding={finding}/>
             {finding.citations.map((citation, j) => <CitationView key={j} citation={citation} />)}
           </section>) : <p>No validated evidence resolves this component.</p>}
@@ -357,7 +382,7 @@ function CanonicalResultView({result, canonical, onDetailChange}: {result: Suppl
         {!failed && canonical.interpreted_claim && <><p>Assessment target: {humanize(canonical.interpreted_claim.target)}</p>
           {!!canonical.interpreted_claim.ambiguities.length && <ul>{canonical.interpreted_claim.ambiguities.map((ambiguity, i) => <li key={i}>{ambiguity}</li>)}</ul>}
           {canonical.interpreted_claim.components.map(component => <div key={component.id}><h4>{component.text}</h4><p>Original claim wording: {component.claim_quote}</p>
-            <dl>{Object.entries({entities: component.entities, predicate: component.predicate, polarity: component.polarity, quantities: component.quantities, scope: component.scope, temporal: component.temporal, modality: component.modality}).map(([field, value]) => <div key={field}><dt>{humanize(field)}</dt><dd>{typeof value === "string" ? value : JSON.stringify(value)}</dd></div>)}</dl>
+            <dl>{Object.entries({entities: component.entities, predicate: component.predicate, polarity: component.polarity, quantities: component.quantities, scope: component.scope, temporal: component.temporal, modality: component.modality}).map(([field, value]) => <div key={field}><dt>{humanize(field).replace(/^./, letter => letter.toUpperCase())}</dt><dd>{interpretedValue(value)}</dd></div>)}</dl>
           </div>)}
         </>}
         <details><summary>Processing diagnostics and provenance</summary><pre>{JSON.stringify({processing: canonical.processing, diagnostics: canonical.diagnostics, provenance: canonical.provenance}, null, 2)}</pre></details>

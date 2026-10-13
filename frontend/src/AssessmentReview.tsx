@@ -1,7 +1,65 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { saveAssessmentRevision, saveCanonicalReview } from "./api";
+import { unifiedGraph } from "./AssessmentGraph";
+import { Badge, MarkdownLite, RecordQuote } from "./EvidenceUI";
 import type { CanonicalAssessment, CanonicalReviewFinding } from "./suppliedAssessmentContract";
 import type { AssessmentSnapshot, ReviewInput } from "./AutomaticAssessment";
+
+// The review opens as a side panel so the result stays in view. A parent can control it
+// (to put the trigger in its toolbar); otherwise the component shows its own trigger.
+export type ReviewPanelProps = { open?: boolean; onOpenChange?: (open: boolean) => void };
+
+function Choice({ label, value, options, onChange }: { label: string; value: string; options: readonly (readonly [string, string])[]; onChange: (value: string) => void }) {
+  return <div className="ev-choice"><span className="ev-choice-label">{label}</span>
+    <div className="ev-segments" role="group" aria-label={label}>{options.map(([option, text]) =>
+      <button type="button" key={option} aria-pressed={value === option} onClick={() => onChange(option)}>{text}</button>)}</div>
+  </div>;
+}
+
+// One item is shown at a time; the rest stay mounted (hidden) so nothing typed is lost.
+function ReviewDrawer({ panel, itemLabel, count, position, onPosition, changed, intro, footnote, reason, onReason, busy, canSave, saveLabel, onSave, error, empty, children }: {
+  panel: ReviewPanelProps; itemLabel: string; count: number; position: number; onPosition: (next: number) => void; changed: number;
+  intro: string; footnote: string; reason: string; onReason: (value: string) => void; busy: boolean; canSave: boolean; saveLabel: string;
+  onSave: () => void; error: string | null; empty: ReactNode; children: ReactNode;
+}) {
+  const [own, setOwn] = useState(false);
+  const controlled = panel.open !== undefined;
+  const open = controlled ? !!panel.open : own;
+  const setOpen = (next: boolean) => { if (controlled) panel.onOpenChange?.(next); else setOwn(next); };
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+  return <section className="ev-automatic">
+    {!controlled && <button type="button" className="ev-card ev-review-trigger" aria-expanded={open} onClick={() => setOpen(true)}>Review this result<span className="ev-muted">Change a judgement and save it as a separate revision</span></button>}
+    <aside className="ev-drawer" hidden={!open} aria-label="Review this result">
+      <header className="ev-drawer-head">
+        <div><h3>Review this result</h3>
+          <span className="ev-muted">{count ? `${itemLabel} ${position + 1} of ${count}` : `No ${itemLabel.toLowerCase()} to review`}{changed ? ` · ${changed} changed` : ""}</span></div>
+        <div className="ev-drawer-nav">
+          <button type="button" className="ev-button" disabled={position <= 0} onClick={() => onPosition(position - 1)}>Previous</button>
+          <button type="button" className="ev-button" disabled={position >= count - 1} onClick={() => onPosition(position + 1)}>Next</button>
+          <button type="button" className="ev-button" aria-label="Close review" onClick={() => setOpen(false)}>Close</button>
+        </div>
+      </header>
+      <div className="ev-drawer-body">
+        <details className="ev-drawer-intro"><summary>How review works</summary><p>{intro}</p></details>
+        {count ? children : empty}
+      </div>
+      <footer className="ev-drawer-foot">
+        <label>Reason for this review <textarea rows={2} value={reason} disabled={busy} onChange={event => onReason(event.target.value)} /></label>
+        {error && <p role="alert" style={{ color: "var(--red)" }}>{error}</p>}
+        <div className="ev-drawer-actions">
+          <span className="ev-muted">{footnote}</span>
+          <button className="ev-button ev-button-primary" disabled={busy || !canSave} onClick={onSave}>{saveLabel}</button>
+        </div>
+      </footer>
+    </aside>
+  </section>;
+}
 
 function stableFields(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stableFields);
@@ -31,7 +89,7 @@ export function checkReviewRevision(value: AssessmentSnapshot, parent: Assessmen
   return value;
 }
 
-function LegacyAssessmentReview({record, onSaved}: {record: AssessmentSnapshot; onSaved: (value: AssessmentSnapshot) => void}) {
+function LegacyAssessmentReview({record, onSaved, panel}: {record: AssessmentSnapshot; onSaved: (value: AssessmentSnapshot) => void; panel: ReviewPanelProps}) {
   const [inputs, setInputs] = useState<ReviewInput[]>(record.snapshot.request.inputs);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -53,35 +111,46 @@ function LegacyAssessmentReview({record, onSaved}: {record: AssessmentSnapshot; 
     finally { setBusy(false); }
   }
   const edit = (index: number, field: string, value: unknown) => setInputs(items => items.map((item, i) => i === index ? { ...item, [field]: value } : item));
-  return <section className="ev-automatic">
-      <details className="ev-card">
-        <summary>Review this result</summary>
-        <p>Inspect the exact citations above before changing a judgement. Revisions assess the current corpus; the previous snapshot stays unchanged. Confirm authority only with evidence of adoption rights or delegation for this scope and date. In Judgement basis, identify the supporting source, passage and applicable dates. If evidence is missing, leave authority Unresolved and explain the gap.</p>
-        {inputs.map((item, index) => <fieldset key={index} disabled={busy}>
-          <legend>Evidence {index + 1} · {item.citations[0]?.source_id ?? "Source unavailable"}</legend>
-          <p>{item.rationale}</p>
-          <p className="ev-muted">Inspect evidence {index + 1} using its citation identifiers below.</p>
-          {item.citations.map((citation, i) => <div key={i}>
-            <p className="ev-quote">{citation.quotation}</p>
-            <p className="ev-mono">{citation.source_id} · {citation.evidence_id} · {citation.locator}</p>
-          </div>)}
-          <label>Relationship <select value={item.stance} onChange={event => edit(index, "stance", event.target.value)}>
-            {["support", "contradict", "qualify", "context", "unresolved"].map(value => <option key={value}>{value}</option>)}
-          </select></label>
-          {(["scope_matches", "temporal_matches", "authority_verified"] as const).map(field => <label key={field}>{field.replace(/_/g, " ")} <select value={String(item[field])} onChange={event => edit(index, field, event.target.value === "null" ? null : event.target.value === "true")}>
-            <option value="null">Unresolved</option><option value="true">Verified</option><option value="false">Does not match</option>
-          </select></label>)}
-          {(["directness", "specificity", "completeness"] as const).map(field => <label key={field}>{field} <input type="number" min="0" max="1" step="0.1" value={item[field]} onChange={event => edit(index, field, Number(event.target.value))} /></label>)}
-          <label>Judgement basis <textarea value={item.judgement_basis} onChange={event => edit(index, "judgement_basis", event.target.value)} /></label>
-          <label>Interpretation rationale <textarea value={item.rationale} onChange={event => edit(index, "rationale", event.target.value)} /></label>
-        </fieldset>)}
-        {!inputs.length && <p className="ev-notice">There are no evidence inputs to review. Run another search with a complete claim before creating a revision.</p>}
-        <label>Reason for this review <textarea value={reason} disabled={busy} onChange={event => setReason(event.target.value)} /></label>
-        <button className="ev-button ev-button-primary" disabled={busy || !reason.trim() || !inputs.length} onClick={review}>Save review as a new revision</button>
-        <p className="ev-muted">Reviewer declarations remain conditional; a saved review is not independent verification.</p>
+  const original = record.snapshot.request.inputs;
+  // Evidence that decided the result is reviewed first; the rest follows in its saved order.
+  const order = useMemo(() => {
+    const response = record.snapshot.response;
+    let used = new Set<string>();
+    try { if (response?.inputs) used = new Set(unifiedGraph(response).nodes.filter(node => node.used).flatMap(node => node.inputs.map(input => input.input_id))); } catch { /* order falls back to saved order */ }
+    const isUsed = (index: number) => response?.inputs?.length === original.length && used.has(response.inputs[index].input_id);
+    const indices = original.map((_, index) => index);
+    return { indices: [...indices.filter(isUsed), ...indices.filter(index => !isUsed(index))], isUsed };
+  }, [record, original]);
+  const [position, setPosition] = useState(0);
+  const isChanged = (index: number) => JSON.stringify(inputs[index]) !== JSON.stringify(original[index]);
+  const tri = (value: boolean | null) => String(value);
+  return <ReviewDrawer panel={panel} itemLabel="Evidence" count={inputs.length} position={position} onPosition={setPosition}
+    changed={inputs.filter((_, index) => isChanged(index)).length} reason={reason} onReason={setReason} busy={busy}
+    canSave={!!reason.trim() && !!inputs.length} saveLabel="Save review as a new revision" onSave={review} error={error}
+    intro="Inspect the exact citations above before changing a judgement. Revisions assess the current corpus; the previous snapshot stays unchanged. Confirm authority only with evidence of adoption rights or delegation for this scope and date. In Judgement basis, identify the supporting source, passage and applicable dates. If evidence is missing, leave authority, scope or date unresolved."
+    footnote="Reviewer declarations remain conditional; a saved review is not independent verification."
+    empty={<p className="ev-notice">There are no evidence inputs to review. Run another search with a complete claim before creating a revision.</p>}>
+    {inputs.map((item, index) => <fieldset key={index} className="ev-review-item" disabled={busy} hidden={order.indices[position] !== index}>
+      <legend>Evidence {index + 1} · {item.citations[0]?.source_id ?? "Source unavailable"}</legend>
+      <div className="ev-chips" style={{ margin: "0 0 10px" }}><Badge tone={order.isUsed(index) ? "green" : "neutral"}>{order.isUsed(index) ? "Used in the result" : "Not used in the result"}</Badge>{isChanged(index) && <Badge tone="amber">Changed</Badge>}</div>
+      <p>{item.rationale}</p>
+      {item.citations.map((citation, i) => <div key={i} className="ev-review-quote">
+        {RecordQuote({ text: citation.quotation }) ?? <MarkdownLite text={citation.quotation} />}
+        <p className="ev-mono">{citation.source_id} · {citation.evidence_id} · {citation.locator}</p>
+      </div>)}
+      <Choice label="Relationship" value={item.stance} onChange={value => edit(index, "stance", value)}
+        options={[["support", "Support"], ["contradict", "Contradict"], ["qualify", "Qualify"], ["context", "Context"], ["unresolved", "Unresolved"]]} />
+      {([["scope_matches", "Scope matches"], ["temporal_matches", "Date applies"], ["authority_verified", "Authority verified"]] as const).map(([field, label]) =>
+        <Choice key={field} label={label} value={tri(item[field])} onChange={value => edit(index, field, value === "null" ? null : value === "true")}
+          options={[["true", "Verified"], ["false", "Does not match"], ["null", "Unresolved"]]} />)}
+      <details><summary>Scores and written basis</summary>
+        <div className="ev-inline-form" style={{ margin: "12px 0" }}>{(["directness", "specificity", "completeness"] as const).map(field =>
+          <label key={field}>{field} <input type="number" min="0" max="1" step="0.1" style={{ width: 96 }} value={item[field]} onChange={event => edit(index, field, Number(event.target.value))} /></label>)}</div>
+        <label>Judgement basis <textarea rows={3} value={item.judgement_basis} onChange={event => edit(index, "judgement_basis", event.target.value)} /></label>
+        <label>Interpretation rationale <textarea rows={3} value={item.rationale} onChange={event => edit(index, "rationale", event.target.value)} /></label>
       </details>
-    {error && <p role="alert">{error}</p>}
-  </section>;
+    </fieldset>)}
+  </ReviewDrawer>;
 }
 
 
@@ -94,7 +163,7 @@ export function canonicalReviewFindings(canonical: CanonicalAssessment): Canonic
   })));
 }
 
-function CanonicalAssessmentReview({record, onSaved}: {record: AssessmentSnapshot; onSaved: (value: AssessmentSnapshot) => void}) {
+function CanonicalAssessmentReview({record, onSaved, panel}: {record: AssessmentSnapshot; onSaved: (value: AssessmentSnapshot) => void; panel: ReviewPanelProps}) {
   const canonical = record.snapshot.response.canonical_assessment!;
   const [findings, setFindings] = useState(() => canonicalReviewFindings(canonical));
   const [reason, setReason] = useState("");
@@ -114,29 +183,41 @@ function CanonicalAssessmentReview({record, onSaved}: {record: AssessmentSnapsho
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Review could not be saved."); }
     finally { setBusy(false); }
   }
+  const original = useMemo(() => canonicalReviewFindings(canonical), [canonical]);
+  const [position, setPosition] = useState(0);
+  const isChanged = (index: number) => JSON.stringify(findings[index]) !== JSON.stringify(original[index]);
   if (canonical.processing.status === "failed") return null;
-  return <section className="ev-automatic"><details className="ev-card"><summary>Review this result</summary>
-    <p>Review the component findings against their exact saved evidence. Saving recalculates the same assessment and confidence method from your judgements in a new revision. The original result, claim interpretation and cited passages stay unchanged.</p>
-    {findings.map((finding, index) => <fieldset key={index} disabled={busy}><legend>{canonical.components.find(component => component.id === finding.component_id)?.text ?? finding.component_id}</legend>
-      <p className="ev-quote">{finding.quotation}</p><p className="ev-mono">{finding.source_id} · {finding.evidence_id}</p>
-      <label>Relationship <select value={finding.relationship} onChange={event => edit(index, "relationship", event.target.value)}>{["supports", "contradicts", "qualifies", "context", "unresolved"].map(value => <option key={value}>{value}</option>)}</select></label>
-      {([["scope_fit", "Scope applies"], ["time_fit", "Date applies"]] as const).map(([field, label]) => <label key={field}>{label} <select value={finding[field]} onChange={event => edit(index, field, event.target.value)}><option value="yes">Yes, based on the cited evidence</option><option value="no">No</option><option value="unknown">Not established</option></select></label>)}
-      <label>Evidence directness <select value={finding.directness} onChange={event => edit(index, "directness", event.target.value)}><option value="direct">Direct</option><option value="indirect">Indirect</option></select></label>
-      <label>Reason for this finding <textarea value={finding.reason} onChange={event => edit(index, "reason", event.target.value)}/></label>
-      <label>Evidence basis <select value={finding.basis} onChange={event => edit(index, "basis", event.target.value)}>{[
-        ["direct_statement", "The source directly states this"], ["recorded_action", "The source records an action"],
-        ["reported_statement", "Someone reports this"], ["independent_validation", "The cited evidence describes an independent check"],
-        ["contextual", "Related context only"],
-      ].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-      <label>Limitations, one per line <textarea value={finding.limitations.join("\n")} onChange={event => edit(index, "limitations", event.target.value.split("\n"))}/></label>
+  return <ReviewDrawer panel={panel} itemLabel="Finding" count={findings.length} position={position} onPosition={setPosition}
+    changed={findings.filter((_, index) => isChanged(index)).length} reason={reason} onReason={setReason} busy={busy}
+    canSave={!!reason.trim() && !!findings.length && !findings.some(finding => !finding.reason.trim() || !finding.basis.trim())}
+    saveLabel={busy ? "Saving review…" : "Save review as a new revision"} onSave={save} error={error}
+    intro="Review the component findings against their exact saved evidence. Saving recalculates the same assessment and confidence method from your judgements in a new revision. The original result, claim interpretation and cited passages stay unchanged."
+    footnote="Reviewer judgements do not independently verify the sources or create authority. Existing validation and date safeguards still apply."
+    empty={<p>No evidence findings are available to revise. Reassess with relevant evidence before reviewing.</p>}>
+    {findings.map((finding, index) => <fieldset key={index} className="ev-review-item" disabled={busy} hidden={position !== index}>
+      <legend>{canonical.components.find(component => component.id === finding.component_id)?.text ?? finding.component_id}</legend>
+      {isChanged(index) && <div className="ev-chips" style={{ margin: "0 0 10px" }}><Badge tone="amber">Changed</Badge></div>}
+      <div className="ev-review-quote">{RecordQuote({ text: finding.quotation }) ?? <MarkdownLite text={finding.quotation} />}<p className="ev-mono">{finding.source_id} · {finding.evidence_id}</p></div>
+      <Choice label="Relationship" value={finding.relationship} onChange={value => edit(index, "relationship", value)}
+        options={[["supports", "Supports"], ["contradicts", "Contradicts"], ["qualifies", "Qualifies"], ["context", "Context"], ["unresolved", "Unresolved"]]} />
+      {([["scope_fit", "Scope applies"], ["time_fit", "Date applies"]] as const).map(([field, label]) =>
+        <Choice key={field} label={label} value={finding[field]} onChange={value => edit(index, field, value)}
+          options={[["yes", "Yes, based on the cited evidence"], ["no", "No"], ["unknown", "Not established"]]} />)}
+      <Choice label="Evidence directness" value={finding.directness} onChange={value => edit(index, "directness", value)} options={[["direct", "Direct"], ["indirect", "Indirect"]]} />
+      <label>Reason for this finding <textarea rows={3} value={finding.reason} onChange={event => edit(index, "reason", event.target.value)}/></label>
+      <details><summary>Evidence basis and limitations</summary>
+        <label style={{ marginTop: 12 }}>Evidence basis <select value={finding.basis} onChange={event => edit(index, "basis", event.target.value)}>{[
+          ["direct_statement", "The source directly states this"], ["recorded_action", "The source records an action"],
+          ["reported_statement", "Someone reports this"], ["independent_validation", "The cited evidence describes an independent check"],
+          ["contextual", "Related context only"],
+        ].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Limitations, one per line <textarea rows={3} value={finding.limitations.join("\n")} onChange={event => edit(index, "limitations", event.target.value.split("\n"))}/></label>
+      </details>
     </fieldset>)}
-    {!findings.length && <p>No evidence findings are available to revise. Reassess with relevant evidence before reviewing.</p>}
-    <label>Reason for this review <textarea value={reason} disabled={busy} onChange={event => setReason(event.target.value)}/></label>
-    <button className="ev-button ev-button-primary" disabled={busy || !reason.trim() || !findings.length || findings.some(finding => !finding.reason.trim() || !finding.basis.trim())} onClick={save}>{busy ? "Saving review…" : "Save review as a new revision"}</button>
-    <p className="ev-muted">Reviewer judgements do not independently verify the sources or create authority. Existing validation and date safeguards still apply.</p>
-  </details>{error && <p role="alert">{error}</p>}</section>;
+  </ReviewDrawer>;
 }
 
-export default function AssessmentReview({record, onSaved}: {record: AssessmentSnapshot; onSaved: (value: AssessmentSnapshot) => void}) {
-  return record.snapshot.response?.canonical_assessment ? <CanonicalAssessmentReview record={record} onSaved={onSaved}/> : <LegacyAssessmentReview record={record} onSaved={onSaved}/>;
+export default function AssessmentReview({record, onSaved, open, onOpenChange}: {record: AssessmentSnapshot; onSaved: (value: AssessmentSnapshot) => void} & ReviewPanelProps) {
+  const panel = { open, onOpenChange };
+  return record.snapshot.response?.canonical_assessment ? <CanonicalAssessmentReview record={record} onSaved={onSaved} panel={panel}/> : <LegacyAssessmentReview record={record} onSaved={onSaved} panel={panel}/>;
 }
