@@ -1,72 +1,25 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import AutomaticAssessment from "./AutomaticAssessment";
-import ScopeClarification from "./ScopeClarification";
-import { searchCorpus, getCorpusEvidence, useApi, type CorpusGroup, type CorpusSource } from "./api";
-import { Badge, DetailFrame, EvidenceRow, PassageView, SourceMetadata, passagePreview } from "./EvidenceUI";
+import { getCorpusEvidence, useApi, type CorpusGroup, type CorpusSource } from "./api";
+import { Badge, PassageView, SourceMetadata } from "./EvidenceUI";
 
 export default function CorpusScreen(props: { claim: string; initialAsOf?: string; onBack: () => void }) {
   return <CorpusClaimScreen key={props.claim} {...props} />;
 }
 
+// The graph engine does its own retrieval, so a claim goes straight to assessment: no separate
+// corpus search and no scope question in between.
 function CorpusClaimScreen({ claim, initialAsOf, onBack }: { claim: string; initialAsOf?: string; onBack: () => void }) {
   const [assessmentReady, setAssessmentReady] = useState(false);
-  const [scopeAnswer, setScopeAnswer] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState(0);
-  const [selected, setSelected] = useState<CorpusGroup | null>(null);
-  const [assessmentDetail, setAssessmentDetail] = useState(false);
-  const [scopeSkipped, setScopeSkipped] = useState(false);
-  const origin = useRef<HTMLElement | null>(null);
-  const { data, error } = useApi(() => searchCorpus(claim, scopeAnswer), [claim, scopeAnswer, attempt]);
-  const sources = new Map(data?.sources.map((source) => [source.source_id, source]) ?? []);
-  // Reached from the claim form, the date is already chosen: assess straight away unless the
-  // corpus first asks which scope is meant.
-  const scopePending = !!data?.scope_context && data.scope_context.status !== "not_requested" && data.scope_context.status !== "scope_supplied" && !scopeSkipped;
-  const assessmentReadyToRun = !!data && !scopePending && (scopeAnswer === null || data.scope_context?.answer === scopeAnswer);
-  const open = (group: CorpusGroup) => { origin.current = document.activeElement as HTMLElement; setSelected(group); };
-  const back = () => { setSelected(null); requestAnimationFrame(() => origin.current?.focus()); };
-  const rows = (groups: CorpusGroup[]) => <div className="ev-list">{groups.map(group => {
-    const source = sources.get(group.source_id);
-    const lead = group.passages.find(p => p.evidence.evidence_id === group.lead_evidence_id) ?? group.passages[0];
-    return <EvidenceRow key={group.lead_evidence_id}
-      title={`${group.position}. ${source?.title ?? group.source_id}${lead?.evidence.row_identifier ? ` · ${lead.evidence.row_identifier}` : ""}`}
-      subtitle={`${group.passages.length} passage(s) · ${group.source_id}`}
-      preview={lead ? passagePreview(lead.evidence) : "No passage text available"}
-      badges={<Badge>{source?.lifecycle_status ?? "unknown"}</Badge>}
-      onOpen={() => open(group)} />;
-  })}</div>;
   return <main className="ev-workspace" style={{ flex: 1, minWidth: 0, overflowY: "auto", padding: "36px 48px" }}>
-    <div hidden={!!selected || assessmentDetail || assessmentReady}>
-      <div className="ev-toolbar"><div><span className="ev-crumb">Claims / Evidence</span><h1>Checking your claim</h1></div>
+    <div hidden={assessmentReady}>
+      <div className="ev-toolbar"><div><span className="ev-crumb">Claims / Assessment</span><h1>Checking your claim</h1></div>
         <button className="ev-button" onClick={onBack}>New claim</button></div>
       <section className="ev-card"><span className="ev-kicker">Your claim</span>
         <p className="ev-claim">{claim}</p>
       </section>
-      {data?.scope_context && <ScopeClarification key={scopeAnswer ?? "unanswered"} context={data.scope_context} onSkip={() => setScopeSkipped(true)} onAnswer={answer => { setAssessmentReady(false); setScopeAnswer(answer); setSelected(null); setAssessmentDetail(false); }} />}
     </div>
-    <div hidden={!!selected}>{(scopeAnswer === null || data?.scope_context?.answer === scopeAnswer) && <AutomaticAssessment key={`${claim}:${scopeAnswer}`} claim={claim} initialAsOf={initialAsOf} autoStart={initialAsOf !== undefined} ready={assessmentReadyToRun} expectedFacet={scopeAnswer === null ? undefined : data?.scope_context?.facet} onDetailChange={setAssessmentDetail} onResultChange={setAssessmentReady} />}</div>
-    <div hidden={!!selected || assessmentDetail || assessmentReady}>
-      {!data && !error && <div className="ev-state" role="status">Searching the sources…</div>}
-      {error && <section className="ev-card" role="alert"><h2>Corpus search unavailable</h2><p>{error}</p>
-        <button className="ev-button" onClick={() => setAttempt(v => v + 1)}>Retry</button></section>}
-      {data && <>
-        <div className="ev-toolbar" style={{ marginTop: 28, marginBottom: 12 }}><h2>Retrieved passages</h2><span className="ev-muted">
-          {data.ranked_groups.length + data.additional_linked_groups.length} found · searched {data.indexed_source_count} sources and {data.indexed_evidence_count} passages
-        </span></div>
-        <p className="ev-muted" style={{ marginBottom: 12 }}>Retrieved for your claim and not yet assessed. Retrieval does not establish support, contradiction, credibility or temporal applicability.</p>
-        {data.ranked_groups.length === 0 && data.additional_linked_groups.length === 0 && <section className="ev-card">
-          <h3>No passages returned</h3><p>This search returned no candidates. It does not establish that the claim is false or that evidence is absent from the corpus.</p>
-        </section>}
-        {data.ranked_groups.length > 0 && rows(data.ranked_groups)}
-        {data.additional_linked_groups.length > 0 && <><h3>Additional linked evidence</h3>
-          <p className="ev-muted">Explicit record connections retained outside the ranked-group limit.</p>{rows(data.additional_linked_groups)}</>}
-        <details className="ev-card"><summary>Search limits and interpretation status</summary>
-          <ul>{data.limitations.map(limit => <li key={limit}>{limit}</li>)}</ul>
-        </details>
-      </>}
-    </div>
-    {selected && <DetailFrame title={sources.get(selected.source_id)?.title ?? selected.source_id} onBack={back}>
-      <CorpusEvidenceDetail group={selected} source={sources.get(selected.source_id)} />
-    </DetailFrame>}
+    <AutomaticAssessment claim={claim} initialAsOf={initialAsOf} autoStart={initialAsOf !== undefined} onResultChange={setAssessmentReady} />
   </main>;
 }
 

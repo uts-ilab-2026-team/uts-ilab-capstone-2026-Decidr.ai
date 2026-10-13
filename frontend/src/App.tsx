@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import CorpusScreen from "./CorpusScreen";
 import { SavedDashboard, SavedAssessmentView } from "./SavedAssessments";
 import {
-  changePassword, checkClaim, forgotPassword, getClaim, getClaims, getMe, getSource, getSources, login, logout,
+  changePassword, checkClaim, forgotPassword, getClaim, getClaims, getMe, getSource, login, logout,
   onUnauthorized, registerCsvUrl, resetPassword, signup, updateProfile, useApi,
   type Assessment, type CheckResponse, type Evidence, type LineageLink, type Mode, type SourceAttestation, type Stance, type User,
 } from "./api";
+import OrganisationScreen from "./OrganisationScreen";
+import { documents as orgDocuments } from "./orgGraph";
 
 // ─── Screens ──────────────────────────────────────────────────────────────────
 
@@ -19,6 +21,7 @@ type Screen =
   | "check"
   | "assessment"
   | "evidence-detail"
+  | "organisation"
   | "sources"
   | "source-detail"
   | "settings"
@@ -63,6 +66,16 @@ function IcoClaims() {
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
       <rect x="1.5" y="1.5" width="12" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.1" />
       <path d="M4 5h7M4 7.5h7M4 10h4.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IcoOrganisation() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <rect x="5.25" y="1.25" width="4.5" height="3.5" rx="0.8" stroke="currentColor" strokeWidth="1.1" />
+      <rect x="1.25" y="10.25" width="4.5" height="3.5" rx="0.8" stroke="currentColor" strokeWidth="1.1" />
+      <rect x="9.25" y="10.25" width="4.5" height="3.5" rx="0.8" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M7.5 4.75v2.75M3.5 10.25V7.5h8v2.75" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -204,6 +217,7 @@ function Sidebar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen)
   const items: { label: string; icon: React.ReactNode; target: Screen }[] = [
     { label: "Dashboard", icon: <IcoDashboard />, target: "dashboard" },
     { label: "Claims",    icon: <IcoClaims />,    target: "assessment" },
+    { label: "Organisation", icon: <IcoOrganisation />, target: "organisation" },
     { label: "Sources",   icon: <IcoSources />,   target: "sources" },
     { label: "Settings",  icon: <IcoSettings />,  target: "settings" },
   ];
@@ -211,6 +225,7 @@ function Sidebar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen)
   const isActive = (target: Screen) => {
     if (target === "dashboard") return ["dashboard", "register", "saved-assessment"].includes(screen);
     if (target === "assessment") return screen === "assessment" || screen === "check" || screen === "evidence-detail";
+    if (target === "organisation") return screen === "organisation";
     if (target === "sources") return screen === "sources" || screen === "source-detail" || screen === "components";
     if (target === "settings") return screen === "settings";
     return false;
@@ -1556,20 +1571,19 @@ const TYPE_PALETTE = [
 ];
 const typeLabel = (type: string | null) => words(type ?? "unknown").replace(/^./, (c) => c.toUpperCase());
 
-function SourcesScreen({ nav }: { nav: Nav }) {
-  const { data: sources, error } = useApi(getSources, []);
+// Sources come from the corpus graph bundled with the app (see orgGraph.ts), not the
+// prototype graph behind /api/sources.
+const CORPUS_SOURCES = orgDocuments().map((doc) => ({
+  id: doc.node.id, short_id: doc.shortId, title: doc.node.label, type: doc.sourceClass, status: doc.status,
+  approval_status: doc.approval, last_updated: doc.date ?? null,
+  governs: doc.governs.map((process) => process.attributes.code ?? process.label),
+}));
+
+export function SourcesScreen() {
+  const sources = CORPUS_SOURCES;
   const [typeFilter, setTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [q, setQ] = useState("");
-
-  if (!sources) {
-    return (
-      <PageShell>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: TEXT, letterSpacing: "-0.02em", margin: "0 0 28px" }}>Sources</h1>
-        <LoadState error={error} />
-      </PageShell>
-    );
-  }
 
   const types = [...new Set(sources.map((s) => typeLabel(s.type)))].sort();
   const statuses = [...new Set(sources.map((s) => s.status))].sort();
@@ -1587,16 +1601,15 @@ function SourcesScreen({ nav }: { nav: Nav }) {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 600, color: TEXT, letterSpacing: "-0.02em", margin: "0 0 4px" }}>Sources</h1>
-          <div style={{ fontSize: 13, color: MUTED }}>{sources.length} sources indexed · searched across all claim assessments</div>
+          <div style={{ fontSize: 13, color: MUTED }}>{sources.length} documents in the corpus graph</div>
         </div>
-        <Btn disabled title={NOT_CONNECTED}>+ Add source</Btn>
       </div>
 
       {/* Summary strip */}
       <div style={{ display: "flex", gap: 12, marginBottom: 28 }}>
         {[
           ...statuses.map((status) => ({ n: sources.filter((s) => s.status === status).length, label: typeLabel(status), color: STATUS_STYLE[statusVariant(status)].color })),
-          { n: sources.reduce((a, s) => a + s.used_in, 0), label: "Total references", color: TEXT },
+          { n: sources.filter((s) => s.governs.length > 0).length, label: "Govern a process", color: TEXT },
         ].map(({ n, label, color }) => (
           <div key={label} style={{ flex: 1, padding: "16px 20px", background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8 }}>
             <div style={{ fontSize: 28, fontWeight: 600, color, letterSpacing: "-0.03em", lineHeight: 1, marginBottom: 5 }}>{n}</div>
@@ -1606,15 +1619,15 @@ function SourcesScreen({ nav }: { nav: Nav }) {
       </div>
 
       {/* Filters */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
         {/* Type filter */}
-        <div style={{ display: "flex", gap: 4 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, flexBasis: "100%" }}>
           {["All", ...types].map((t) => (
             <button
               key={t}
               onClick={() => setTypeFilter(t)}
               style={{
-                padding: "5px 12px", fontSize: 12, fontFamily: "Inter, sans-serif",
+                padding: "5px 12px", fontSize: 12, fontFamily: "Inter, sans-serif", whiteSpace: "nowrap",
                 background: typeFilter === t ? (t === "All" ? TEXT : typeColor(t).bg) : SURFACE,
                 color: typeFilter === t ? (t === "All" ? "#fff" : typeColor(t).text) : TEXT3,
                 border: `1px solid ${BORDER}`, borderRadius: 5, cursor: "pointer",
@@ -1632,7 +1645,7 @@ function SourcesScreen({ nav }: { nav: Nav }) {
             key={s}
             onClick={() => setStatusFilter(s)}
             style={{
-              padding: "5px 12px", fontSize: 12, fontFamily: "Inter, sans-serif",
+              padding: "5px 12px", fontSize: 12, fontFamily: "Inter, sans-serif", whiteSpace: "nowrap",
               background: statusFilter === s ? GREY_BG : SURFACE,
               color: statusFilter === s ? TEXT : MUTED,
               border: `1px solid ${statusFilter === s ? BORDER : "transparent"}`,
@@ -1655,8 +1668,8 @@ function SourcesScreen({ nav }: { nav: Nav }) {
 
       {/* Table */}
       <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "150px 1fr 130px 150px 110px 70px 92px", padding: "9px 20px", borderBottom: `1px solid ${BORDER}`, background: "#faf9f7" }}>
-          {["ID", "Name", "Type", "Owner", "Last updated", "Used in", "Status"].map((h) => (
+        <div style={{ display: "grid", gridTemplateColumns: "170px 1fr 216px 104px 96px 64px 96px", padding: "9px 20px", borderBottom: `1px solid ${BORDER}`, background: "#faf9f7" }}>
+          {["ID", "Name", "Class", "Approval", "Dated", "Governs", "Status"].map((h) => (
             <div key={h} style={{ fontSize: 11, color: MUTED, fontWeight: 500 }}>{h}</div>
           ))}
         </div>
@@ -1669,19 +1682,16 @@ function SourcesScreen({ nav }: { nav: Nav }) {
           return (
             <div
               key={src.id}
-              onClick={() => nav.openSource(src.id)}
-              style={{ display: "grid", gridTemplateColumns: "150px 1fr 130px 150px 110px 70px 92px", alignItems: "center", padding: "13px 20px", borderBottom: i < filtered.length - 1 ? `1px solid ${BORDER_INNER}` : "none", cursor: "pointer" }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#faf9f7")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
+              style={{ display: "grid", gridTemplateColumns: "170px 1fr 216px 104px 96px 64px 96px", alignItems: "center", padding: "13px 20px", borderBottom: i < filtered.length - 1 ? `1px solid ${BORDER_INNER}` : "none" }}
             >
-              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11.5, fontWeight: 500, color: ORANGE }}>{src.short_id}</span>
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11.5, fontWeight: 500, color: TEXT2, overflowWrap: "anywhere", paddingRight: 12 }}>{src.short_id}</span>
               <span style={{ fontSize: 13.5, color: TEXT, paddingRight: 16, lineHeight: 1.35 }}>{src.title}</span>
               <span>
-                <span style={{ fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4, background: tc.bg, color: tc.text }}>{typeLabel(src.type)}</span>
+                <span style={{ fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4, background: tc.bg, color: tc.text, whiteSpace: "nowrap" }}>{typeLabel(src.type)}</span>
               </span>
-              <span style={{ fontSize: 12.5, color: TEXT3 }}>{src.owner ?? "—"}</span>
+              <span style={{ fontSize: 12.5, color: TEXT3 }}>{typeLabel(src.approval_status)}</span>
               <span style={{ fontSize: 12, color: MUTED, fontFamily: "JetBrains Mono, monospace" }}>{fmtDate(src.last_updated)}</span>
-              <span style={{ fontSize: 12.5, color: src.used_in > 0 ? TEXT : MUTED }}>{src.used_in > 0 ? `${src.used_in} claim${src.used_in > 1 ? "s" : ""}` : "—"}</span>
+              <span style={{ fontSize: 12.5, color: src.governs.length ? TEXT : MUTED }}>{src.governs.join(", ") || "—"}</span>
               <span>
                 <span style={{ display: "inline-flex", alignItems: "center", fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4, color: ss.color, background: ss.bg, border: `1px solid ${ss.border}` }}>
                   {typeLabel(src.status)}
@@ -1690,74 +1700,6 @@ function SourcesScreen({ nav }: { nav: Nav }) {
             </div>
           );
         })}
-      </div>
-    </PageShell>
-  );
-}
-
-// ─── Screen: Source detail ────────────────────────────────────────────────────
-
-function SourceDetailScreen({ nav, sourceId, asOf }: { nav: Nav; sourceId: string; asOf: string }) {
-  const { data: src, error } = useApi(() => getSource(sourceId, asOf), [sourceId, asOf]);
-
-  const back = (
-    <button
-      onClick={() => nav.go("sources")}
-      style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: MUTED, padding: 0, marginBottom: 24, fontFamily: "Inter, sans-serif" }}
-    >
-      ← Back to sources
-    </button>
-  );
-
-  if (!src) {
-    return (
-      <PageShell>
-        {back}
-        <LoadState error={error} />
-      </PageShell>
-    );
-  }
-
-  return (
-    <PageShell>
-      {back}
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-        <h1 style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 22, fontWeight: 600, color: TEXT, margin: 0 }}>{src.short_id}</h1>
-        <span style={{ fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4, background: "#dbeafe", color: "#1e40af" }}>{typeLabel(src.type)}</span>
-        <StatusPill label={typeLabel(src.status)} variant={statusVariant(src.status)} />
-      </div>
-      <div style={{ fontSize: 17, fontWeight: 500, color: TEXT, marginBottom: 24 }}>{src.title}</div>
-
-      {/* Metadata strip */}
-      <MetaStrip
-        cols={[
-          { label: "Owner", value: src.owner ?? "—" },
-          { label: "Effective", value: src.effective_end_date ? `${fmtDate(src.effective_date)} – ${fmtDate(src.effective_end_date)}` : fmtDate(src.effective_date) },
-          { label: "Last updated", value: fmtDate(src.last_updated) },
-          { label: "Approval", value: words(src.approval_status) },
-          { label: "Used in", value: `${src.used_in} claim${src.used_in === 1 ? "" : "s"}` },
-        ]}
-      />
-
-      {/* Attested values */}
-      {src.attestations.map((item) => (
-        <div key={item.edge_id} style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderLeft: `3px solid ${ORANGE}`, borderRadius: "0 8px 8px 0", padding: "24px 28px", marginBottom: 24 }}>
-          <div style={{ fontSize: 10.5, color: MUTED, marginBottom: 14 }}>Attested value — {item.mode === "formal" ? "formal" : "observed practice"}</div>
-          <p style={{ fontSize: 15, color: TEXT, lineHeight: 1.75, margin: 0 }}>{item.attests_value}</p>
-        </div>
-      ))}
-
-      {/* Claims referencing this source + lineage */}
-      <div style={{ display: "flex", gap: 24, alignItems: "flex-start", marginBottom: 24 }}>
-        <SourceClaims title="Claims referencing this source" attestations={src.attestations} onOpen={nav.openClaim} />
-        <LineageCard links={src.lineage} />
-      </div>
-
-      <div style={{ display: "flex", gap: 8 }}>
-        <Btn variant="secondary" disabled title={NOT_CONNECTED}>Edit metadata</Btn>
-        <Btn variant="secondary" disabled title={NOT_CONNECTED}>Re-index content</Btn>
-        <Btn variant="secondary" disabled title={NOT_CONNECTED}>Archive source</Btn>
       </div>
     </PageShell>
   );
@@ -1954,8 +1896,8 @@ export default function App() {
             </div>
           )}
           {view === "evidence-detail" && evidence && <EvidenceDetailScreen nav={nav} evidence={evidence} asOf={asOf} />}
-          {view === "sources" && <SourcesScreen nav={nav} />}
-          {view === "source-detail" && sourceId && <SourceDetailScreen nav={nav} sourceId={sourceId} asOf={asOf} />}
+          {view === "organisation" && <OrganisationScreen />}
+          {view === "sources" && <SourcesScreen />}
           {view === "settings" && <SettingsScreen user={user} onUser={setUser} />}
           {view === "components" && <ComponentsScreen />}
         </div>
