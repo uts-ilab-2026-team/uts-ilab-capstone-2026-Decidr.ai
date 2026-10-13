@@ -1,12 +1,12 @@
-"""Automatic assessment endpoint (legacy general-bundle path) + parent-linked human review.
+"""Claim runner + save: POST /api/assessments/automatic runs the graph engine and saves it.
 
-Single code path: delegates to ``decidr.general_assessment.build_general_bundle``. The former
-``bounded`` vs general dispatcher — and the overloaded ``DECIDR_ASSESSMENT_PROVIDER`` toggle that
-selected it — were removed (3d). ``DECIDR_ASSESSMENT_PROVIDER`` now means only "which LLM provider"
-(used by the graph-engine endpoint ``POST /api/corpus/assess``); it no longer switches this route.
+The claim check now runs the single-path graph engine (``decidr.assess_claim`` via
+``graph_assessment.build_graph_bundle``). The former general/bounded scorers are retired. The
+saved bundle keeps the history envelope (``response``/``request``/``provenance``) so the history
+read endpoints (list/snapshot/export) keep working.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import Field
 
@@ -18,7 +18,7 @@ from decidr.api.assessment_history import (
     history_path,
     implementation_manifest,
 )
-from decidr.api.corpus import corpus_database_path
+from decidr.api.graph_assessment import ASSESSMENT_METHOD, build_graph_bundle
 from decidr.api.interpretation import InterpretationProposalRequest
 
 router = APIRouter(dependencies=[Depends(auth.current_user)])
@@ -29,27 +29,14 @@ class SaveAutomaticRequest(InterpretationProposalRequest):
 
 
 def build_automatic_assessment(request: InterpretationProposalRequest) -> dict:
-    from decidr.general_assessment import build_general_bundle
-
-    try:
-        path = corpus_database_path()
-    except HTTPException:
-        path = None
-    return build_general_bundle(request, path)
-
-
-@router.post("/api/corpus/assess-automatic")
-def assess_automatic(request: InterpretationProposalRequest):
-    return build_automatic_assessment(request)["response"]
+    return build_graph_bundle(request)
 
 
 @router.post("/api/assessments/automatic")
 def save_automatic(request: SaveAutomaticRequest, user: Owner):
     with history_errors():
-        from decidr.general_assessment import METHOD as GENERAL_METHOD
-
         path = history_path()
-        command = {**request.model_dump(mode="json"), "method": GENERAL_METHOD}
+        command = {**request.model_dump(mode="json"), "method": ASSESSMENT_METHOD}
         previous = history.existing_retry(path, user["id"], command)
         if previous is not None:
             return JSONResponse(previous, status_code=200)

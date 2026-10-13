@@ -68,9 +68,12 @@ def _config():
     return GraphCredibilityConfig.load(CONFIG_PATH)
 
 
-@router.post("/assess")
-def assess(request: AssessClaimRequest) -> dict:
-    """Assess one claim end to end and return the UI-ready verdict payload."""
+ASSESSMENT_METHOD = "graph-credibility-v1"
+
+
+def _run_claim(claim: str, as_of):
+    """Shared engine run with the cached snapshot/skeleton/config. Raises HTTPException on model
+    unavailability (503) or model failure (502) so both callers surface the same errors."""
     try:
         provider = get_provider()
     except ProviderError as error:
@@ -79,15 +82,62 @@ def assess(request: AssessClaimRequest) -> dict:
             detail="No local assessment model is configured; set DECIDR_ASSESSMENT_PROVIDER/MODEL.",
         ) from error
     try:
-        result = assess_claim(
-            request.claim,
+        return assess_claim(
+            claim,
             provider,
-            as_of=request.as_of,
+            as_of=as_of,
             snapshot=_snapshot(),
             skeleton=_skeleton(),
             config=_config(),
         )
     except ProviderError as error:
-        # Reader/splitter model failure (not a graph/data error): surface as a model problem.
         raise HTTPException(status_code=502, detail=f"Assessment model failed: {error}") from error
-    return to_payload(result)
+
+
+def build_graph_bundle(request) -> dict:
+    """Run the engine and wrap it in the history bundle envelope the save/list path expects.
+
+    ``request`` only needs ``.claim`` and ``.as_of`` (``.facet`` optional). The returned bundle's
+    ``response`` carries our full verdict payload PLUS the minimal legacy summary keys
+    (``claim_text``/``facet``/``as_of``/``status``/``assessment``/``assurance``) that
+    ``assessment_history.append_run``/``list_runs`` read, so persistence keeps working unchanged.
+    """
+    result = _run_claim(request.claim, request.as_of)
+    payload = to_payload(result)
+    facet = getattr(request, "facet", None) or result.claim_text
+    verdict = result.verdict
+    response = {
+        **payload,
+        "claim_text": result.claim_text,
+        "facet": facet,
+        "as_of": str(result.as_of),
+        "status": "assessed_automatically",
+        # Claim-level formal/observed are not separated by the combiner; mirror the overall
+        # outcome for the history summary (per-facet lanes live in payload["facets"]).
+        "assessment": {
+            "overall_outcome": verdict.overall_outcome,
+            "formal_outcome": verdict.overall_outcome,
+            "observed_outcome": verdict.overall_outcome,
+            "confidence": verdict.confidence,
+        },
+        "assurance": {"outcome_basis": "graph_engine_deterministic_scoring"},
+    }
+    return {
+        "response": response,
+        "request": {
+            "claim_text": result.claim_text,
+            "facet": facet,
+            "assessment_target": result.split.get("target"),
+            "as_of": str(result.as_of),
+        },
+        "provenance": {
+            "assessment_method": ASSESSMENT_METHOD,
+            "evidence_scope": "graph_guided_lane_balanced_retrieval",
+        },
+    }
+
+
+@router.post("/assess")
+def assess(request: AssessClaimRequest) -> dict:
+    """Assess one claim end to end and return the UI-ready verdict payload."""
+    return to_payload(_run_claim(request.claim, request.as_of))

@@ -156,8 +156,6 @@ def existing_retry(path: Path, owner_id: int, request: dict) -> dict | None:
 
 
 def list_runs(path: Path, owner_id: int, *, limit: int, offset: int) -> list[dict]:
-    from decidr.transaction_claims import transaction_conclusion
-
     if not path.is_file():
         return []
     with closing(_connect(path)) as connection:
@@ -178,8 +176,7 @@ def list_runs(path: Path, owner_id: int, *, limit: int, offset: int) -> list[dic
                 "claim_text": response["claim_text"],
                 "facet": response["facet"],
                 "as_of": response["as_of"],
-                "claim_conclusion": response.get("claim_conclusion")
-                or transaction_conclusion(response.get("transaction_assessment")),
+                "claim_conclusion": response.get("claim_conclusion"),
                 "overall_outcome": response["assessment"]["overall_outcome"],
                 "formal_outcome": response["assessment"]["formal_outcome"],
                 "observed_outcome": response["assessment"]["observed_outcome"],
