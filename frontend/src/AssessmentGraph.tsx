@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import type { Citation, SuppliedResult } from "./suppliedAssessmentContract";
 import ConnectedEvidence from "./ConnectedEvidence";
-import { humanize } from "./EvidenceUI";
+import { Count, humanize, quotePreview } from "./EvidenceUI";
 
 type Input = SuppliedResult["inputs"][number];
 export function graphInputs(result: SuppliedResult, lane: string) {
@@ -214,7 +214,7 @@ export default function AssessmentGraph({result, onOpen, openSignal = 0}: {resul
   const current = graph.nodes.find(node => node.id === selected);
   const contextCount = graph.nodes.filter(node => !node.used).length;
   return <section className="ev-card ev-graph" aria-label="Evidence graph">
-    <div className="ev-toolbar"><h3>Evidence graph · {nodes.length} of {graph.nodes.length} passages</h3>
+    <div className="ev-toolbar"><h3>Evidence graph <Count>{nodes.length} of {graph.nodes.length} passages</Count></h3>
       <button className="ev-button" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? "Hide graph" : "Show graph"}</button>
     </div>
     <div hidden={!expanded}>
@@ -223,30 +223,34 @@ export default function AssessmentGraph({result, onOpen, openSignal = 0}: {resul
         {[["both", "All"], ["formal", "Formal"], ["observed", "Practice"], ["documented", "Documentation"], ...(result.canonical_assessment ? [["unresolved", "Unknown"]] : [])].map(([value, label]) =>
           <button key={value} aria-pressed={lane === value} onClick={() => setLane(value)}>{label}</button>)}
       </div>{contextCount > 0 && <button className="ev-button" aria-pressed={showContext} onClick={() => setShowContext(value => !value)}>{showContext ? "Hide" : "Include"} related context · {contextCount}</button>}</div>
-      <div className="ev-graph-tree">
+      <div className={`ev-graph-layout${current ? " ev-graph-split" : ""}`}><div className="ev-graph-tree">
         <div className="ev-graph-claim"><span className="ev-kicker">Claim being assessed</span><strong>{result.facet}</strong></div>
         {!!graph.components.length && <section aria-label="Claim components" className="ev-two">{graph.components.map(component => <button key={component.id} className="ev-graph-node" aria-pressed={componentId === component.id} onClick={() => setComponentId(value => value === component.id ? null : component.id)}>
           <strong>{component.text}</strong><span>{component.outcome}</span><small>{componentId === component.id ? "Showing this component · select again to show all" : "Inspect evidence connected to this component"}</small>
         </button>)}</section>}
         {nodes.length ? <div className={`ev-graph-branches ${groups.length === 1 ? "ev-graph-single" : ""}`} style={{"--lane-count": groups.length, "--branch-start": `calc(${50 / groups.length}% - ${12 * (groups.length - 1) / groups.length}px)`} as CSSProperties}>
-          {groups.map(group => <section className="ev-graph-branch" key={group.mode}><h4>{group.label} · {group.nodes.length}</h4>
+          {groups.map(group => <section className="ev-graph-branch" key={group.mode}><h4>{group.label} <Count>{group.nodes.length}</Count></h4>
             <div className="ev-graph-nodes">{group.nodes.map(node => <button key={node.id}
-              className={`ev-graph-node ${(result.canonical_assessment ? node.used : node.inputs.some(item => item.admitted_to_framework)) ? "" : "ev-graph-retained"}`}
+              className={`ev-graph-node ${(result.canonical_assessment ? node.used : node.inputs.some(item => item.admitted_to_framework)) ? "" : "ev-graph-retained"}${node.used ? " ev-graph-used" : ""}`}
               aria-pressed={selected === node.id} onClick={() => setSelected(node.id)} aria-label={`Inspect ${node.title}: ${node.citations[0]?.locator ?? node.evidenceId}`}>
               <strong>{node.recordIds.length ? `${node.recordIds.join(", ")} · ` : ""}{node.title}</strong>
               <span>{node.used ? "Used in assessment" : "Related context · not used in conclusion"}</span>
               {node.findings.map((finding, i) => <span key={i}>{finding.label}: {humanize(finding.status)}</span>)}
               {!node.findings.length && (result.canonical_assessment ? <span>{labels[node.lanes[0]]}</span> : node.inputs.map(item => <span key={item.input_id}>{humanize(item.interpretation.mode)} · {item.interpretation.stance}</span>))}
               <small>{result.canonical_assessment ? (node.used ? "Validated relation used in assessment" : "Context link only · not inferential") : node.inputs.some(item => item.admitted_to_framework) ? "Included in framework scoring" : "Not scored · retained for review"}</small>
-              <span className="ev-preview">{node.citations[0]?.quotation ?? node.inputs[0]?.interpretation.rationale}</span>
+              <span className="ev-preview">{quotePreview(node.citations[0]?.quotation ?? node.inputs[0]?.interpretation.rationale ?? "")}</span>
               <small className="ev-mono">{node.citations[0]?.locator ?? node.evidenceId}</small>
             </button>)}</div></section>)}
         </div> : <p className="ev-muted">No evidence used in this category.{contextCount > 0 ? " Include related context to inspect the remaining retrieved passages." : ""}</p>}
       </div>
-      {current && <ConnectedEvidence node={current} graph={graph} result={result} onSelect={setSelected} onOpen={onOpen} onClose={() => setSelected(null)} />}
-      {!!graph.comparisons.length && <details><summary>Policy and recorded-role differences · {graph.comparisons.length}</summary>{graph.comparisons.map((comparison, i) => <p key={i}>{comparison.summary} {comparison.node_ids.map(id => <button className="ev-button" key={id} onClick={() => setSelected(id)}>Inspect {graph.nodes.find(node => node.id === id)?.recordIds[0] ?? "passage"}</button>)}</p>)}</details>}
-      <p className="ev-muted">{result.canonical_assessment ? "Categories describe source types, not credibility or support. Component connections labelled supports, contradicts or qualifies are used in the assessment only when their provenance and applicability checks pass. Dashed cards show context or excluded evidence. Exact record references organise evidence; they do not themselves establish support or independent corroboration." : "Connections group interpreted evidence under the claim. Dashed cards are retained without a score; their findings may still inform the component assessment. Context links do not establish support, independence or authority."}</p>
-      {result.evidence_synthesis && <details><summary>Context search coverage and remaining questions</summary><p>{result.evidence_synthesis.summary}</p><p>{result.evidence_synthesis.future_evidence_excluded} later-dated passages or records excluded for this assessment date.</p><ul>{result.evidence_synthesis.questions.map(question => <li key={question}>{question}</li>)}</ul><p>{result.evidence_synthesis.notice}</p></details>}
+      {current && <ConnectedEvidence node={current} graph={graph} result={result} onSelect={setSelected} onOpen={onOpen} onClose={() => setSelected(null)} />}</div>
+      {!!graph.comparisons.length && <details><summary>Policy and recorded-role differences <Count>{graph.comparisons.length}</Count></summary>{graph.comparisons.map((comparison, i) => <div className="ev-callout" key={i}><p>{comparison.summary}</p>
+        <div className="ev-chips">{comparison.node_ids.map(id => <button className="ev-button" key={id} onClick={() => setSelected(id)}>Inspect {graph.nodes.find(node => node.id === id)?.recordIds[0] ?? "passage"}</button>)}</div></div>)}</details>}
+      <details className="ev-graph-guide"><summary>How to read this graph</summary><p className="ev-muted">{result.canonical_assessment ? "Categories describe source types, not credibility or support. Component connections labelled supports, contradicts or qualifies are used in the assessment only when their provenance and applicability checks pass. Dashed cards show context or excluded evidence. Exact record references organise evidence; they do not themselves establish support or independent corroboration." : "Connections group interpreted evidence under the claim. Dashed cards are retained without a score; their findings may still inform the component assessment. Context links do not establish support, independence or authority."}</p></details>
+      {result.evidence_synthesis && <details><summary>Context search coverage and remaining questions</summary><div className="ev-coverage">
+        <p>{result.evidence_synthesis.summary}</p><p className="ev-muted">{result.evidence_synthesis.future_evidence_excluded} later-dated passages or records excluded for this assessment date.</p>
+        {!!result.evidence_synthesis.questions.length && <><h4>Questions still open</h4><ul className="ev-checks">{result.evidence_synthesis.questions.map(question => <li key={question}>{question}</li>)}</ul></>}
+        <p className="ev-muted">{result.evidence_synthesis.notice}</p></div></details>}
     </div>
   </section>;
 }

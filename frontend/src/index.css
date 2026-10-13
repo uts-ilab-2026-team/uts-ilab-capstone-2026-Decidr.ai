@@ -2,6 +2,28 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 
+/* Design tokens shared by every screen (mirrors the constants at the top of App.tsx). */
+:root {
+  --orange: #F26B21;
+  --orange-deep: #b7470b;
+  --surface: #ffffff;
+  --page: #f5f4f2;
+  --hover: #faf9f7;
+  --border: #e5e3df;
+  --border-inner: #f0eee9;
+  --text: #1a1a1a;
+  --text-2: #374151;
+  --text-3: #6b7280;
+  --muted: #9ca3af;
+  --green: #1F6B30;
+  --green-bg: #f0faf2;
+  --amber: #7A4F0A;
+  --amber-bg: #fef9ed;
+  --red: #991B1B;
+  --red-bg: #fef2f2;
+  --mono: 'JetBrains Mono', monospace;
+}
+
 html,
 body,
 #root {

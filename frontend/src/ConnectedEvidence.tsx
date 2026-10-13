@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { SuppliedResult } from "./suppliedAssessmentContract";
 import type { GraphComponent, GraphEdge, GraphNode } from "./AssessmentGraph";
-import { humanize } from "./EvidenceUI";
+import { Count, MarkdownLite, RecordQuote, humanize } from "./EvidenceUI";
 
 type Props = {node: GraphNode; graph: {nodes: GraphNode[]; edges: GraphEdge[]; components?: GraphComponent[]}; result: SuppliedResult;
   onSelect: (id: string) => void; onOpen: (inputId: string) => void; onClose: () => void};
@@ -24,8 +24,8 @@ export default function ConnectedEvidence({node, graph, result, onSelect, onOpen
         <button className="ev-button" onClick={() => onOpen(item.input_id)}>Inspect assessment reasoning and scoring checks</button>
       </div>;
     })}
-    <h4>Exact citations · {node.citations.length}</h4>
-    {node.citations.map((citation, i) => <div key={i}><blockquote style={{whiteSpace: "pre-wrap"}}>{citation.quotation}</blockquote>
+    <h4>Exact citations <Count>{node.citations.length}</Count></h4>
+    {node.citations.map((citation, i) => <div key={i}><blockquote>{RecordQuote({ text: citation.quotation }) ?? <MarkdownLite text={citation.quotation} />}</blockquote>
       <p className="ev-mono">{citation.evidence_id} · {citation.source_id} · {citation.locator} · characters {citation.start}–{citation.end}</p></div>)}
     {!node.citations.length && <p>No passage quotation was saved for this input.</p>}
     {node.contexts.map((context, i) => <details key={i}><summary>{humanize(context.relationship)}{context.temporal_status ? ` · ${humanize(context.temporal_status)}` : ""}</summary>
