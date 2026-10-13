@@ -36,6 +36,7 @@ class Source(StrictModel):
     predecessor_source_id: str | None = None
     successor_source_id: str | None = None
     derived_from_source_id: str | None = None
+    related_source_codes: list[str] = Field(default_factory=list)
     duplicate_group: str | None = None
     ingestion_status: str = "registered"
     exclusion_reason: str | None = None

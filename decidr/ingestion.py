@@ -125,6 +125,25 @@ def _source_code(path: Path, title: str) -> str:
     return match.group() if match else _slug(path.stem)
 
 
+_RELATED_CODE = re.compile(r"\b([A-Z]{2,}-\d+)\b")
+
+
+def _related_source_codes(value: str | None, self_code: str) -> list[str]:
+    """Extract document codes from a 'Related documents:' metadata value.
+
+    "PROC-02 (Discount Approval Process), POL-06 (...)" -> ["PROC-02", "POL-06"].
+    "None formally linked." -> [] (no code pattern). The document's own code is dropped so a
+    self-reference never produces a self-loop.
+    """
+    if not value:
+        return []
+    codes: list[str] = []
+    for code in _RELATED_CODE.findall(value):
+        if code != self_code and code not in codes:
+            codes.append(code)
+    return codes
+
+
 def build_source(path: Path, root: Path, release: str) -> Source:
     """Register a file and label every inferred metadata field."""
     relative = path.relative_to(root)
@@ -196,6 +215,7 @@ def build_source(path: Path, root: Path, release: str) -> Source:
         "superseded date",
         "document owner",
         "owner",
+        "related documents",
     ):
         if key in metadata:
             provenance[key.replace(" ", "_")] = f"direct:markdown_metadata:{key}"
@@ -214,6 +234,7 @@ def build_source(path: Path, root: Path, release: str) -> Source:
             else None
         ),
         responsible_person_or_role=owner or role_function,
+        related_source_codes=_related_source_codes(metadata.get("related documents"), code),
         author_or_system=author,
         creation_date=creation_date,
         last_updated_date=last_updated_date,

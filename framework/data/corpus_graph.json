@@ -1,0 +1,2216 @@
+{
+  "graph_version": "corpus-backbone-v1:1c9061a34987",
+  "nodes": [
+    {
+      "id": "document:company-overview",
+      "kind": "document",
+      "label": "Northfield Software Ltd — Company Overview",
+      "attributes": {
+        "source_id": "phase1:company-overview",
+        "status": "current",
+        "source_class": "role_description",
+        "approval_status": "unknown",
+        "duplicate_group": "document:company-overview"
+      }
+    },
+    {
+      "id": "document:decision-rights-table",
+      "kind": "document",
+      "label": "Decision Rights Table",
+      "attributes": {
+        "source_id": "phase1:decision-rights-table",
+        "status": "current",
+        "source_class": "role_description",
+        "approval_status": "unknown",
+        "duplicate_group": "document:decision-rights-table"
+      }
+    },
+    {
+      "id": "document:org-chart-and-roster",
+      "kind": "document",
+      "label": "Northfield Software Ltd — Organisational Structure and Staff Roster",
+      "attributes": {
+        "source_id": "phase1:org-chart-and-roster",
+        "status": "current",
+        "source_class": "role_description",
+        "approval_status": "unknown",
+        "duplicate_group": "document:org-chart-and-roster"
+      }
+    },
+    {
+      "id": "document:role-descriptions",
+      "kind": "document",
+      "label": "Role Descriptions and Decision Rights",
+      "attributes": {
+        "source_id": "phase1:role-descriptions",
+        "status": "current",
+        "source_class": "role_description",
+        "approval_status": "unknown",
+        "duplicate_group": "document:role-descriptions"
+      }
+    },
+    {
+      "id": "document:org-chart-2023-02-superseded",
+      "kind": "document",
+      "label": "Northfield Software Ltd — Organisational Chart (2023-02 snapshot)",
+      "attributes": {
+        "source_id": "phase1:org-chart-2023-02-superseded",
+        "status": "superseded",
+        "source_class": "role_description",
+        "approval_status": "superseded",
+        "duplicate_group": "document:org-chart-2023-02-superseded"
+      }
+    },
+    {
+      "id": "document:POL-01",
+      "kind": "document",
+      "label": "POL-01 — Discount Approval Policy",
+      "attributes": {
+        "source_id": "phase1:POL-01",
+        "status": "current",
+        "source_class": "approved_policy",
+        "approval_status": "approved",
+        "duplicate_group": "document:POL-01",
+        "effective_date": "2025-03-01"
+      }
+    },
+    {
+      "id": "document:POL-03",
+      "kind": "document",
+      "label": "POL-03 — Customer Onboarding & Implementation Policy",
+      "attributes": {
+        "source_id": "phase1:POL-03",
+        "status": "current",
+        "source_class": "approved_policy",
+        "approval_status": "approved",
+        "duplicate_group": "document:POL-03",
+        "effective_date": "2024-01-15"
+      }
+    },
+    {
+      "id": "document:POL-04",
+      "kind": "document",
+      "label": "POL-04 — Support Escalation Policy (Revision)",
+      "attributes": {
+        "source_id": "phase1:POL-04",
+        "status": "draft",
+        "source_class": "approved_policy",
+        "approval_status": "draft",
+        "duplicate_group": "document:POL-04"
+      }
+    },
+    {
+      "id": "document:POL-05",
+      "kind": "document",
+      "label": "POL-05 — Data Handling & Customer Data Export Policy",
+      "attributes": {
+        "source_id": "phase1:POL-05",
+        "status": "current",
+        "source_class": "approved_policy",
+        "approval_status": "approved",
+        "duplicate_group": "document:POL-05",
+        "effective_date": "2023-05-01"
+      }
+    },
+    {
+      "id": "document:POL-06",
+      "kind": "document",
+      "label": "POL-06 — Contract Renewal Discount Policy",
+      "attributes": {
+        "source_id": "phase1:POL-06",
+        "status": "current",
+        "source_class": "approved_policy",
+        "approval_status": "approved",
+        "duplicate_group": "document:POL-06",
+        "effective_date": "2024-06-01"
+      }
+    },
+    {
+      "id": "document:POL-07",
+      "kind": "document",
+      "label": "POL-07 — Expense Approval Policy",
+      "attributes": {
+        "source_id": "phase1:POL-07",
+        "status": "current",
+        "source_class": "approved_policy",
+        "approval_status": "approved",
+        "duplicate_group": "document:POL-07",
+        "effective_date": "2021-09-01"
+      }
+    },
+    {
+      "id": "document:POL-08",
+      "kind": "document",
+      "label": "POL-08 — New Hire Onboarding & Probation Policy",
+      "attributes": {
+        "source_id": "phase1:POL-08",
+        "status": "current",
+        "source_class": "approved_policy",
+        "approval_status": "approved",
+        "duplicate_group": "document:POL-08",
+        "effective_date": "2021-05-24"
+      }
+    },
+    {
+      "id": "document:POL-02",
+      "kind": "document",
+      "label": "POL-02 — Discount Approval Policy [SUPERSEDED]",
+      "attributes": {
+        "source_id": "phase1:POL-02",
+        "status": "superseded",
+        "source_class": "approved_policy",
+        "approval_status": "superseded",
+        "duplicate_group": "document:POL-02",
+        "effective_date": "2021-06-01",
+        "superseded_date": "2025-02-28"
+      }
+    },
+    {
+      "id": "document:PROC-01",
+      "kind": "document",
+      "label": "PROC-01 — Customer Onboarding & Implementation Process",
+      "attributes": {
+        "source_id": "phase1:PROC-01",
+        "status": "current",
+        "source_class": "approved_process",
+        "approval_status": "unknown",
+        "duplicate_group": "document:PROC-01",
+        "last_updated": "2024-01-20"
+      }
+    },
+    {
+      "id": "document:PROC-02",
+      "kind": "document",
+      "label": "PROC-02 — Discount Approval Process",
+      "attributes": {
+        "source_id": "phase1:PROC-02",
+        "status": "current",
+        "source_class": "approved_process",
+        "approval_status": "unknown",
+        "duplicate_group": "document:PROC-02",
+        "last_updated": "2022-08-15"
+      }
+    },
+    {
+      "id": "document:PROC-03",
+      "kind": "document",
+      "label": "PROC-03 — Product Change / Feature Request Intake Process",
+      "attributes": {
+        "source_id": "phase1:PROC-03",
+        "status": "current",
+        "source_class": "approved_process",
+        "approval_status": "unknown",
+        "duplicate_group": "document:PROC-03",
+        "last_updated": "2023-11-02"
+      }
+    },
+    {
+      "id": "document:PROC-04",
+      "kind": "document",
+      "label": "PROC-04 — Expense Approval Process",
+      "attributes": {
+        "source_id": "phase1:PROC-04",
+        "status": "current",
+        "source_class": "approved_process",
+        "approval_status": "unknown",
+        "duplicate_group": "document:PROC-04",
+        "last_updated": "2021-09-10"
+      }
+    },
+    {
+      "id": "document:PROC-05",
+      "kind": "document",
+      "label": "PROC-05 — Support Escalation Process (v1 — approved)",
+      "attributes": {
+        "source_id": "phase1:PROC-05",
+        "status": "current",
+        "source_class": "approved_process",
+        "approval_status": "approved",
+        "duplicate_group": "document:PROC-05",
+        "last_updated": "2021-02-10"
+      }
+    },
+    {
+      "id": "document:PROC-06",
+      "kind": "document",
+      "label": "PROC-06 — Invoicing & Collections Process",
+      "attributes": {
+        "source_id": "phase1:PROC-06",
+        "status": "current",
+        "source_class": "approved_process",
+        "approval_status": "unknown",
+        "duplicate_group": "document:PROC-06",
+        "last_updated": "2022-11-01"
+      }
+    },
+    {
+      "id": "document:PROC-07",
+      "kind": "document",
+      "label": "PROC-07 — Contract Renewal & Churn-Risk Review Process",
+      "attributes": {
+        "source_id": "phase1:PROC-07",
+        "status": "current",
+        "source_class": "approved_process",
+        "approval_status": "unknown",
+        "duplicate_group": "document:PROC-07",
+        "last_updated": "2024-07-05"
+      }
+    },
+    {
+      "id": "document:INT-01",
+      "kind": "document",
+      "label": "INT-01 — Interview: Renata Voss",
+      "attributes": {
+        "source_id": "phase1:INT-01",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-01"
+      }
+    },
+    {
+      "id": "document:INT-02",
+      "kind": "document",
+      "label": "INT-02 — Interview: Diane Okafor",
+      "attributes": {
+        "source_id": "phase1:INT-02",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-02"
+      }
+    },
+    {
+      "id": "document:INT-03",
+      "kind": "document",
+      "label": "INT-03 — Interview: Harriet Doyle",
+      "attributes": {
+        "source_id": "phase1:INT-03",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-03"
+      }
+    },
+    {
+      "id": "document:INT-04",
+      "kind": "document",
+      "label": "INT-04 — Interview: Callum Reyes",
+      "attributes": {
+        "source_id": "phase1:INT-04",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-04"
+      }
+    },
+    {
+      "id": "document:INT-05",
+      "kind": "document",
+      "label": "INT-05 — Interview: Jonah Fischer",
+      "attributes": {
+        "source_id": "phase1:INT-05",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-05"
+      }
+    },
+    {
+      "id": "document:INT-06",
+      "kind": "document",
+      "label": "INT-06 — Interview: Adaeze Nwosu",
+      "attributes": {
+        "source_id": "phase1:INT-06",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-06"
+      }
+    },
+    {
+      "id": "document:INT-07",
+      "kind": "document",
+      "label": "INT-07 — Interview: Sam Okonkwo",
+      "attributes": {
+        "source_id": "phase1:INT-07",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-07"
+      }
+    },
+    {
+      "id": "document:INT-08",
+      "kind": "document",
+      "label": "INT-08 — Interview: Ines Torres",
+      "attributes": {
+        "source_id": "phase1:INT-08",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-08"
+      }
+    },
+    {
+      "id": "document:INT-09",
+      "kind": "document",
+      "label": "INT-09 — Interview: Priya Anand",
+      "attributes": {
+        "source_id": "phase1:INT-09",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-09"
+      }
+    },
+    {
+      "id": "document:INT-10",
+      "kind": "document",
+      "label": "INT-10 — Interview: Ana Kowalski",
+      "attributes": {
+        "source_id": "phase1:INT-10",
+        "status": "current",
+        "source_class": "interview",
+        "approval_status": "unknown",
+        "duplicate_group": "document:INT-10"
+      }
+    },
+    {
+      "id": "document:MTG-01",
+      "kind": "document",
+      "label": "MTG-01 — Discount Policy Review",
+      "attributes": {
+        "source_id": "phase1:MTG-01",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-01"
+      }
+    },
+    {
+      "id": "document:MTG-02",
+      "kind": "document",
+      "label": "MTG-02 — Sales Team Weekly",
+      "attributes": {
+        "source_id": "phase1:MTG-02",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-02"
+      }
+    },
+    {
+      "id": "document:MTG-03",
+      "kind": "document",
+      "label": "MTG-03 — Product/Engineering Planning",
+      "attributes": {
+        "source_id": "phase1:MTG-03",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-03"
+      }
+    },
+    {
+      "id": "document:MTG-04",
+      "kind": "document",
+      "label": "MTG-04 — Customer Success & Delivery Team Meeting",
+      "attributes": {
+        "source_id": "phase1:MTG-04",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-04"
+      }
+    },
+    {
+      "id": "document:MTG-05",
+      "kind": "document",
+      "label": "MTG-05 — Quarterly Renewal & Churn-Risk Review",
+      "attributes": {
+        "source_id": "phase1:MTG-05",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-05"
+      }
+    },
+    {
+      "id": "document:MTG-06",
+      "kind": "document",
+      "label": "MTG-06 — Leadership Strategy Session",
+      "attributes": {
+        "source_id": "phase1:MTG-06",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-06"
+      }
+    },
+    {
+      "id": "document:MTG-07",
+      "kind": "document",
+      "label": "MTG-07 — Billing Integration Incident Review",
+      "attributes": {
+        "source_id": "phase1:MTG-07",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-07"
+      }
+    },
+    {
+      "id": "document:MTG-08",
+      "kind": "document",
+      "label": "MTG-08 — Departure Handover Planning",
+      "attributes": {
+        "source_id": "phase1:MTG-08",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-08"
+      }
+    },
+    {
+      "id": "document:MTG-09",
+      "kind": "document",
+      "label": "MTG-09 — Quarterly Finance & Ops Review",
+      "attributes": {
+        "source_id": "phase1:MTG-09",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-09"
+      }
+    },
+    {
+      "id": "document:MTG-10",
+      "kind": "document",
+      "label": "MTG-10 — Ashgrove Trades Renewal Review",
+      "attributes": {
+        "source_id": "phase1:MTG-10",
+        "status": "current",
+        "source_class": "meeting_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:MTG-10"
+      }
+    },
+    {
+      "id": "document:communications-log",
+      "kind": "document",
+      "label": "Internal Communications Log",
+      "attributes": {
+        "source_id": "phase1:communications-log",
+        "status": "current",
+        "source_class": "self_reported_communication",
+        "approval_status": "unknown",
+        "duplicate_group": "document:communications-log"
+      }
+    },
+    {
+      "id": "document:crm-deals",
+      "kind": "document",
+      "label": "crm_deals",
+      "attributes": {
+        "source_id": "phase1:crm-deals",
+        "status": "current",
+        "source_class": "structured_operational_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:crm-deals"
+      }
+    },
+    {
+      "id": "document:project-tasks",
+      "kind": "document",
+      "label": "project_tasks",
+      "attributes": {
+        "source_id": "phase1:project-tasks",
+        "status": "current",
+        "source_class": "structured_operational_record",
+        "approval_status": "unknown",
+        "duplicate_group": "document:project-tasks"
+      }
+    },
+    {
+      "id": "document:system-audit-log",
+      "kind": "document",
+      "label": "system_audit_log",
+      "attributes": {
+        "source_id": "phase1:system-audit-log",
+        "status": "current",
+        "source_class": "system_verified",
+        "approval_status": "unknown",
+        "duplicate_group": "document:system-audit-log"
+      }
+    },
+    {
+      "id": "process:p1",
+      "kind": "process",
+      "label": "P1 Customer discount approval",
+      "attributes": {
+        "code": "P1"
+      }
+    },
+    {
+      "id": "process:p2",
+      "kind": "process",
+      "label": "P2 Customer onboarding / implementation",
+      "attributes": {
+        "code": "P2"
+      }
+    },
+    {
+      "id": "process:p3",
+      "kind": "process",
+      "label": "P3 Product change / feature request intake",
+      "attributes": {
+        "code": "P3"
+      }
+    },
+    {
+      "id": "process:p4",
+      "kind": "process",
+      "label": "P4 Expense approval",
+      "attributes": {
+        "code": "P4"
+      }
+    },
+    {
+      "id": "process:p5",
+      "kind": "process",
+      "label": "P5 Support escalation",
+      "attributes": {
+        "code": "P5"
+      }
+    },
+    {
+      "id": "process:p6",
+      "kind": "process",
+      "label": "P6 New hire onboarding",
+      "attributes": {
+        "code": "P6"
+      }
+    },
+    {
+      "id": "process:p7",
+      "kind": "process",
+      "label": "P7 Invoicing & collections",
+      "attributes": {
+        "code": "P7"
+      }
+    },
+    {
+      "id": "process:p8",
+      "kind": "process",
+      "label": "P8 Contract renewal & churn-risk review",
+      "attributes": {
+        "code": "P8"
+      }
+    },
+    {
+      "id": "person:renata-voss",
+      "kind": "person",
+      "label": "Renata Voss",
+      "attributes": {
+        "status": "active",
+        "start_date": "2020-01-13"
+      }
+    },
+    {
+      "id": "role:ceo-founder",
+      "kind": "role",
+      "label": "CEO / Founder",
+      "attributes": {}
+    },
+    {
+      "id": "function:leadership",
+      "kind": "function",
+      "label": "Leadership",
+      "attributes": {}
+    },
+    {
+      "id": "person:marcus-ihejirika",
+      "kind": "person",
+      "label": "Marcus Ihejirika",
+      "attributes": {
+        "status": "active",
+        "start_date": "2021-03-01"
+      }
+    },
+    {
+      "id": "role:coo",
+      "kind": "role",
+      "label": "COO",
+      "attributes": {}
+    },
+    {
+      "id": "person:diane-okafor",
+      "kind": "person",
+      "label": "Diane Okafor",
+      "attributes": {
+        "status": "active",
+        "start_date": "2021-06-07"
+      }
+    },
+    {
+      "id": "role:head-of-sales",
+      "kind": "role",
+      "label": "Head of Sales",
+      "attributes": {}
+    },
+    {
+      "id": "function:sales",
+      "kind": "function",
+      "label": "Sales",
+      "attributes": {}
+    },
+    {
+      "id": "person:callum-reyes",
+      "kind": "person",
+      "label": "Callum Reyes",
+      "attributes": {
+        "status": "active",
+        "start_date": "2022-01-10"
+      }
+    },
+    {
+      "id": "role:senior-account-executive",
+      "kind": "role",
+      "label": "Senior Account Executive",
+      "attributes": {}
+    },
+    {
+      "id": "person:priya-anand",
+      "kind": "person",
+      "label": "Priya Anand",
+      "attributes": {
+        "status": "active",
+        "start_date": "2023-04-17"
+      }
+    },
+    {
+      "id": "role:account-executive",
+      "kind": "role",
+      "label": "Account Executive",
+      "attributes": {}
+    },
+    {
+      "id": "person:jonah-fischer",
+      "kind": "person",
+      "label": "Jonah Fischer",
+      "attributes": {
+        "status": "active",
+        "start_date": "2025-02-03"
+      }
+    },
+    {
+      "id": "person:ester-malik",
+      "kind": "person",
+      "label": "Ester Malik",
+      "attributes": {
+        "status": "active",
+        "start_date": "2024-08-19"
+      }
+    },
+    {
+      "id": "role:sdr",
+      "kind": "role",
+      "label": "SDR",
+      "attributes": {}
+    },
+    {
+      "id": "person:tomas-bright",
+      "kind": "person",
+      "label": "Tomas Bright",
+      "attributes": {
+        "status": "active",
+        "start_date": "2025-05-05"
+      }
+    },
+    {
+      "id": "person:helena-cho",
+      "kind": "person",
+      "label": "Helena Cho",
+      "attributes": {
+        "status": "active",
+        "start_date": "2021-09-06"
+      }
+    },
+    {
+      "id": "role:head-of-customer-success-delivery",
+      "kind": "role",
+      "label": "Head of Customer Success & Delivery",
+      "attributes": {}
+    },
+    {
+      "id": "function:customer-success-delivery",
+      "kind": "function",
+      "label": "Customer Success & Delivery",
+      "attributes": {}
+    },
+    {
+      "id": "person:adaeze-nwosu",
+      "kind": "person",
+      "label": "Adaeze Nwosu",
+      "attributes": {
+        "status": "active",
+        "start_date": "2022-05-16"
+      }
+    },
+    {
+      "id": "role:implementation-specialist",
+      "kind": "role",
+      "label": "Implementation Specialist",
+      "attributes": {}
+    },
+    {
+      "id": "person:ben-lockwood",
+      "kind": "person",
+      "label": "Ben Lockwood",
+      "attributes": {
+        "status": "active",
+        "start_date": "2023-11-13"
+      }
+    },
+    {
+      "id": "person:ruth-padgett",
+      "kind": "person",
+      "label": "Ruth Padgett",
+      "attributes": {
+        "status": "active",
+        "start_date": "2025-01-06"
+      }
+    },
+    {
+      "id": "person:sam-okonkwo",
+      "kind": "person",
+      "label": "Sam Okonkwo",
+      "attributes": {
+        "status": "active",
+        "start_date": "2022-02-14"
+      }
+    },
+    {
+      "id": "role:support-lead",
+      "kind": "role",
+      "label": "Support Lead",
+      "attributes": {}
+    },
+    {
+      "id": "person:ines-torres",
+      "kind": "person",
+      "label": "Ines Torres",
+      "attributes": {
+        "status": "active",
+        "start_date": "2023-06-05"
+      }
+    },
+    {
+      "id": "role:support-rep",
+      "kind": "role",
+      "label": "Support Rep",
+      "attributes": {}
+    },
+    {
+      "id": "person:deshawn-riley",
+      "kind": "person",
+      "label": "Deshawn Riley",
+      "attributes": {
+        "status": "active",
+        "start_date": "2024-10-21"
+      }
+    },
+    {
+      "id": "person:lior-ben-david",
+      "kind": "person",
+      "label": "Lior Ben-David",
+      "attributes": {
+        "status": "active",
+        "start_date": "2020-04-20"
+      }
+    },
+    {
+      "id": "role:head-of-engineering",
+      "kind": "role",
+      "label": "Head of Engineering",
+      "attributes": {}
+    },
+    {
+      "id": "function:engineering-product",
+      "kind": "function",
+      "label": "Engineering & Product",
+      "attributes": {}
+    },
+    {
+      "id": "person:grace-whitfield",
+      "kind": "person",
+      "label": "Grace Whitfield",
+      "attributes": {
+        "status": "active",
+        "start_date": "2021-11-08"
+      }
+    },
+    {
+      "id": "role:product-manager",
+      "kind": "role",
+      "label": "Product Manager",
+      "attributes": {}
+    },
+    {
+      "id": "person:owen-mbeki",
+      "kind": "person",
+      "label": "Owen Mbeki",
+      "attributes": {
+        "status": "active",
+        "start_date": "2024-02-12"
+      }
+    },
+    {
+      "id": "person:ana-kowalski",
+      "kind": "person",
+      "label": "Ana Kowalski",
+      "attributes": {
+        "status": "active",
+        "start_date": "2020-08-03"
+      }
+    },
+    {
+      "id": "role:senior-engineer",
+      "kind": "role",
+      "label": "Senior Engineer",
+      "attributes": {}
+    },
+    {
+      "id": "person:femi-adekunle",
+      "kind": "person",
+      "label": "Femi Adekunle",
+      "attributes": {
+        "status": "active",
+        "start_date": "2022-07-11"
+      }
+    },
+    {
+      "id": "role:engineer",
+      "kind": "role",
+      "label": "Engineer",
+      "attributes": {}
+    },
+    {
+      "id": "person:nadia-petrov",
+      "kind": "person",
+      "label": "Nadia Petrov",
+      "attributes": {
+        "status": "active",
+        "start_date": "2023-02-27"
+      }
+    },
+    {
+      "id": "person:colm-brennan",
+      "kind": "person",
+      "label": "Colm Brennan",
+      "attributes": {
+        "status": "active",
+        "start_date": "2023-09-04"
+      }
+    },
+    {
+      "id": "person:wei-zhang",
+      "kind": "person",
+      "label": "Wei Zhang",
+      "attributes": {
+        "status": "inactive",
+        "start_date": "2024-06-10"
+      }
+    },
+    {
+      "id": "person:yusuf-demir",
+      "kind": "person",
+      "label": "Yusuf Demir",
+      "attributes": {
+        "status": "active",
+        "start_date": "2025-09-01"
+      }
+    },
+    {
+      "id": "role:junior-engineer",
+      "kind": "role",
+      "label": "Junior Engineer",
+      "attributes": {}
+    },
+    {
+      "id": "person:sofia-marchetti",
+      "kind": "person",
+      "label": "Sofia Marchetti",
+      "attributes": {
+        "status": "active",
+        "start_date": "2022-10-17"
+      }
+    },
+    {
+      "id": "role:qa-lead",
+      "kind": "role",
+      "label": "QA Lead",
+      "attributes": {}
+    },
+    {
+      "id": "person:harriet-doyle",
+      "kind": "person",
+      "label": "Harriet Doyle",
+      "attributes": {
+        "status": "active",
+        "start_date": "2020-11-02"
+      }
+    },
+    {
+      "id": "role:head-of-finance-people-ops",
+      "kind": "role",
+      "label": "Head of Finance & People Ops",
+      "attributes": {}
+    },
+    {
+      "id": "function:finance-people-ops",
+      "kind": "function",
+      "label": "Finance & People Ops",
+      "attributes": {}
+    },
+    {
+      "id": "person:victor-adeyemi",
+      "kind": "person",
+      "label": "Victor Adeyemi",
+      "attributes": {
+        "status": "active",
+        "start_date": "2022-03-14"
+      }
+    },
+    {
+      "id": "role:financial-controller",
+      "kind": "role",
+      "label": "Financial Controller",
+      "attributes": {}
+    },
+    {
+      "id": "person:naomi-kessler",
+      "kind": "person",
+      "label": "Naomi Kessler",
+      "attributes": {
+        "status": "active",
+        "start_date": "2021-05-24"
+      }
+    },
+    {
+      "id": "role:people-ops-lead",
+      "kind": "role",
+      "label": "People Ops Lead",
+      "attributes": {}
+    },
+    {
+      "id": "person:paul-vasquez",
+      "kind": "person",
+      "label": "Paul Vasquez",
+      "attributes": {
+        "status": "active",
+        "start_date": "2023-08-08"
+      }
+    },
+    {
+      "id": "role:office-it-ops-coordinator",
+      "kind": "role",
+      "label": "Office & IT Ops Coordinator",
+      "attributes": {}
+    },
+    {
+      "id": "system:crm",
+      "kind": "system",
+      "label": "CRM",
+      "attributes": {}
+    },
+    {
+      "id": "system:project-system",
+      "kind": "system",
+      "label": "project system ",
+      "attributes": {}
+    },
+    {
+      "id": "system:support-ticketing-system",
+      "kind": "system",
+      "label": "support ticketing system",
+      "attributes": {}
+    },
+    {
+      "id": "system:linear",
+      "kind": "system",
+      "label": "Linear",
+      "attributes": {}
+    },
+    {
+      "id": "system:billing-integration",
+      "kind": "system",
+      "label": "billing integration ",
+      "attributes": {}
+    },
+    {
+      "id": "system:staging-environment",
+      "kind": "system",
+      "label": "Staging environment",
+      "attributes": {}
+    },
+    {
+      "id": "system:finance-system",
+      "kind": "system",
+      "label": "finance system",
+      "attributes": {}
+    },
+    {
+      "id": "system:expenses-spreadsheet",
+      "kind": "system",
+      "label": "expenses spreadsheet",
+      "attributes": {}
+    },
+    {
+      "id": "system:hr-system",
+      "kind": "system",
+      "label": "HR system",
+      "attributes": {}
+    },
+    {
+      "id": "system:it-admin-systems",
+      "kind": "system",
+      "label": "IT admin systems",
+      "attributes": {}
+    }
+  ],
+  "edges": [
+    {
+      "id": "holds:person:renata-voss->role:ceo-founder",
+      "source": "person:renata-voss",
+      "target": "role:ceo-founder",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:ceo-founder->function:leadership",
+      "source": "role:ceo-founder",
+      "target": "function:leadership",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:marcus-ihejirika->role:coo",
+      "source": "person:marcus-ihejirika",
+      "target": "role:coo",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:coo->function:leadership",
+      "source": "role:coo",
+      "target": "function:leadership",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:diane-okafor->role:head-of-sales",
+      "source": "person:diane-okafor",
+      "target": "role:head-of-sales",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:head-of-sales->function:sales",
+      "source": "role:head-of-sales",
+      "target": "function:sales",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:callum-reyes->role:senior-account-executive",
+      "source": "person:callum-reyes",
+      "target": "role:senior-account-executive",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:senior-account-executive->function:sales",
+      "source": "role:senior-account-executive",
+      "target": "function:sales",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:priya-anand->role:account-executive",
+      "source": "person:priya-anand",
+      "target": "role:account-executive",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:account-executive->function:sales",
+      "source": "role:account-executive",
+      "target": "function:sales",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:jonah-fischer->role:account-executive",
+      "source": "person:jonah-fischer",
+      "target": "role:account-executive",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:ester-malik->role:sdr",
+      "source": "person:ester-malik",
+      "target": "role:sdr",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:sdr->function:sales",
+      "source": "role:sdr",
+      "target": "function:sales",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:tomas-bright->role:sdr",
+      "source": "person:tomas-bright",
+      "target": "role:sdr",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:helena-cho->role:head-of-customer-success-delivery",
+      "source": "person:helena-cho",
+      "target": "role:head-of-customer-success-delivery",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:head-of-customer-success-delivery->function:customer-success-delivery",
+      "source": "role:head-of-customer-success-delivery",
+      "target": "function:customer-success-delivery",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:adaeze-nwosu->role:implementation-specialist",
+      "source": "person:adaeze-nwosu",
+      "target": "role:implementation-specialist",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:implementation-specialist->function:customer-success-delivery",
+      "source": "role:implementation-specialist",
+      "target": "function:customer-success-delivery",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:ben-lockwood->role:implementation-specialist",
+      "source": "person:ben-lockwood",
+      "target": "role:implementation-specialist",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:ruth-padgett->role:implementation-specialist",
+      "source": "person:ruth-padgett",
+      "target": "role:implementation-specialist",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:sam-okonkwo->role:support-lead",
+      "source": "person:sam-okonkwo",
+      "target": "role:support-lead",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:support-lead->function:customer-success-delivery",
+      "source": "role:support-lead",
+      "target": "function:customer-success-delivery",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:ines-torres->role:support-rep",
+      "source": "person:ines-torres",
+      "target": "role:support-rep",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:support-rep->function:customer-success-delivery",
+      "source": "role:support-rep",
+      "target": "function:customer-success-delivery",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:deshawn-riley->role:support-rep",
+      "source": "person:deshawn-riley",
+      "target": "role:support-rep",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:lior-ben-david->role:head-of-engineering",
+      "source": "person:lior-ben-david",
+      "target": "role:head-of-engineering",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:head-of-engineering->function:engineering-product",
+      "source": "role:head-of-engineering",
+      "target": "function:engineering-product",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:grace-whitfield->role:product-manager",
+      "source": "person:grace-whitfield",
+      "target": "role:product-manager",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:product-manager->function:engineering-product",
+      "source": "role:product-manager",
+      "target": "function:engineering-product",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:owen-mbeki->role:product-manager",
+      "source": "person:owen-mbeki",
+      "target": "role:product-manager",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:ana-kowalski->role:senior-engineer",
+      "source": "person:ana-kowalski",
+      "target": "role:senior-engineer",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:senior-engineer->function:engineering-product",
+      "source": "role:senior-engineer",
+      "target": "function:engineering-product",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:femi-adekunle->role:engineer",
+      "source": "person:femi-adekunle",
+      "target": "role:engineer",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:engineer->function:engineering-product",
+      "source": "role:engineer",
+      "target": "function:engineering-product",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:nadia-petrov->role:engineer",
+      "source": "person:nadia-petrov",
+      "target": "role:engineer",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:colm-brennan->role:engineer",
+      "source": "person:colm-brennan",
+      "target": "role:engineer",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:wei-zhang->role:engineer",
+      "source": "person:wei-zhang",
+      "target": "role:engineer",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:yusuf-demir->role:junior-engineer",
+      "source": "person:yusuf-demir",
+      "target": "role:junior-engineer",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:junior-engineer->function:engineering-product",
+      "source": "role:junior-engineer",
+      "target": "function:engineering-product",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:sofia-marchetti->role:qa-lead",
+      "source": "person:sofia-marchetti",
+      "target": "role:qa-lead",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:qa-lead->function:engineering-product",
+      "source": "role:qa-lead",
+      "target": "function:engineering-product",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:harriet-doyle->role:head-of-finance-people-ops",
+      "source": "person:harriet-doyle",
+      "target": "role:head-of-finance-people-ops",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:head-of-finance-people-ops->function:finance-people-ops",
+      "source": "role:head-of-finance-people-ops",
+      "target": "function:finance-people-ops",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:victor-adeyemi->role:financial-controller",
+      "source": "person:victor-adeyemi",
+      "target": "role:financial-controller",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:financial-controller->function:finance-people-ops",
+      "source": "role:financial-controller",
+      "target": "function:finance-people-ops",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:naomi-kessler->role:people-ops-lead",
+      "source": "person:naomi-kessler",
+      "target": "role:people-ops-lead",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:people-ops-lead->function:finance-people-ops",
+      "source": "role:people-ops-lead",
+      "target": "function:finance-people-ops",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "holds:person:paul-vasquez->role:office-it-ops-coordinator",
+      "source": "person:paul-vasquez",
+      "target": "role:office-it-ops-coordinator",
+      "relationship": "HOLDS",
+      "attributes": {}
+    },
+    {
+      "id": "sits_in:role:office-it-ops-coordinator->function:finance-people-ops",
+      "source": "role:office-it-ops-coordinator",
+      "target": "function:finance-people-ops",
+      "relationship": "SITS_IN",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:coo->role:ceo-founder",
+      "source": "role:coo",
+      "target": "role:ceo-founder",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:head-of-sales->role:ceo-founder",
+      "source": "role:head-of-sales",
+      "target": "role:ceo-founder",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:senior-account-executive->role:head-of-sales",
+      "source": "role:senior-account-executive",
+      "target": "role:head-of-sales",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:account-executive->role:head-of-sales",
+      "source": "role:account-executive",
+      "target": "role:head-of-sales",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:sdr->role:head-of-sales",
+      "source": "role:sdr",
+      "target": "role:head-of-sales",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:head-of-customer-success-delivery->role:coo",
+      "source": "role:head-of-customer-success-delivery",
+      "target": "role:coo",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:implementation-specialist->role:head-of-customer-success-delivery",
+      "source": "role:implementation-specialist",
+      "target": "role:head-of-customer-success-delivery",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:support-lead->role:head-of-customer-success-delivery",
+      "source": "role:support-lead",
+      "target": "role:head-of-customer-success-delivery",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:support-rep->role:support-lead",
+      "source": "role:support-rep",
+      "target": "role:support-lead",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:head-of-engineering->role:ceo-founder",
+      "source": "role:head-of-engineering",
+      "target": "role:ceo-founder",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:product-manager->role:head-of-engineering",
+      "source": "role:product-manager",
+      "target": "role:head-of-engineering",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:senior-engineer->role:head-of-engineering",
+      "source": "role:senior-engineer",
+      "target": "role:head-of-engineering",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:engineer->role:head-of-engineering",
+      "source": "role:engineer",
+      "target": "role:head-of-engineering",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:junior-engineer->role:head-of-engineering",
+      "source": "role:junior-engineer",
+      "target": "role:head-of-engineering",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:qa-lead->role:head-of-engineering",
+      "source": "role:qa-lead",
+      "target": "role:head-of-engineering",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:head-of-finance-people-ops->role:ceo-founder",
+      "source": "role:head-of-finance-people-ops",
+      "target": "role:ceo-founder",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:financial-controller->role:head-of-finance-people-ops",
+      "source": "role:financial-controller",
+      "target": "role:head-of-finance-people-ops",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:people-ops-lead->role:head-of-finance-people-ops",
+      "source": "role:people-ops-lead",
+      "target": "role:head-of-finance-people-ops",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "reports_to:role:office-it-ops-coordinator->role:head-of-finance-people-ops",
+      "source": "role:office-it-ops-coordinator",
+      "target": "role:head-of-finance-people-ops",
+      "relationship": "REPORTS_TO",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:ceo-founder->process:p7",
+      "source": "role:ceo-founder",
+      "target": "process:p7",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:coo->system:crm",
+      "source": "role:coo",
+      "target": "system:crm",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:coo->system:project-system",
+      "source": "role:coo",
+      "target": "system:project-system",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:coo->process:p2",
+      "source": "role:coo",
+      "target": "process:p2",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:coo->process:p8",
+      "source": "role:coo",
+      "target": "process:p8",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:head-of-sales->system:crm",
+      "source": "role:head-of-sales",
+      "target": "system:crm",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-sales->process:p1",
+      "source": "role:head-of-sales",
+      "target": "process:p1",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-sales->process:p8",
+      "source": "role:head-of-sales",
+      "target": "process:p8",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:senior-account-executive->system:crm",
+      "source": "role:senior-account-executive",
+      "target": "system:crm",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:senior-account-executive->process:p1",
+      "source": "role:senior-account-executive",
+      "target": "process:p1",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:senior-account-executive->process:p8",
+      "source": "role:senior-account-executive",
+      "target": "process:p8",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:head-of-customer-success-delivery->system:crm",
+      "source": "role:head-of-customer-success-delivery",
+      "target": "system:crm",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:head-of-customer-success-delivery->system:project-system",
+      "source": "role:head-of-customer-success-delivery",
+      "target": "system:project-system",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:head-of-customer-success-delivery->system:support-ticketing-system",
+      "source": "role:head-of-customer-success-delivery",
+      "target": "system:support-ticketing-system",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-customer-success-delivery->process:p2",
+      "source": "role:head-of-customer-success-delivery",
+      "target": "process:p2",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-customer-success-delivery->process:p5",
+      "source": "role:head-of-customer-success-delivery",
+      "target": "process:p5",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-customer-success-delivery->process:p8",
+      "source": "role:head-of-customer-success-delivery",
+      "target": "process:p8",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:support-lead->system:support-ticketing-system",
+      "source": "role:support-lead",
+      "target": "system:support-ticketing-system",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:support-lead->system:crm",
+      "source": "role:support-lead",
+      "target": "system:crm",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:support-lead->process:p5",
+      "source": "role:support-lead",
+      "target": "process:p5",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-engineering->process:p3",
+      "source": "role:head-of-engineering",
+      "target": "process:p3",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-engineering->process:p5",
+      "source": "role:head-of-engineering",
+      "target": "process:p5",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-engineering->process:p7",
+      "source": "role:head-of-engineering",
+      "target": "process:p7",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:product-manager->system:linear",
+      "source": "role:product-manager",
+      "target": "system:linear",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:product-manager->system:crm",
+      "source": "role:product-manager",
+      "target": "system:crm",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:product-manager->process:p3",
+      "source": "role:product-manager",
+      "target": "process:p3",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:senior-engineer->system:billing-integration",
+      "source": "role:senior-engineer",
+      "target": "system:billing-integration",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:senior-engineer->process:p7",
+      "source": "role:senior-engineer",
+      "target": "process:p7",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:senior-engineer->process:p5",
+      "source": "role:senior-engineer",
+      "target": "process:p5",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:qa-lead->system:staging-environment",
+      "source": "role:qa-lead",
+      "target": "system:staging-environment",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:qa-lead->system:crm",
+      "source": "role:qa-lead",
+      "target": "system:crm",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:qa-lead->system:project-system",
+      "source": "role:qa-lead",
+      "target": "system:project-system",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:qa-lead->process:p3",
+      "source": "role:qa-lead",
+      "target": "process:p3",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:head-of-finance-people-ops->system:crm",
+      "source": "role:head-of-finance-people-ops",
+      "target": "system:crm",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:head-of-finance-people-ops->system:finance-system",
+      "source": "role:head-of-finance-people-ops",
+      "target": "system:finance-system",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:head-of-finance-people-ops->system:expenses-spreadsheet",
+      "source": "role:head-of-finance-people-ops",
+      "target": "system:expenses-spreadsheet",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-finance-people-ops->process:p1",
+      "source": "role:head-of-finance-people-ops",
+      "target": "process:p1",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-finance-people-ops->process:p4",
+      "source": "role:head-of-finance-people-ops",
+      "target": "process:p4",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:head-of-finance-people-ops->process:p7",
+      "source": "role:head-of-finance-people-ops",
+      "target": "process:p7",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:financial-controller->system:finance-system",
+      "source": "role:financial-controller",
+      "target": "system:finance-system",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:financial-controller->system:crm",
+      "source": "role:financial-controller",
+      "target": "system:crm",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:financial-controller->process:p1",
+      "source": "role:financial-controller",
+      "target": "process:p1",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:financial-controller->process:p7",
+      "source": "role:financial-controller",
+      "target": "process:p7",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:people-ops-lead->system:hr-system",
+      "source": "role:people-ops-lead",
+      "target": "system:hr-system",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:people-ops-lead->system:project-system",
+      "source": "role:people-ops-lead",
+      "target": "system:project-system",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:people-ops-lead->process:p6",
+      "source": "role:people-ops-lead",
+      "target": "process:p6",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "accesses:role:office-it-ops-coordinator->system:it-admin-systems",
+      "source": "role:office-it-ops-coordinator",
+      "target": "system:it-admin-systems",
+      "relationship": "ACCESSES",
+      "attributes": {}
+    },
+    {
+      "id": "participates_in:role:office-it-ops-coordinator->process:p4",
+      "source": "role:office-it-ops-coordinator",
+      "target": "process:p4",
+      "relationship": "PARTICIPATES_IN",
+      "attributes": {}
+    },
+    {
+      "id": "related:document:POL-01->document:PROC-02",
+      "source": "document:POL-01",
+      "target": "document:PROC-02",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-01->document:POL-06",
+      "source": "document:POL-01",
+      "target": "document:POL-06",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-03->document:PROC-01",
+      "source": "document:POL-03",
+      "target": "document:PROC-01",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-03->document:PROC-06",
+      "source": "document:POL-03",
+      "target": "document:PROC-06",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-04->document:PROC-05",
+      "source": "document:POL-04",
+      "target": "document:PROC-05",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-06->document:PROC-07",
+      "source": "document:POL-06",
+      "target": "document:PROC-07",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-06->document:POL-01",
+      "source": "document:POL-06",
+      "target": "document:POL-01",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "related:document:POL-07->document:PROC-04",
+      "source": "document:POL-07",
+      "target": "document:PROC-04",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "superseded_by:document:POL-02->document:POL-01",
+      "source": "document:POL-02",
+      "target": "document:POL-01",
+      "relationship": "SUPERSEDED_BY",
+      "attributes": {}
+    },
+    {
+      "id": "related:document:POL-02->document:PROC-02",
+      "source": "document:POL-02",
+      "target": "document:PROC-02",
+      "relationship": "RELATED",
+      "attributes": {
+        "reason": "stated related document (header metadata)"
+      }
+    },
+    {
+      "id": "governs:document:POL-01->process:p1",
+      "source": "document:POL-01",
+      "target": "process:p1",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:POL-03->process:p2",
+      "source": "document:POL-03",
+      "target": "process:p2",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:POL-04->process:p5",
+      "source": "document:POL-04",
+      "target": "process:p5",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:POL-06->process:p8",
+      "source": "document:POL-06",
+      "target": "process:p8",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:POL-07->process:p4",
+      "source": "document:POL-07",
+      "target": "process:p4",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:POL-08->process:p6",
+      "source": "document:POL-08",
+      "target": "process:p6",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:PROC-01->process:p2",
+      "source": "document:PROC-01",
+      "target": "process:p2",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:PROC-02->process:p1",
+      "source": "document:PROC-02",
+      "target": "process:p1",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:PROC-03->process:p3",
+      "source": "document:PROC-03",
+      "target": "process:p3",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:PROC-04->process:p4",
+      "source": "document:PROC-04",
+      "target": "process:p4",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:PROC-05->process:p5",
+      "source": "document:PROC-05",
+      "target": "process:p5",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:PROC-06->process:p7",
+      "source": "document:PROC-06",
+      "target": "process:p7",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "governs:document:PROC-07->process:p8",
+      "source": "document:PROC-07",
+      "target": "process:p8",
+      "relationship": "GOVERNS",
+      "attributes": {}
+    },
+    {
+      "id": "owned_by:document:POL-01->person:harriet-doyle",
+      "source": "document:POL-01",
+      "target": "person:harriet-doyle",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-03->person:helena-cho",
+      "source": "document:POL-03",
+      "target": "person:helena-cho",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-04->person:sam-okonkwo",
+      "source": "document:POL-04",
+      "target": "person:sam-okonkwo",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-05->person:paul-vasquez",
+      "source": "document:POL-05",
+      "target": "person:paul-vasquez",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-06->person:diane-okafor",
+      "source": "document:POL-06",
+      "target": "person:diane-okafor",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-07->person:harriet-doyle",
+      "source": "document:POL-07",
+      "target": "person:harriet-doyle",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-08->person:naomi-kessler",
+      "source": "document:POL-08",
+      "target": "person:naomi-kessler",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:POL-02->person:harriet-doyle",
+      "source": "document:POL-02",
+      "target": "person:harriet-doyle",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-01->person:helena-cho",
+      "source": "document:PROC-01",
+      "target": "person:helena-cho",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-02->person:victor-adeyemi",
+      "source": "document:PROC-02",
+      "target": "person:victor-adeyemi",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-03->person:grace-whitfield",
+      "source": "document:PROC-03",
+      "target": "person:grace-whitfield",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-04->person:harriet-doyle",
+      "source": "document:PROC-04",
+      "target": "person:harriet-doyle",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-05->person:sam-okonkwo",
+      "source": "document:PROC-05",
+      "target": "person:sam-okonkwo",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    },
+    {
+      "id": "owned_by:document:PROC-06->person:victor-adeyemi",
+      "source": "document:PROC-06",
+      "target": "person:victor-adeyemi",
+      "relationship": "OWNED_BY",
+      "attributes": {
+        "reason": "document owner (header metadata)",
+        "owner_active": true
+      }
+    }
+  ]
+}

@@ -39,9 +39,9 @@ export function confidenceLevel(score: number): string {
 }
 // A ring gauge. It takes the verdict's colour, so colour only ever means the outcome; the
 // confidence itself is carried by how full the ring is, the number and the word beneath.
-export function ConfidenceRing({ score, tone = "neutral" }: { score: number; tone?: string }) {
+export function ConfidenceRing({ score, tone = "neutral", label }: { score: number; tone?: string; label?: string }) {
   const value = Math.max(0, Math.min(100, score));
-  const level = confidenceLevel(value);
+  const level = label ? label.replace(/\s*confidence$/i, "") : confidenceLevel(value); // a band supplied with the score wins
   const radius = 30, circumference = 2 * Math.PI * radius;
   return <div className={`ev-ring ev-ring-${tone}`} role="img" aria-label={`Confidence in this result: ${Math.round(value)} out of 100, ${level.toLowerCase()}`}>
     <svg width="76" height="76" viewBox="4 4 76 76" aria-hidden="true">
@@ -50,6 +50,16 @@ export function ConfidenceRing({ score, tone = "neutral" }: { score: number; ton
       <text x="42" y="43" textAnchor="middle" dominantBaseline="middle" className="ev-ring-number">{Math.round(value)}</text>
     </svg>
     <span className="ev-ring-word">{level} confidence</span>
+    <span className="ev-ring-sub">in this result</span>
+  </div>;
+}
+// The graph engine reports confidence as one of three bands, not a number.
+const CONFIDENCE_BANDS = ["lower confidence", "moderate confidence", "higher confidence"];
+export function ConfidenceBand({ label, tone = "neutral" }: { label: string; tone?: string }) {
+  const rank = CONFIDENCE_BANDS.indexOf(label.trim().toLowerCase());
+  return <div className={`ev-band ev-band-${tone}`} role="img" aria-label={`Confidence in this result: ${label.toLowerCase()}`}>
+    <div className="ev-band-steps" aria-hidden="true">{CONFIDENCE_BANDS.map((band, i) => <span key={band} className={rank >= 0 && i <= rank ? "ev-band-on" : undefined} />)}</div>
+    <span className="ev-ring-word">{label}</span>
     <span className="ev-ring-sub">in this result</span>
   </div>;
 }

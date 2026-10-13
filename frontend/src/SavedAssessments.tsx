@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { getSavedAssessments, getSavedAssessment, useApi, type SavedAssessmentSummary } from "./api";
+import { REVIEW_AVAILABLE, getSavedAssessments, getSavedAssessment, useApi, type SavedAssessmentSummary } from "./api";
 import AssessmentReview from "./AssessmentReview";
 import { SuppliedResultView, assessmentConfidence, processingExplanation } from "./SuppliedAssessment";
 import { Badge, outcomeTone } from "./EvidenceUI";
+import { GraphResultView, isGraphResult } from "./GraphAssessment";
 
-export function savedResultType(row: {parent_run_id: string | null; record_type: string}) {
+const GRAPH_BASIS = "graph_engine_deterministic_scoring";
+export function savedResultType(row: {parent_run_id: string | null; record_type: string; outcome_basis?: string}) {
   if (row.record_type === "automatic_processing_failure") return "Processing incomplete · no assessment outcome";
   if (row.parent_run_id) return "Human review revision · conditional";
-  return row.record_type === "automatic_assessment" ? "Automatic result · review pending" : "Supplied assessment · review not established";
+  if (row.record_type === "automatic_assessment") return row.outcome_basis === GRAPH_BASIS ? "Automatic result · graph assessment" : "Automatic result · review pending";
+  return "Supplied assessment · review not established";
 }
 export function savedOutcome(row: SavedAssessmentSummary) {
   if (row.processing?.status === "failed" || row.record_type === "automatic_processing_failure") return "Assessment not completed";
@@ -15,6 +18,7 @@ export function savedOutcome(row: SavedAssessmentSummary) {
 }
 function savedBasis(row: SavedAssessmentSummary) {
   if (row.processing?.status === "failed" || row.record_type === "automatic_processing_failure") return processingExplanation(row.processing?.code ?? null);
+  if (row.outcome_basis === GRAPH_BASIS) return "Scored on the organisation graph";
   if (row.claim_conclusion?.basis === "canonical_component_assessment" || row.processing?.status === "assessed") return "Evaluated claim components";
   return row.claim_conclusion ? (row.claim_conclusion.basis === "unsupported_interpretation" ? "Interpretation incomplete" : "Recorded event comparison") : `Formal: ${row.formal_outcome}; Practice: ${row.observed_outcome}`;
 }
@@ -28,7 +32,7 @@ export function SavedRows({items, onOpen}: {items: SavedAssessmentSummary[]; onO
     </button>)}
   </div>;
 }
-export function SavedDashboard({onOpen, onRegister, onCheck}: {onOpen: (id: string) => void; onRegister: () => void; onCheck: () => void}) {
+export function SavedDashboard({onOpen, onCheck}: {onOpen: (id: string) => void; onCheck: () => void}) {
   const [offset, setOffset] = useState(0);
   const [query, setQuery] = useState("");
   const [verdict, setVerdict] = useState("All");
@@ -36,14 +40,13 @@ export function SavedDashboard({onOpen, onRegister, onCheck}: {onOpen: (id: stri
   const items = data?.items ?? [];
   const rows = items.filter(row => row.claim_text.toLowerCase().includes(query.toLowerCase()) && (verdict === "All" || savedOutcome(row) === verdict));
   return <section className="ev-workspace"><h1>Dashboard</h1>
-    <p className="ev-muted" style={{ marginTop: 4 }}>Every claim you check is saved here. A review is kept as a separate revision; counts and filters apply to this page.</p>
+    <p className="ev-muted" style={{ marginTop: 4 }}>Every claim you check is saved here. Counts and filters apply to this page.</p>
     <div className="ev-tiles">
-      {[['Conflicting evidence', items.filter(r => ['Contested', 'Conflicting evidence', 'Conflicting records'].includes(savedOutcome(r))).length], ['Insufficient evidence', items.filter(r => savedOutcome(r) === 'Insufficient evidence').length], ['Saved results', items.length], ['Review revisions', items.filter(r => r.parent_run_id).length]].map(([label, n]) => <section className={`ev-tile${data && n === 0 ? " ev-tile-empty" : ""}`} key={label}><strong>{data ? n : '—'}</strong><span>{label}</span></section>)}
+      {[['Saved results', items.length], ['Contested', items.filter(r => ['Contested', 'Conflicting evidence', 'Conflicting records'].includes(savedOutcome(r))).length], ['Insufficient evidence', items.filter(r => savedOutcome(r) === 'Insufficient evidence').length], ['Contradicted', items.filter(r => savedOutcome(r).startsWith('Contradicted')).length]].map(([label, n]) => <section className={`ev-tile${data && n === 0 ? " ev-tile-empty" : ""}`} key={label}><strong>{data ? n : '—'}</strong><span>{label}</span></section>)}
     </div>
     <div className="ev-filters"><h2>Saved assessments</h2>
       <input aria-label="Search saved claims on this page" placeholder="Search this page…" value={query} onChange={e => setQuery(e.target.value)} />
       <select aria-label="Saved overall outcome" value={verdict} onChange={e => setVerdict(e.target.value)}>{['All','Assessment not completed','Not assessed automatically','Supported','Partially supported','Conflicting evidence','Contested','Contradicted','Insufficient evidence','Supported by the available record','Partially supported by the available records','Contradicted by the available records','Conflicting records','Not established by the available records'].map(v => <option key={v}>{v}</option>)}</select>
-      <button className="ev-button" onClick={onRegister}>Fact register</button>
     </div>
     {error ? <p role="alert">Could not load saved assessments: {error}</p> : !data ? <p role="status">Loading saved assessments…</p> : <>
       {rows.length ? <SavedRows items={rows} onOpen={onOpen} /> : <div className="ev-state">
@@ -58,15 +61,16 @@ export function SavedAssessmentView({runId, onBack, onOpen, onRunAgain}: {runId:
   const [detail, setDetail] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const {data, error} = useApi(() => getSavedAssessment(runId), [runId]);
+  const reviewable = REVIEW_AVAILABLE && !!data && !isGraphResult(data.snapshot.response) && data.snapshot.response.canonical_assessment?.processing.status !== "failed";
   return <section className={`ev-workspace${reviewOpen && !detail ? " ev-with-drawer" : ""}`}><button className="ev-back" onClick={onBack}>← Back to saved assessments</button>
     {error ? <p role="alert">Could not load saved assessment: {error}</p> : !data ? <p role="status">Loading saved snapshot…</p> : data.snapshot.run_id !== runId ? <p role="alert">Snapshot identity mismatch.</p> : <>
-      <div className="ev-toolbar" hidden={detail}><div><span className="ev-crumb">{savedResultType(data.snapshot)} · Saved {new Date(data.snapshot.created_at).toLocaleString()}</span><h1>Saved assessment</h1></div>
-        <div className="ev-chips" style={{ margin: 0 }}>{data.snapshot.response.canonical_assessment?.processing.status !== "failed" && <button className="ev-button" aria-expanded={reviewOpen} onClick={() => setReviewOpen(true)}>Review</button>}<a className="ev-button" href={`/api/assessments/${encodeURIComponent(runId)}/export`}>Export</a><button className="ev-button ev-button-primary" onClick={() => onRunAgain(data.snapshot.request.claim_text, data.snapshot.request.as_of)}>Run again</button></div></div>
+      <div className="ev-toolbar" hidden={detail}><div><span className="ev-crumb">{savedResultType({...data.snapshot, outcome_basis: data.snapshot.response.assurance?.outcome_basis})} · Saved {new Date(data.snapshot.created_at).toLocaleString()}</span><h1>Saved assessment</h1></div>
+        <div className="ev-chips" style={{ margin: 0 }}>{reviewable && <button className="ev-button" aria-expanded={reviewOpen} onClick={() => setReviewOpen(true)}>Review</button>}<a className="ev-button" href={`/api/assessments/${encodeURIComponent(runId)}/export`}>Export</a><button className="ev-button ev-button-primary" onClick={() => onRunAgain(data.snapshot.request.claim_text, data.snapshot.request.as_of)}>Run again</button></div></div>
       <p className="ev-muted" style={{ marginBottom: 16 }}>This is the result and evidence saved at that time. Opening it does not reassess the claim.</p>
       {data.snapshot.revision_reason && <p>Review reason: {data.snapshot.revision_reason}</p>}
       {data.snapshot.parent_run_id && <button className="ev-button" onClick={() => onOpen(data.snapshot.parent_run_id!)}>Open preceding snapshot</button>}
-      <SuppliedResultView result={data.snapshot.response} onDetailChange={setDetail} />
-      {data.snapshot.response.canonical_assessment?.processing.status !== "failed" && <div hidden={detail}><AssessmentReview key={runId} record={data} open={reviewOpen} onOpenChange={setReviewOpen} onSaved={value => { setReviewOpen(false); onOpen(value.snapshot.run_id); }} /></div>}
+      {isGraphResult(data.snapshot.response) ? <GraphResultView result={data.snapshot.response} /> : <SuppliedResultView result={data.snapshot.response} onDetailChange={setDetail} />}
+      {reviewable && <div hidden={detail}><AssessmentReview key={runId} record={data} open={reviewOpen} onOpenChange={setReviewOpen} onSaved={value => { setReviewOpen(false); onOpen(value.snapshot.run_id); }} /></div>}
     </>}
   </section>;
 }

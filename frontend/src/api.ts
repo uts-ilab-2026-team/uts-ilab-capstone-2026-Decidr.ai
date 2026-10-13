@@ -311,6 +311,10 @@ export const assessSupplied = (body: import("./suppliedAssessmentContract").Supp
 export const saveAutomatic = (body: { claim: string; facet: string; as_of: string; request_id: string }) =>
   post<import("./AutomaticAssessment").AssessmentSnapshot>("/assessments/automatic", body);
 
+// The backend retired both review routes (POST /assessments and /review-canonical) with the
+// legacy scorers. The review panel stays in the code but is not offered until they return.
+export const REVIEW_AVAILABLE = false;
+
 export const saveAssessmentRevision = (body: {
   assessment: import("./suppliedAssessmentContract").SuppliedRequest;
   parent_run_id: string; revision_reason: string; request_id: string;
@@ -329,7 +333,7 @@ export interface SavedAssessmentSummary {
   run_id: string; parent_run_id: string | null; created_at: string;
   claim_text: string; facet: string; as_of: string; overall_outcome: string;
   formal_outcome: string; observed_outcome: string; record_type: string;
-  review_status: string; snapshot_sha256: string;
+  review_status: string; snapshot_sha256: string; outcome_basis?: string;
 }
 export const getSavedAssessments = (offset: number) =>
   request<{items: SavedAssessmentSummary[]}>(`/assessments?limit=20&offset=${offset}`);
