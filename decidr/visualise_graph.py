@@ -17,10 +17,9 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
+from framework.graph import OrganisationalGraph
 import networkx as nx
 from pyvis.network import Network
-
-from framework.graph import OrganisationalGraph
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 GRAPH_PATH = REPO_ROOT / "framework" / "data" / "corpus_graph.json"
@@ -51,7 +50,7 @@ def _subgraph(og: OrganisationalGraph, view: str) -> nx.MultiDiGraph:
         for u, v, rel in full.edges(data="relationship"):
             if v == "process:p1" and rel in {"GOVERNS", "PARTICIPATES_IN"}:
                 keep.add(u)
-        for role in list(keep):
+        for role in keep:
             for u, v, rel in full.edges(data="relationship"):
                 if v == role and rel == "HOLDS":
                     keep.add(u)  # person holding a discount role

@@ -1,14 +1,10 @@
-"""Translate one LLM reading ("finding") into a graph attestation the engine can score.
+"""Translate one LLM reading ("finding") into fields the graph engine can score.
 
-This is the shim (Phase 2a): LLM finding -> PreparedAttestation -> assess_prepared_facet
--> framework engine. It does NO judging — it only maps the LLM's fields onto the
-attestation shape and resolves the cited document/passage against the live corpus so
-citation-binding (exact-substring check) passes.
-
-Two layers, kept separate on purpose:
-  1. _map_quality(): the pure field table (stance/mode/source_type -> engine fields).
-  2. resolve_and_prepare(): finds our Source + Evidence passage for the finding, so the
-     adapter's verbatim-quote check succeeds even though fixtures use a different release id.
+The shim does NO judging. It provides the pure field table (`_map_quality`) that maps an LLM
+finding's stance/mode/source_type onto the engine's attestation scalars, and the verbatim-quote
+resolver (`_find_passage`) that binds a quotation to its stored passage. The scoring itself is
+done by ``decidr.backbone_assessment`` (fact + FORMAL/OBSERVED overlay on the real skeleton →
+``evaluate_fact``); this module only supplies the per-edge fields.
 
 Run the bundled demo (one recorded llama fixture, no Ollama needed):
     uv run python -m decidr.finding_shim
@@ -16,7 +12,6 @@ Run the bundled demo (one recorded llama fixture, no Ollama needed):
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
 import json
@@ -25,10 +20,8 @@ from pathlib import Path
 from framework import CONFIG_PATH
 from framework.config import GraphCredibilityConfig
 
-from decidr.assessment_adapter import FacetAssessmentResult, PreparedAttestation, assess_prepared_facet
 from decidr.backbone_graph import DATA_DIR, SOURCE_CLASS_BY_TYPE, _approval_key
 from decidr.ingestion import ingest
-from decidr.interpretation_models import EvidenceInterpretation, InterpretationCitation
 from decidr.retrieval_models import Evidence, Source
 
 DEFAULT_AS_OF = date(2026, 7, 31)  # dataset is read "as at 31 July 2026"
@@ -139,7 +132,7 @@ def _map_quality(finding: LlmFinding, source: Source, config: GraphCredibilityCo
 
 
 # --------------------------------------------------------------------------- #
-# 2. Resolve + build the PreparedAttestation                                   #
+# 2. Verbatim-quote resolver (binds a finding's quotation to a stored passage)  #
 # --------------------------------------------------------------------------- #
 
 
@@ -155,89 +148,8 @@ def _find_passage(passages: list[Evidence], quotation: str) -> tuple[Evidence, i
     )
 
 
-def resolve_and_prepare(
-    finding: LlmFinding, snapshot: CorpusSnapshot, config: GraphCredibilityConfig
-) -> tuple[PreparedAttestation, Evidence]:
-    """Match the finding to our Source + Evidence and build one PreparedAttestation."""
-    source = snapshot.sources_by_code.get(finding.source_code)
-    if source is None:
-        raise ValueError(f"no corpus source for code {finding.source_code!r}")
-    passages = snapshot.evidence_by_source.get(source.source_id, [])
-    passage, start, end = _find_passage(passages, finding.quotation)
-
-    citation = InterpretationCitation(
-        evidence_id=passage.evidence_id,
-        source_id=passage.source_id,
-        locator=passage.locator,
-        quotation=finding.quotation,
-        start=start,
-        end=end,
-    )
-    interpretation = EvidenceInterpretation(
-        claim_text=finding.claim_text,
-        facet=finding.facet,
-        stance=finding.stance,
-        mode=finding.mode,
-        rationale=finding.rationale,
-        citations=(citation,),
-    )
-    quality = _map_quality(finding, source, config)
-    prepared = PreparedAttestation(
-        interpretation=interpretation,
-        source=source,
-        origin_id=str(source.duplicate_group or source.source_id),
-        **quality,
-    )
-    return prepared, passage
-
-
-def assess_finding(
-    finding: LlmFinding,
-    snapshot: CorpusSnapshot,
-    config: GraphCredibilityConfig,
-    *,
-    as_of: date = DEFAULT_AS_OF,
-) -> FacetAssessmentResult:
-    """Full shim path for a single finding: resolve -> prepare -> engine."""
-    prepared, passage = resolve_and_prepare(finding, snapshot, config)
-    return assess_prepared_facet(
-        claim_text=finding.claim_text,
-        facet=finding.facet,
-        as_of=as_of,
-        prepared=[prepared],
-        evidence=[passage],
-        config=config,
-    )
-
-
-def assess_findings(
-    findings: Iterable[LlmFinding],
-    snapshot: CorpusSnapshot,
-    config: GraphCredibilityConfig,
-    *,
-    facet: str,
-    claim_text: str,
-    as_of: date = DEFAULT_AS_OF,
-) -> FacetAssessmentResult:
-    """Assess several findings for ONE facet together (one Fact, many attestations)."""
-    prepared = []
-    passages = []
-    for finding in findings:
-        item, passage = resolve_and_prepare(finding, snapshot, config)
-        prepared.append(item)
-        passages.append(passage)
-    return assess_prepared_facet(
-        claim_text=claim_text,
-        facet=facet,
-        as_of=as_of,
-        prepared=prepared,
-        evidence=passages,
-        config=config,
-    )
-
-
 # --------------------------------------------------------------------------- #
-# Demo / self-test                                                             #
+# Demo / self-test — shows the field mapping; scoring lives in backbone_assessment
 # --------------------------------------------------------------------------- #
 
 _FIXTURE = (
@@ -253,6 +165,11 @@ def main() -> None:
     config = GraphCredibilityConfig.load(CONFIG_PATH)
     snapshot = load_corpus_snapshot()
     finding = finding_from_result_json(_FIXTURE)
+    source = snapshot.sources_by_code[finding.source_code]
+    passage, start, end = _find_passage(
+        snapshot.evidence_by_source.get(source.source_id, []), finding.quotation
+    )
+    quality = _map_quality(finding, source, config)
 
     print("LLM finding:")
     print(f"  claim : {finding.claim_text}")
@@ -260,26 +177,17 @@ def main() -> None:
     print(f"  stance: {finding.stance}   mode: {finding.mode}")
     print(f"  source: {finding.source_code}")
     print(f"  quote : {finding.quotation[:80]}...")
-
-    prepared, passage = resolve_and_prepare(finding, snapshot, config)
-    print("\nmapped PreparedAttestation:")
-    print(f"  source_class      = {prepared.source_class}")
-    print(f"  approval_key      = {prepared.approval_key}")
-    print(f"  mode (-> edge)    = {prepared.interpretation.mode.upper()}")
-    print(f"  agrees            = {prepared.interpretation.stance == 'support'}")
-    print(f"  directness/spec/comp = {prepared.directness}/{prepared.specificity}/{prepared.completeness}")
-    print(f"  matched passage   = {passage.evidence_id} ({passage.source_id})")
-
-    result = assess_finding(finding, snapshot, config)
-    a = result.assessment
-    print("\nengine verdict:")
-    print(f"  formal_outcome   = {a.formal_outcome}")
-    print(f"  observed_outcome = {a.observed_outcome}")
-    print(f"  overall_outcome  = {a.overall_outcome}")
-    print(f"  confidence       = {a.confidence}")
-    if a.evidence:
-        edge = a.evidence[0]
-        print(f"  scored edge      = material={edge.material} score={edge.materiality_score:.3f}")
+    print("\nmapped engine fields (the shim's output):")
+    print(f"  source_class      = {quality['source_class']}")
+    print(f"  approval_key      = {quality['approval_key']}")
+    print(f"  mode (-> edge)    = {finding.mode.upper()}")
+    print(f"  agrees            = {finding.stance == 'support'}")
+    print(
+        f"  directness/spec/comp = "
+        f"{quality['directness']}/{quality['specificity']}/{quality['completeness']}"
+    )
+    print(f"  matched passage   = {passage.evidence_id} ({passage.source_id}) [{start}:{end}]")
+    print("\n(scoring: see `python -m decidr.backbone_assessment` — fact overlay on the skeleton)")
 
 
 if __name__ == "__main__":

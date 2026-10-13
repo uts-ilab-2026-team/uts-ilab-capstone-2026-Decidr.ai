@@ -141,8 +141,12 @@ def main() -> None:
 
     # Facet 1: the requirement is supported by POL-01.
     requirement = assess_on_backbone(
-        [base], facet="approval_requirement", claim_text=base.claim_text,
-        snapshot=snapshot, skeleton=skeleton, config=config,
+        [base],
+        facet="approval_requirement",
+        claim_text=base.claim_text,
+        snapshot=snapshot,
+        skeleton=skeleton,
+        config=config,
     )
     # Facet 2: valid authority — but the only evidence names Diane, who lacks the role,
     # so this facet comes back Insufficient (a gap, not a contradiction).
@@ -153,8 +157,12 @@ def main() -> None:
         mode="observed",
     )
     authority = assess_on_backbone(
-        [diane], facet="valid_authority", claim_text=base.claim_text,
-        snapshot=snapshot, skeleton=skeleton, config=config,
+        [diane],
+        facet="valid_authority",
+        claim_text=base.claim_text,
+        snapshot=snapshot,
+        skeleton=skeleton,
+        config=config,
     )
 
     verdict = combine(

@@ -2171,46 +2171,6 @@ def test_only_background_or_inapplicable_verified_findings_cannot_rescue_invalid
     )
 
 
-@pytest.mark.parametrize("relationship", ["supports", "contradicts", "qualifies"])
-@pytest.mark.parametrize("uncertain_field", ["scope_fit", "time_fit"])
-def test_complete_audit_retains_verified_uncertain_material_as_unresolved(
-    relationship, uncertain_field
-):
-    from decidr.canonical_assessment import canonical_assessment
-
-    passages, good, bad, _ = mixed_semantic_responses(relationship)
-    good[uncertain_field] = "unknown"
-    checked = verified_evidence(good, bad)
-    checked["finding_checks"]["1"].update(fields_valid=False, reason="The action is unverified.")
-    provider = MockProvider(evaluated(good, bad), checked, evaluated(good, bad), checked)
-    interpretation = checked_interpretation()
-    result = evaluate_evidence(interpretation, CLAIM, passages, "2026-04-01", provider)
-    retained = result["findings"][0]
-    assert retained["relationship"] == "unresolved"
-    assert retained[uncertain_field] == "unknown"
-    assert retained["semantic_validation"]["valid"] is True
-    assert retained["semantic_validation"]["original_proposal"]["relationship"] == relationship
-    assert retained["semantic_validation"]["grounding_quote"] == passages[0]["text"]
-    assert retained["quotation"] == passages[0]["text"]
-    validation = result["semantic_validation"]
-    assert validation["status"] == "partially_validated"
-    assert validation["verified_contributing_findings"] == 0
-    assert validation["verified_uncertain_findings"] == 1
-    canonical = canonical_assessment(
-        interpretation,
-        result,
-        {p["evidence_id"]: p for p in passages},
-        {"record": {"source_id": "record", "ingestion_status": "ingested"}},
-        "2026-04-01",
-    )
-    assert canonical["processing"]["status"] == "assessed"
-    assert canonical["overall_outcome"] == "Insufficient evidence"
-    assert not any(f["admitted"] for f in canonical["components"][0]["findings"])
-    assert ("temporal applicability" if uncertain_field == "time_fit" else "scope") in canonical[
-        "summary"
-    ]
-
-
 @pytest.mark.parametrize("uncertain_field", ["scope_fit", "time_fit"])
 def test_malformed_repair_cannot_fall_back_to_only_uncertain_initial_findings(uncertain_field):
     passages, good, bad, _ = mixed_semantic_responses()

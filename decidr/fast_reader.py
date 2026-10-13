@@ -236,7 +236,9 @@ def main() -> None:
     print(f"total LLM calls this claim: {provider.calls}")
     print(f"findings: {len(output['findings'])}")
     for finding in output["findings"][:6]:
-        print(f"  - {finding['component_id']} :: {finding['relationship']} ({finding['evidence_id']})")
+        print(
+            f"  - {finding['component_id']} :: {finding['relationship']} ({finding['evidence_id']})"
+        )
 
 
 if __name__ == "__main__":

@@ -192,7 +192,11 @@ Do not create an omission entry to say that nothing is missing; omission entries
 
 
 def _propose(claim: str, as_of: date | str, provider: Provider, feedback: str):
-    data = {"original_claim": claim, "assessment_date": str(as_of), "validation_feedback": feedback}
+    data = {
+        "original_claim": claim,
+        "assessment_date": str(as_of),
+        "validation_feedback": feedback,
+    }
     output = _complete(provider, _interpretation_model(claim), PROPOSER_INSTRUCTION, data)
     ids = [component["id"] for component in output["components"]]
     if len(ids) != len(set(ids)):
@@ -217,7 +221,10 @@ def _verify(claim: str, output: dict, ids: list[str], data: dict, provider: Prov
         provider,
         _claim_verifier_model(ids),
         VERIFIER_INSTRUCTION,
-        {**{k: v for k, v in data.items() if k != "validation_feedback"}, "proposed_interpretation": output},
+        {
+            **{k: v for k, v in data.items() if k != "validation_feedback"},
+            "proposed_interpretation": output,
+        },
     )
     checks = [
         {"component_id": cid, **check} for cid, check in verification["component_checks"].items()

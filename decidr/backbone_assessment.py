@@ -26,7 +26,8 @@ from framework.credibility import GraphCredibilityFramework
 from framework.graph import OrganisationalGraph
 from framework.models import FactAssessment, GraphEdge, GraphNode
 
-from decidr.backbone_graph import OUTPUT_PATH as BACKBONE_PATH, _slug
+from decidr.backbone_graph import OUTPUT_PATH as BACKBONE_PATH
+from decidr.backbone_graph import _slug
 from decidr.finding_shim import (
     DEFAULT_AS_OF,
     CorpusSnapshot,
