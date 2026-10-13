@@ -38,6 +38,7 @@ from decidr.claim_interpreter import (
     _validated_retry,
     claim_evidence_exclusion,
 )
+from decidr.event_date_check import event_date_exclusion
 
 
 def _evaluate_evidence_fast_once(
@@ -129,6 +130,29 @@ def _evaluate_evidence_fast_once(
                 "invalid_model_output",
                 "A recorded value was incorrectly treated as independently accurate.",
             )
+        if (
+            interpretation["target"] == "event"
+            and finding["relationship"] == "supports"
+            and finding["basis"] != "independent_validation"
+        ):
+            date_exclusion = event_date_exclusion(components[finding["component_id"]], p)
+            if date_exclusion:
+                adjustment = {
+                    "component_id": finding["component_id"],
+                    "evidence_id": finding["evidence_id"],
+                    "proposed_relationship": finding["relationship"],
+                    "admitted_relationship": "context",
+                    "reason": date_exclusion,
+                }
+                admission_adjustments.append(adjustment)
+                record = getattr(provider, "record_admission_adjustment", None)
+                if callable(record):
+                    record(adjustment)
+                finding["relationship"] = "context"
+                finding["reason"] = (
+                    "Retained as context after a deterministic event-date check. " + date_exclusion
+                )
+                finding["limitations"].append(date_exclusion)
         if finding["relationship"] in {"supports", "contradicts"}:
             component = components[finding["component_id"]]
             required_ids = {
