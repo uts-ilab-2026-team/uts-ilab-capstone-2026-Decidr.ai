@@ -33,6 +33,7 @@ from framework import CONFIG_PATH
 from framework.config import GraphCredibilityConfig
 from framework.graph import OrganisationalGraph
 from framework.models import FactAssessment
+import networkx as nx
 
 from decidr.backbone_assessment import assess_on_backbone, load_skeleton
 from decidr.claim_combiner import ClaimVerdict, combine
@@ -64,6 +65,7 @@ _RETRIEVAL_LIMIT = 8  # ranked groups per keyword query
 _MAX_PASSAGES = 10  # cap distinct passages fed to the single batched read
 _GOVERNED_PER_DOC = 2  # passages taken from each governing document
 _MAX_GOVERNED = 4  # formal-lane cap for graph-governed docs
+_MAX_RELATED = 3  # formal-lane cap for one-hop RELATED-expanded docs
 # Generic words in process labels that should not drive a claim->process match.
 _PROCESS_STOP = {"customer", "process", "review", "request", "intake", "risk", "new"}
 # Targets where the GOVERNING DOCUMENT is itself the evidence (so graph-guidance helps). For
@@ -163,6 +165,38 @@ def _governs_map(skeleton: OrganisationalGraph) -> dict[str, list[str]]:
     return mapping
 
 
+def _related_view(skeleton: OrganisationalGraph) -> nx.MultiDiGraph:
+    """A directed RELATED-only view of the skeleton (so ``.successors`` walks only stated links)."""
+    graph = skeleton.graph
+    related_edges = [
+        (source, target, key)
+        for source, target, key, relationship in graph.edges(keys=True, data="relationship")
+        if relationship == "RELATED"
+    ]
+    return graph.edge_subgraph(related_edges)
+
+
+def _related_codes(governed_codes: list[str], skeleton: OrganisationalGraph) -> list[str]:
+    """One directed hop over RELATED: codes a governing doc declares, excluding the governing set.
+
+    Walks ``nx.MultiDiGraph.successors`` on a RELATED-only view, so it follows only the links a
+    document itself states (a process doc declares none -> expands to nothing) and never chains a
+    second hop.
+    """
+    view = _related_view(skeleton)
+    governed_set = set(governed_codes)
+    expanded: list[str] = []
+    for code in governed_codes:
+        node_id = f"document:{code}"
+        if node_id not in view:
+            continue
+        for target in view.successors(node_id):
+            neighbour = target.replace("document:", "")
+            if neighbour not in governed_set and neighbour not in expanded:
+                expanded.append(neighbour)
+    return expanded
+
+
 def _governed_passages(
     governed_codes: list[str],
     claim_tokens: set[str],
@@ -240,6 +274,15 @@ def _retrieve_passages(
                 governed_codes.append(code)
     governed_ids = _governed_passages(governed_codes, claim_tokens, snapshot)[:_MAX_GOVERNED]
 
+    # One directed RELATED hop out of the governing docs (rule-type targets only): pull the docs a
+    # governing policy itself declares related (e.g. POL-01 -> POL-06), so the reader sees them too.
+    related_codes = _related_codes(governed_codes, skeleton) if rule_target else []
+    related_ids = [
+        eid
+        for eid in _governed_passages(related_codes, claim_tokens, snapshot)
+        if eid not in set(governed_ids)
+    ][:_MAX_RELATED]
+
     # Keyword search across the whole (skeleton-only) index.
     queries = list(
         dict.fromkeys(
@@ -268,9 +311,12 @@ def _retrieve_passages(
         return passage is not None and passage.source_type in _FORMAL_SOURCE_TYPES
 
     governed_set = set(governed_ids)
+    related_set = set(related_ids)
+    graph_formal_set = governed_set | related_set
     formal_pool = [
         *governed_ids,
-        *(e for e in keyword_ids if _is_formal(e) and e not in governed_set),
+        *related_ids,
+        *(e for e in keyword_ids if _is_formal(e) and e not in graph_formal_set),
     ]
     observed_pool = [e for e in keyword_ids if not _is_formal(e)]
 
@@ -290,7 +336,12 @@ def _retrieve_passages(
         passage = evidence_by_id.get(evidence_id)
         if passage is None or evidence_id in seen:
             continue
-        via = "graph_governed" if evidence_id in governed_set else "keyword"
+        if evidence_id in governed_set:
+            via = "graph_governed"
+        elif evidence_id in related_set:
+            via = "graph_related"
+        else:
+            via = "keyword"
         passages.append(_passage_dict(passage, via))
         seen.add(evidence_id)
 
@@ -299,8 +350,10 @@ def _retrieve_passages(
         "graph_guided": rule_target,
         "processes_matched": [label for _id, label in processes],
         "governed_docs": governed_codes,
+        "related_docs": related_codes,
         "counts": {
             "graph_governed": sum(p["retrieved_via"] == "graph_governed" for p in passages),
+            "graph_related": sum(p["retrieved_via"] == "graph_related" for p in passages),
             "keyword": sum(p["retrieved_via"] == "keyword" for p in passages),
         },
         "lanes": {
