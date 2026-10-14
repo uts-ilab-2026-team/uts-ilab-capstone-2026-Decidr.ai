@@ -13,7 +13,6 @@ Run the bundled demo (one recorded llama fixture, no Ollama needed):
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
 import json
 from pathlib import Path
 
@@ -21,11 +20,9 @@ from framework import CONFIG_PATH
 from framework.config import GraphCredibilityConfig
 
 from decidr.backbone_graph import DATA_DIR, SOURCE_CLASS_BY_TYPE, _approval_key
+from decidr.constants import DEFAULT_AS_OF  # noqa: F401  (re-exported for existing importers)
 from decidr.ingestion import ingest
 from decidr.retrieval_models import Evidence, Source
-
-DEFAULT_AS_OF = date(2026, 7, 31)  # dataset is read "as at 31 July 2026"
-
 
 # --------------------------------------------------------------------------- #
 # The LLM finding (just the fields the shim consumes)                          #

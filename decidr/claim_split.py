@@ -25,6 +25,7 @@ from decidr.claim_interpreter import (
     _validate_claim_numbers,
 )
 from decidr.claim_spans import exact_claim_span
+from decidr.constants import DEFAULT_AS_OF
 
 # --------------------------------------------------------------------------- #
 # Prompts                                                                      #
@@ -311,7 +312,7 @@ def main() -> None:
     except ProviderError as error:
         print(f"no local provider available: {error}")
         return
-    result = split_claim(claim, date(2026, 7, 31), provider)
+    result = split_claim(claim, DEFAULT_AS_OF, provider)
     print(f"claim: {claim}")
     print(f"split status: {result['semantic_validation']['status']}")
     for component in result["components"]:

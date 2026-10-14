@@ -130,8 +130,7 @@ def _dated_mentions(text: str) -> list[tuple[str, date]]:
 def _claim_date(component: dict) -> tuple[str, date] | None:
     """Exactly one distinct date asserted by the claim -> (operator, date); else None."""
     text = " ".join(
-        str(component.get(key, ""))
-        for key in ("temporal", "claim_quote", "text", "predicate")
+        str(component.get(key, "")) for key in ("temporal", "claim_quote", "text", "predicate")
     )
     mentions = _dated_mentions(text)
     distinct = {parsed for _op, parsed in mentions}

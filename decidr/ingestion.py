@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 import subprocess
 
+from decidr.constants import SOURCE_CODE_PATTERN
 from decidr.retrieval_models import Evidence, Source
 from decidr.retrieval_store import (
     connect,
@@ -32,7 +33,6 @@ ANNOTATION_NAMES = {"labelled_claims_sample.csv"}
 METADATA_PATTERN = re.compile(r"^- \*\*(?P<key>[^*]+):\*\*\s*(?P<value>.*)$")
 HEADING_PATTERN = re.compile(r"^(?P<level>#{1,6})\s+(?P<title>.+?)\s*$")
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
-SOURCE_CODE_PATTERN = re.compile(r"\b(?:POL|PROC|INT|MTG)-\d+\b")
 
 
 @dataclass(slots=True)
@@ -112,12 +112,6 @@ def _parse_date(value: str | None) -> date | None:
     if not match:
         return None
     return date.fromisoformat(match.group())
-
-
-def _markdown_header(path: Path) -> tuple[str, dict[str, str]]:
-    """Compatibility wrapper for the document-scoped header reader."""
-    title, metadata, _, _ = read_header(path)
-    return title, metadata
 
 
 def _source_code(path: Path, title: str) -> str:
@@ -567,45 +561,3 @@ def ingest(releases: dict[str, Path], database_path: Path | None = None) -> Inge
                     evidence_by_source[source.source_id],
                 )
     return result
-
-
-def write_exports(result: IngestionResult, output_dir: Path) -> None:
-    """Write machine-readable registers and a concise Markdown ingestion report."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "source_register.json").write_text(
-        json.dumps([item.model_dump(mode="json") for item in result.sources], indent=2),
-        encoding="utf-8",
-    )
-    (output_dir / "evidence_register.json").write_text(
-        json.dumps([item.model_dump(mode="json") for item in result.evidence], indent=2),
-        encoding="utf-8",
-    )
-    with (output_dir / "source_register.csv").open("w", encoding="utf-8", newline="") as handle:
-        fields = [
-            "source_id",
-            "title",
-            "source_type",
-            "original_file_path",
-            "checksum",
-            "ingestion_status",
-            "lifecycle_status",
-            "duplicate_group",
-            "predecessor_source_id",
-            "successor_source_id",
-            "exclusion_reason",
-        ]
-        writer = csv.DictWriter(handle, fieldnames=fields)
-        writer.writeheader()
-        for source in result.sources:
-            data = source.model_dump(mode="json")
-            writer.writerow({field: data.get(field) for field in fields})
-    summary = result.summary()
-    lines = ["# Ingestion report", "", f"- Dataset fingerprint: `{result.dataset_fingerprint}`"]
-    lines.extend(
-        f"- {key.replace('_', ' ').title()}: {value}"
-        for key, value in summary.items()
-        if key != "dataset_fingerprint"
-    )
-    if result.warnings:
-        lines.extend(["", "## Warnings", "", *[f"- {warning}" for warning in result.warnings]])
-    (output_dir / "ingestion_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")

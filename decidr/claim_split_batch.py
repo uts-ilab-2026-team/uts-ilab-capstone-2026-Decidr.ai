@@ -10,16 +10,15 @@ vs degraded (flagged undecisive) vs errored.
 
 from __future__ import annotations
 
-from datetime import date
 import glob
 import json
 from pathlib import Path
 
 from decidr.claim_interpreter import ProviderError, get_provider
 from decidr.claim_split import split_claim
+from decidr.constants import DEFAULT_AS_OF, REPO_ROOT
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-AS_OF = date(2026, 7, 31)
+AS_OF = DEFAULT_AS_OF
 
 
 def unique_claims() -> list[str]:

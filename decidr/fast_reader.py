@@ -38,6 +38,7 @@ from decidr.claim_interpreter import (
     _validated_retry,
     claim_evidence_exclusion,
 )
+from decidr.constants import DEFAULT_AS_OF
 from decidr.event_date_check import event_date_exclusion
 
 
@@ -227,7 +228,7 @@ def main() -> None:
     from decidr.finding_shim import load_corpus_snapshot
 
     claim = "Discounts above 15% require Head of Finance approval before the deal is closed."
-    as_of = date(2026, 7, 31)
+    as_of = DEFAULT_AS_OF
 
     try:
         provider = _CountingProvider(get_provider())

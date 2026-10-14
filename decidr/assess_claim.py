@@ -713,7 +713,7 @@ def main() -> None:
 
     override = os.environ.get("DECIDR_ASSESS_CLAIM")
     claims = [override] if override else _DEMO_CLAIMS
-    as_of = date(2026, 7, 31)
+    as_of = DEFAULT_AS_OF
 
     results = []
     for index, claim in enumerate(claims, start=1):

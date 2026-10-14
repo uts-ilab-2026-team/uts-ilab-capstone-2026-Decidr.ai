@@ -167,33 +167,3 @@ def header_date(metadata: dict, key: str, conflicts: list) -> date | None:
         }
     )
     return None
-
-
-def metadata_constraint(source: dict, start: date, end: date) -> tuple[str | None, list[str]]:
-    """Additional constraints, not proof of applicability. Boundary equality is unknown.
-
-    Legacy snapshots without the new fields keep their original behaviour.
-    """
-    temporal_fields = {
-        "lifecycle_status",
-        "approval_status",
-        "effective_date",
-        "superseded_date",
-        "effective_start_date",
-        "effective_end_date",
-        "supersession",
-        "date",
-        "interview_date",
-    }
-    if any(c["field"] in temporal_fields for c in source.get("metadata_conflicts", [])):
-        return "unknown", ["Unresolved source metadata conflict; temporal applicability unknown."]
-    if source.get("metadata_version") and source.get("lifecycle_status") in {"draft", "withdrawn"}:
-        return "no", ["Document's own lifecycle is draft or withdrawn."]
-    superseded = source.get("superseded_date")
-    if superseded:
-        boundary = date.fromisoformat(superseded)
-        if end > boundary:
-            return "no", ["Assessed period extends beyond the documented superseded date."]
-        if end == boundary:
-            return "unknown", ["Superseded-date boundary inclusion is unspecified."]
-    return None, []
