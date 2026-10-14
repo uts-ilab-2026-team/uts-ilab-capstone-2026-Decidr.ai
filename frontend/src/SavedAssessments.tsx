@@ -32,28 +32,42 @@ export function SavedRows({items, onOpen}: {items: SavedAssessmentSummary[]; onO
     </button>)}
   </div>;
 }
+const PAGE_SIZE = 10;
+async function loadAllSaved() {
+  const all: SavedAssessmentSummary[] = [];
+  for (let offset = 0; ; offset += 100) {
+    const { items } = await getSavedAssessments(offset, 100);
+    all.push(...items);
+    if (items.length < 100) return { items: all };
+  }
+}
 export function SavedDashboard({onOpen, onCheck}: {onOpen: (id: string) => void; onCheck: () => void}) {
   const [offset, setOffset] = useState(0);
   const [query, setQuery] = useState("");
   const [verdict, setVerdict] = useState("All");
-  const {data, error} = useApi(() => getSavedAssessments(offset), [offset]);
+  // The history endpoint returns one page at a time with no total, so the whole list is loaded
+  // once: the tiles count every saved result and search and filters cover all of them.
+  const {data, error} = useApi(loadAllSaved, []);
   const items = data?.items ?? [];
-  const rows = items.filter(row => row.claim_text.toLowerCase().includes(query.toLowerCase()) && (verdict === "All" || savedOutcome(row) === verdict));
+  const matches = items.filter(row => row.claim_text.toLowerCase().includes(query.toLowerCase()) && (verdict === "All" || savedOutcome(row) === verdict));
+  const rows = matches.slice(offset, offset + PAGE_SIZE);
+  const hasNext = offset + PAGE_SIZE < matches.length;
+  const pages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
   return <section className="ev-workspace"><h1>Dashboard</h1>
-    <p className="ev-muted" style={{ marginTop: 4 }}>Every claim you check is saved here. Counts and filters apply to this page.</p>
+    <p className="ev-muted" style={{ marginTop: 4 }}>Every claim you check is saved here.</p>
     <div className="ev-tiles">
-      {[['Saved results', items.length], ['Contested', items.filter(r => ['Contested', 'Conflicting evidence', 'Conflicting records'].includes(savedOutcome(r))).length], ['Insufficient evidence', items.filter(r => savedOutcome(r) === 'Insufficient evidence').length], ['Contradicted', items.filter(r => savedOutcome(r).startsWith('Contradicted')).length]].map(([label, n]) => <section className={`ev-tile${data && n === 0 ? " ev-tile-empty" : ""}`} key={label}><strong>{data ? n : '—'}</strong><span>{label}</span></section>)}
+      {[['Saved results', items.length], ['Supported', items.filter(r => savedOutcome(r).startsWith('Supported')).length], ['Contested', items.filter(r => ['Contested', 'Conflicting evidence', 'Conflicting records'].includes(savedOutcome(r))).length], ['Insufficient evidence', items.filter(r => savedOutcome(r) === 'Insufficient evidence').length], ['Contradicted', items.filter(r => savedOutcome(r).startsWith('Contradicted')).length]].map(([label, n]) => <section className={`ev-tile${data && n === 0 ? " ev-tile-empty" : ""}`} key={label}><strong>{data ? n : '—'}</strong><span>{label}</span></section>)}
     </div>
     <div className="ev-filters"><h2>Saved assessments</h2>
-      <input aria-label="Search saved claims on this page" placeholder="Search this page…" value={query} onChange={e => setQuery(e.target.value)} />
-      <select aria-label="Saved overall outcome" value={verdict} onChange={e => setVerdict(e.target.value)}>{['All','Assessment not completed','Not assessed automatically','Supported','Partially supported','Conflicting evidence','Contested','Contradicted','Insufficient evidence','Supported by the available record','Partially supported by the available records','Contradicted by the available records','Conflicting records','Not established by the available records'].map(v => <option key={v}>{v}</option>)}</select>
+      <input aria-label="Search saved claims" placeholder="Search saved claims…" value={query} onChange={e => { setQuery(e.target.value); setOffset(0); }} />
+      <select aria-label="Saved overall outcome" value={verdict} onChange={e => { setVerdict(e.target.value); setOffset(0); }}>{['All','Assessment not completed','Not assessed automatically','Supported','Partially supported','Conflicting evidence','Contested','Contradicted','Insufficient evidence','Supported by the available record','Partially supported by the available records','Contradicted by the available records','Conflicting records','Not established by the available records'].map(v => <option key={v}>{v}</option>)}</select>
     </div>
     {error ? <p role="alert">Could not load saved assessments: {error}</p> : !data ? <p role="status">Loading saved assessments…</p> : <>
       {rows.length ? <SavedRows items={rows} onOpen={onOpen} /> : <div className="ev-state">
-        <strong>{items.length ? 'No matches on this page.' : 'No saved assessments on this page.'}</strong>
+        <strong>{items.length ? 'No saved claims match.' : 'No saved assessments yet.'}</strong>
         {!items.length && <>Check a claim to see how it holds up against the indexed sources.<div style={{ marginTop: 16 }}><button className="ev-button ev-button-primary" onClick={onCheck}>Check a claim</button></div></>}
       </div>}
-      {(offset > 0 || items.length >= 20) && <div className="ev-pager"><button className="ev-button" disabled={offset === 0} onClick={() => setOffset(n => Math.max(0,n-20))}>Previous</button><span>Page {offset / 20 + 1}</span><button className="ev-button" disabled={items.length < 20} onClick={() => setOffset(n => n+20)}>Next</button></div>}
+      {(offset > 0 || hasNext) && <div className="ev-pager"><button className="ev-button" disabled={offset === 0} onClick={() => setOffset(n => Math.max(0, n - PAGE_SIZE))}>Previous</button><span>Page {offset / PAGE_SIZE + 1} of {pages}</span><button className="ev-button" disabled={!hasNext} onClick={() => setOffset(n => n + PAGE_SIZE)}>Next</button></div>}
     </>}
   </section>;
 }
