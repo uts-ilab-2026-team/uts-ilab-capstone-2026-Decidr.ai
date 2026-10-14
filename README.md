@@ -26,6 +26,24 @@ Requires [uv](https://docs.astral.sh/uv/).
     cd uts-ilab-capstone-2026-Decidr.ai
     uv sync
 
+## Local models (Ollama)
+
+Assessment runs fully locally against [Ollama](https://ollama.com) — no paid API. Install it,
+then pull the two models the pipeline uses **before running an assessment**:
+
+    ollama pull qwen3.5:9b      # reads the evidence (required for assessment)
+    ollama pull all-minilm      # embeds passages for semantic retrieval (recommended)
+
+- `qwen3.5:9b` is the reader (`ASSESSMENT_MODEL`). Without it, a claim assessment cannot run.
+- `all-minilm` is the embedder (`SEMANTIC_MODEL`). Without it, retrieval degrades gracefully to
+  lexical-only (keyword/FTS) — nothing crashes, results are just less recall-complete.
+
+Both are served by the same local Ollama server (`http://127.0.0.1:11434`). After the corpus is in
+place, pre-index its embeddings once so each claim reuses the stored vectors instead of
+re-embedding every passage:
+
+    uv run python -m decidr.preindex      # writes data/app/embedding_cache.sqlite
+
 ## Running the app
 
 The web app is a React frontend over a FastAPI backend. Run each in its own terminal:

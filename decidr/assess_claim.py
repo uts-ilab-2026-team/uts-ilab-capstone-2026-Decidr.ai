@@ -259,8 +259,10 @@ def _retrieve_passages(
     only context, so we don't force it and let the observed records fill naturally.
 
     Returns (passages, retrieval_meta). Each passage carries ``retrieved_via`` =
-    ``"graph_governed"`` or ``"keyword"``. Graph-guidance only ever ADDS governing docs; it never
-    restricts keyword search, so evidence with no process edge (CRM, logs, interviews) stays reachable.
+    ``"graph_governed"`` / ``"graph_related"`` (surfaced by graph guidance) or, for search-sourced
+    passages, the honest fused lane: ``"keyword"`` (lexical only), ``"semantic"`` (found by meaning
+    only), or ``"hybrid"`` (both lanes). Graph-guidance only ever ADDS governing docs; it never
+    restricts the search, so evidence with no process edge (CRM, logs, interviews) stays reachable.
     """
     from decidr.hybrid import search_corpus
     from decidr.semantic import get_embedder
@@ -302,6 +304,9 @@ def _retrieve_passages(
     # every query, so the local model is probed a single time per assessment.
     embedder = get_embedder()
     best_rank: dict[str, int] = {}
+    # Which fused lane(s) surfaced each candidate, aggregated across queries, so provenance stays
+    # honest: a passage found by meaning is tagged "semantic", not flattened to "keyword".
+    lane_hits: dict[str, set[str]] = {}
     for query in queries:
         if not query or not query.strip():
             continue
@@ -311,7 +316,23 @@ def _retrieve_passages(
             best_rank[candidate.evidence_id] = min(
                 rank, best_rank.get(candidate.evidence_id, rank)
             )
+            retrieval = getattr(candidate, "retrieval", None)
+            if retrieval is not None:
+                hits = lane_hits.setdefault(candidate.evidence_id, set())
+                if retrieval.lexical_rank is not None:
+                    hits.add("lexical")
+                if retrieval.semantic_rank is not None:
+                    hits.add("semantic")
     keyword_ids = sorted(best_rank, key=lambda eid: best_rank[eid])
+
+    def _search_via(evidence_id: str) -> str:
+        """Honest lane label for a search-sourced passage: lexical-only, semantic-only, or both."""
+        hits = lane_hits.get(evidence_id, set())
+        if "semantic" in hits and "lexical" in hits:
+            return "hybrid"
+        if hits == {"semantic"}:
+            return "semantic"
+        return "keyword"  # lexical-only, or a reference-only candidate with no fused rank
 
     # Split candidates into lanes by source type (policy/procedure = formal, else observed).
     def _is_formal(evidence_id: str) -> bool:
@@ -349,7 +370,7 @@ def _retrieve_passages(
         elif evidence_id in related_set:
             via = "graph_related"
         else:
-            via = "keyword"
+            via = _search_via(evidence_id)
         passages.append(_passage_dict(passage, via))
         seen.add(evidence_id)
 
@@ -363,6 +384,8 @@ def _retrieve_passages(
             "graph_governed": sum(p["retrieved_via"] == "graph_governed" for p in passages),
             "graph_related": sum(p["retrieved_via"] == "graph_related" for p in passages),
             "keyword": sum(p["retrieved_via"] == "keyword" for p in passages),
+            "semantic": sum(p["retrieved_via"] == "semantic" for p in passages),
+            "hybrid": sum(p["retrieved_via"] == "hybrid" for p in passages),
         },
         "lanes": {
             "formal": sum(1 for p in passages if _is_formal(p["evidence_id"])),
@@ -572,33 +595,95 @@ def _group_evidence(
     return list(grouped.values())
 
 
-def _facet_confidence_score(assessment: FactAssessment | None, outcome: str) -> float:
-    """Confidence-in-evidence for one facet, aligned to the decided outcome (0-1).
+# Confidence is ONE reconciled axis: the 0-1 score and its categorical tier come from the same
+# calculation, so the number and the label can never disagree. The score rewards BOTH evidence
+# strength (peak + mean of the aligned material sources, so more strong evidence scores higher and
+# weak evidence lower) AND corroboration (independent origins): a lone strong source lands in
+# Moderate, two independent decisive sources unlock Higher. This is confidence-in-evidence for the
+# STATED outcome, never a probability the claim is true (per the system card).
+_HIGHER_BAND = 0.75
+_MODERATE_BAND = 0.45
+_PEAK_WEIGHT = 0.5  # strength = _PEAK_WEIGHT * peak + (1 - _PEAK_WEIGHT) * mean
+_CORROB_BASE = 0.65  # multiplier for a single independent origin
+_CORROB_STEP = 0.20  # added per extra independent origin, capped at 1.0
+_TIER_ORDER = {"Lower confidence": 0, "Moderate confidence": 1, "Higher confidence": 2}
 
-    This is a measure of how strongly the evidence backs the STATED outcome, NOT a probability the
-    claim is true (per the system card). It is tied to the outcome so the number can never disagree
-    with the verdict:
-      * Supported   -> strongest MATERIAL support edge,
-      * Contradicted -> strongest MATERIAL contradict edge,
-      * Insufficient evidence / Contested -> 0.0 (no confident single direction; the categorical
-        tier carries the nuance).
+
+def _confidence_band(score: float) -> str:
+    """Map a 0-1 confidence score to its tier — the single source of the categorical label."""
+    if score >= _HIGHER_BAND:
+        return "Higher confidence"
+    if score >= _MODERATE_BAND:
+        return "Moderate confidence"
+    return "Lower confidence"
+
+
+def _facet_confidence(
+    assessment: FactAssessment | None, outcome: str, gaps: tuple[str, ...]
+) -> tuple[float, str]:
+    """Reconciled (score, tier) for one facet, aligned to the decided outcome.
+
+    For a decided outcome the score blends strength and corroboration of the aligned material
+    evidence and the tier is exactly its band, so ``_confidence_band(score) == tier`` always holds.
+    Non-decided outcomes carry no single-direction confidence: Insufficient -> (0.0, Lower),
+    Contested -> (0.0, Moderate), where the categorical label does the explaining.
     """
-    if assessment is None:
-        return 0.0
+    if outcome == "Insufficient evidence":
+        return 0.0, "Lower confidence"
+    if outcome == "Contested":
+        return 0.0, "Moderate confidence"
+    if outcome not in {"Supported", "Contradicted"} or assessment is None:
+        return 0.0, "Lower confidence"
 
-    def strength(stance: str) -> float:
-        scores = [
-            edge.materiality_score
-            for edge in assessment.evidence
-            if edge.material and edge.stance == stance and edge.materiality_score is not None
-        ]
-        return max(scores) if scores else 0.0
+    stance = "support" if outcome == "Supported" else "contradict"
+    # Collapse to independent origins: each distinct document counts once, at its strongest score.
+    best_by_origin: dict[str, float] = {}
+    non_material_divergence = False
+    for edge in assessment.evidence:
+        if edge.stance == "contradict" and edge.applicable and not edge.material:
+            non_material_divergence = True
+        if edge.material and edge.stance == stance and edge.materiality_score is not None:
+            prev = best_by_origin.get(edge.document_id, 0.0)
+            if edge.materiality_score > prev:
+                best_by_origin[edge.document_id] = edge.materiality_score
+    if not best_by_origin:
+        return 0.0, "Lower confidence"
 
-    if outcome == "Supported":
-        return round(strength("support"), 3)
-    if outcome == "Contradicted":
-        return round(strength("contradict"), 3)
-    return 0.0
+    scores = list(best_by_origin.values())
+    origins = len(scores)
+    peak = max(scores)
+    mean = sum(scores) / origins
+    strength = _PEAK_WEIGHT * peak + (1.0 - _PEAK_WEIGHT) * mean
+    corroboration = min(1.0, _CORROB_BASE + _CORROB_STEP * (origins - 1))
+    score = strength * corroboration
+    # Caveat cap: an unresolved gap or applicable non-material dissent keeps a facet out of Higher.
+    if (gaps or non_material_divergence) and score >= _HIGHER_BAND:
+        score = _HIGHER_BAND - 0.001
+    score = round(score, 3)
+    return score, _confidence_band(score)
+
+
+def _reconcile_confidence(
+    result: ClaimAssessment,
+) -> tuple[dict[str, tuple[float, str]], float, str]:
+    """Recompute per-facet and whole-claim confidence as one consistent (score, tier) per level.
+
+    Whole-claim confidence is weakest-link: a conjunctive claim is only as sure as its weakest
+    decisive facet, so the claim score is the minimum facet score and the claim tier the lowest
+    facet tier (both drawn from the same per-facet pairs).
+    """
+    facet_conf: dict[str, tuple[float, str]] = {}
+    for facet in result.verdict.facets:
+        assessment = result.facet_assessments.get(facet.facet)
+        gaps = assessment.gaps if assessment else ()
+        facet_conf[facet.facet] = _facet_confidence(assessment, facet.outcome, gaps)
+
+    decisive = [facet_conf[facet.facet] for facet in result.verdict.facets if facet.decisive]
+    if not decisive:
+        return facet_conf, 0.0, "Lower confidence"
+    claim_score = round(min(score for score, _ in decisive), 3)
+    claim_tier = min((tier for _, tier in decisive), key=lambda tier: _TIER_ORDER[tier])
+    return facet_conf, claim_score, claim_tier
 
 
 def to_payload(result: ClaimAssessment) -> dict:
@@ -613,32 +698,31 @@ def to_payload(result: ClaimAssessment) -> dict:
         code = _strip_release(passage["source_id"])
         via_by_code.setdefault(code, set()).add(passage["retrieved_via"])
 
+    # One reconciled confidence per level: facet (score, tier) pairs plus the weakest-link claim
+    # score and tier, all from the same calculation so number and label never disagree.
+    facet_conf, claim_confidence_score, claim_confidence = _reconcile_confidence(result)
     facets = []
     for facet in result.verdict.facets:
         assessment = result.facet_assessments.get(facet.facet)
+        score, tier = facet_conf[facet.facet]
         facets.append(
             {
                 "facet": facet.facet,
                 "predicate": predicate_by_id.get(facet.facet, ""),
                 "summary": text_by_id.get(facet.facet, ""),
                 "outcome": facet.outcome,
-                "confidence": facet.confidence,
-                "confidence_score": _facet_confidence_score(assessment, facet.outcome),
+                "confidence": tier,
+                "confidence_score": score,
                 "decisive": decisive_facets.get(facet.facet, True),
                 "evidence": _group_evidence(assessment, via_by_code),
             }
         )
 
-    # Whole-claim confidence score: the weakest DECISIVE facet (a claim is only as sure as its
-    # weakest part, mirroring how the categorical confidence tier is combined). 0.0 if none decisive.
-    decisive_scores = [f["confidence_score"] for f in facets if f["decisive"]]
-    claim_confidence_score = round(min(decisive_scores), 3) if decisive_scores else 0.0
-
     return {
         "claim": result.claim_text,
         "as_of": str(result.as_of),
         "overall_outcome": result.verdict.overall_outcome,
-        "confidence": result.verdict.confidence,
+        "confidence": claim_confidence,
         "confidence_score": claim_confidence_score,
         "target": result.split.get("target"),
         "split_status": result.split["semantic_validation"]["status"],
@@ -668,6 +752,7 @@ _DEMO_CLAIMS = [
 
 
 def _print_result(result: ClaimAssessment) -> None:
+    facet_conf, claim_score, claim_tier = _reconcile_confidence(result)
     via_by_code: dict[str, set[str]] = {}
     for passage in result.passages:
         via_by_code.setdefault(_strip_release(passage["source_id"]), set()).add(
@@ -685,14 +770,16 @@ def _print_result(result: ClaimAssessment) -> None:
         f"retrieval: process={', '.join(procs)}  governed={retrieval.get('governed_docs') or '[]'}  "
         f"related={retrieval.get('related_docs') or '[]'}  "
         f"graph_governed={counts.get('graph_governed', 0)} "
-        f"graph_related={counts.get('graph_related', 0)} keyword={counts.get('keyword', 0)}"
+        f"graph_related={counts.get('graph_related', 0)} keyword={counts.get('keyword', 0)} "
+        f"semantic={counts.get('semantic', 0)} hybrid={counts.get('hybrid', 0)}"
     )
     print(
         f"passages considered: {len(result.passages)}   findings: {len(result.reading.get('findings', []))}"
     )
     for facet in result.verdict.facets:
         flag = "" if facet.decisive else "  (undecisive - excluded)"
-        print(f"  facet {facet.facet:6} {facet.outcome:22} {facet.confidence}{flag}")
+        score, tier = facet_conf[facet.facet]
+        print(f"  facet {facet.facet:6} {facet.outcome:22} {tier} (score={score}){flag}")
         assessment = result.facet_assessments.get(facet.facet)
         for edge in assessment.evidence if assessment else []:
             score = "n/a" if edge.materiality_score is None else f"{edge.materiality_score:.3f}"
@@ -701,7 +788,9 @@ def _print_result(result: ClaimAssessment) -> None:
             print(
                 f"        - {doc} [{edge.mode}] material={edge.material} score={score} via={via}"
             )
-    print(f"  => WHOLE CLAIM: {result.verdict.overall_outcome}  |  {result.verdict.confidence}")
+    print(
+        f"  => WHOLE CLAIM: {result.verdict.overall_outcome}  |  {claim_tier} (score={claim_score})"
+    )
     if result.notes:
         for note in result.notes:
             print(f"     note: {note}")
@@ -732,8 +821,10 @@ def main() -> None:
 
     print(f"\n{'=' * 90}\nsummary")
     for result in results:
+        _, claim_score, claim_tier = _reconcile_confidence(result)
         print(
-            f"  {result.verdict.overall_outcome:22} {result.verdict.confidence:20} {result.claim_text[:60]}"
+            f"  {result.verdict.overall_outcome:22} {claim_tier:20} "
+            f"score={claim_score:<6} {result.claim_text[:60]}"
         )
 
     # One full payload (the last claim) so the UI shape is visible.
