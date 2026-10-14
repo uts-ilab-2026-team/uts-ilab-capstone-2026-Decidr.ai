@@ -31,14 +31,15 @@ import re
 from framework.graph import OrganisationalGraph
 from framework.models import GraphEdge, GraphNode
 
+from decidr.constants import (
+    CORPUS_GRAPH_PATH as OUTPUT_PATH,  # re-exported for existing importers
+)
+from decidr.constants import (
+    RAW_DATA_DIR,  # ingestion root (corpus lives under data/raw)
+)
 from decidr.ingestion import ingest
 from decidr.retrieval_models import Source
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = REPO_ROOT / "data"
-OUTPUT_PATH = REPO_ROOT / "framework" / "data" / "corpus_graph.json"
-
-SOURCE_CODE_PATTERN = re.compile(r"\b(?:POL|PROC|INT|MTG)-\d+\b")
 PROCESS_CODE_PATTERN = re.compile(r"\bP([1-8])\b")
 LEFT_COMPANY_PATTERN = re.compile(
     r"^(?P<name>[A-Z][\w .'-]+?) left Northfield on (\d{4}-\d{2}-\d{2})"
@@ -410,7 +411,7 @@ def _add_role_descriptions(
 
 
 def build_corpus_graph(
-    data_dir: Path = DATA_DIR, *, release: str = "phase1"
+    data_dir: Path = RAW_DATA_DIR, *, release: str = "phase1"
 ) -> OrganisationalGraph:
     """Build and validate the persistent backbone graph from the corpus.
 

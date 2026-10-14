@@ -1,16 +1,31 @@
 # Adapted from decidr/semantic.py at commit 90ffff9.
 """Optional local semantic retrieval with auditable embedding caching."""
 
+from contextlib import closing
 from dataclasses import dataclass
 import hashlib
 import json
 import math
+from pathlib import Path
 import sqlite3
 from typing import Protocol
 
+import ollama
 
-class SemanticUnavailableError(RuntimeError):
-    """Raised when the optional local embedding dependency/model is unavailable."""
+from decidr.constants import ASSESSMENT_URL, EMBEDDING_CACHE_PATH, SEMANTIC_MODEL
+
+# Standalone persistent-cache schema (no FK to evidence, so it stands alone as a file).
+_CACHE_SCHEMA = """
+CREATE TABLE IF NOT EXISTS embedding_cache (
+    evidence_id TEXT NOT NULL,
+    model_name TEXT NOT NULL,
+    model_version TEXT NOT NULL,
+    content_checksum TEXT NOT NULL,
+    vector_json TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(evidence_id, model_name, model_version)
+);
+"""
 
 
 class Embedder(Protocol):
@@ -20,29 +35,107 @@ class Embedder(Protocol):
     def encode(self, texts: list[str]) -> list[list[float]]: ...
 
 
-class SentenceTransformerEmbedder:
-    """Lazy adapter; importing the core package never requires sentence-transformers."""
+class OllamaEmbedder:
+    """Local Ollama embedding backend (implements the ``Embedder`` protocol).
 
-    def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2") -> None:
-        self.name = model_name
-        try:
-            from sentence_transformers import SentenceTransformer, __version__
-        except ImportError as error:
-            raise SemanticUnavailableError(
-                "Semantic retrieval is unavailable. Install with `uv sync --extra semantic`; "
-                "the lexical baseline remains fully operational."
-            ) from error
-        try:
-            self._model = SentenceTransformer(model_name, local_files_only=True)
-        except Exception as error:
-            raise SemanticUnavailableError(
-                f"Local embedding model '{model_name}' is not cached. No model was downloaded."
-            ) from error
-        self.version = __version__
+    Served by the same local Ollama server as the assessment model, so it needs no
+    extra model files and runs anywhere Ollama does (including Intel macOS). ``name``
+    and ``version`` key the embedding cache; bump ``version`` if the embedding contract
+    changes so stale vectors are not reused.
+    """
+
+    name = SEMANTIC_MODEL
+    version = "ollama-embed-v1"
 
     def encode(self, texts: list[str]) -> list[list[float]]:
-        vectors = self._model.encode(texts, normalize_embeddings=True)
-        return [vector.tolist() for vector in vectors]
+        if not texts:
+            return []
+        response = ollama.Client(host=ASSESSMENT_URL).embed(model=self.name, input=list(texts))
+        return [list(vector) for vector in response.embeddings]
+
+
+def get_embedder() -> Embedder | None:
+    """A ready local embedder, or ``None`` to fall back to lexical-only retrieval.
+
+    Probes the server once; any failure (server down, model not installed) degrades to
+    the deterministic lexical baseline rather than erroring mid-retrieval. Because a
+    returned embedder has answered, ``search_corpus`` never sees a semantic failure.
+    """
+    try:
+        embedder = OllamaEmbedder()
+        embedder.encode(["ready"])
+        return embedder
+    except Exception:  # noqa: BLE001 - any backend failure must degrade to lexical, never crash
+        return None
+
+
+def index_evidence(evidence, embedder: Embedder, cache_path: Path = EMBEDDING_CACHE_PATH) -> int:
+    """Embed every passage once into the persistent cache (the pre-index / ingestion step).
+
+    ``evidence`` is any iterable of objects exposing ``evidence_id`` and ``text``. Only passages
+    whose (id, model, version, checksum) are not already cached are embedded, so re-running after
+    a corpus edit re-embeds just the changed passages. Returns the number newly embedded.
+    """
+    cache_path = Path(cache_path)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    with closing(sqlite3.connect(cache_path)) as cache, cache:
+        cache.executescript(_CACHE_SCHEMA)
+        pending: list[tuple[str, str, str]] = []
+        for item in evidence:
+            checksum = hashlib.sha256(item.text.encode()).hexdigest()
+            cached = cache.execute(
+                "SELECT 1 FROM embedding_cache WHERE evidence_id=? AND model_name=? "
+                "AND model_version=? AND content_checksum=?",
+                (item.evidence_id, embedder.name, embedder.version, checksum),
+            ).fetchone()
+            if cached is None:
+                pending.append((item.evidence_id, item.text, checksum))
+        if not pending:
+            return 0
+        vectors = embedder.encode([text for _id, text, _sum in pending])
+        for (evidence_id, _text, checksum), vector in zip(pending, vectors, strict=True):
+            cache.execute(
+                "INSERT INTO embedding_cache(evidence_id, model_name, model_version, "
+                "content_checksum, vector_json) VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT(evidence_id, model_name, model_version) DO UPDATE SET "
+                "content_checksum=excluded.content_checksum, vector_json=excluded.vector_json, "
+                "created_at=CURRENT_TIMESTAMP",
+                (evidence_id, embedder.name, embedder.version, checksum, json.dumps(vector)),
+            )
+    return len(pending)
+
+
+def preload_cached_vectors(
+    connection: sqlite3.Connection, cache_path: Path = EMBEDDING_CACHE_PATH
+) -> int:
+    """Copy pre-indexed vectors from the persistent cache into an in-memory retrieval DB.
+
+    Best-effort: if the cache file is absent nothing is loaded and retrieval embeds on demand.
+    Only vectors for evidence present in ``connection`` are copied; query-time checksum matching
+    still guards correctness, so a stale row simply misses and is re-embedded. Returns the number
+    of rows loaded.
+    """
+    if not Path(cache_path).is_file():
+        return 0
+    evidence_ids = {row[0] for row in connection.execute("SELECT evidence_id FROM evidence")}
+    if not evidence_ids:
+        return 0
+    with closing(sqlite3.connect(cache_path)) as cache:
+        rows = cache.execute(
+            "SELECT evidence_id, model_name, model_version, content_checksum, vector_json "
+            "FROM embedding_cache"
+        ).fetchall()
+    loaded = 0
+    for row in rows:
+        if row[0] not in evidence_ids:
+            continue
+        connection.execute(
+            "INSERT OR IGNORE INTO embedding_cache(evidence_id, model_name, model_version, "
+            "content_checksum, vector_json) VALUES (?, ?, ?, ?, ?)",
+            row,
+        )
+        loaded += 1
+    return loaded
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,5 +1,14 @@
-# Data
-/data/
+# Data — ignore contents (/data/* not /data/ so subdirs can be re-included below).
+/data/*
+# Keep the raw-corpus and derived-artifact folders tracked, but never their contents
+# (the local corpus and the embedding cache stay out of git).
+!/data/raw/
+/data/raw/*
+!/data/raw/.gitkeep
+!/data/app/
+/data/app/*
+!/data/app/.gitkeep
+
 
 # Mac OS-specific storage files
 .DS_Store

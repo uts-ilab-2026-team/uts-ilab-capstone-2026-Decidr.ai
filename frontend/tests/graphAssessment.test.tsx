@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { checkAutomaticResponse, type AssessmentSnapshot } from "../src/AutomaticAssessment";
-import { GraphResultView, evidenceMap, isGraphResult, ruleText, scoreOutOf100, sourceStance, type GraphResult } from "../src/GraphAssessment";
+import { GraphResultView, evidenceMap, explainPassage, isGraphResult, ruleText, scoreOutOf100, sourceStance, type GraphResult } from "../src/GraphAssessment";
 import { SavedRows } from "../src/SavedAssessments";
 
 const passage = { quote: "Any discount of **15% or greater** requires written approval.", stance: "support", applicable: true, material: true, score: 0.938, limitations: ["Independence is unverified."], trace: ["Source: approved_policy authority=1.00."] };
@@ -23,12 +23,13 @@ const result: GraphResult = {
 
 test("graph result shows the verdict, confidence band, parts and evidence", () => {
   const html = renderToStaticMarkup(<GraphResultView result={result} />);
-  for (const text of ["Contested", 'aria-label="Confidence in this result: moderate confidence"', "Discounts require approval", "not counted in the verdict",
-    "POL-01 — Discount Approval Policy", "Formal document", "Found by: Governing document", "Supports", "Used in assessment · weight 0.94",
-    "Contradicts", "Not applicable · kept for reference", "<strong>15% or greater</strong>", "P1 Customer discount approval", "dropped a malformed finding: x"])
+  for (const text of ["Contested", 'aria-label="Confidence in this result: moderate confidence"', "Discounts require approval", "shown but not counted",
+    "POL-01 — Discount Approval Policy", "Formal document", "Found by: Governing document", "Supports", "Used in assessment · weight 93/100",
+    "Contradicts", "Not applied · kept for reference", "<strong>15% or greater</strong>", "P1 Customer discount approval", "dropped a malformed finding: x"])
     assert.ok(html.includes(text), text);
   assert.ok(!html.includes("<script>x</script>"));
   assert.ok(html.includes("1 part of the claim assessed against 5 passages from 2 sources."));
+  assert.ok(!html.includes("ev-component-summary")); // parts are listed under Findings, not under the score
 });
 
 test("graph results are recognised and validated against the request", () => {
@@ -64,13 +65,33 @@ test("evidence map links the claim to parts, sources and the governed process", 
 });
 
 test("a supported or contradicted result shows the score ring; other outcomes keep the band", () => {
-  assert.equal(scoreOutOf100("Supported", 0.938), 94);
+  assert.equal(scoreOutOf100("Supported", 0.938), 93);
+  assert.equal(scoreOutOf100("Supported", 0.749), 74);
+  assert.equal(scoreOutOf100("Supported", 0.75), 75);
   assert.equal(scoreOutOf100("Contested", 0), null);
   assert.equal(scoreOutOf100("Supported", undefined), null);
-  const scored = { ...result, overall_outcome: "Supported", confidence_score: 0.938, facets: result.facets.map(facet => ({ ...facet, outcome: "Supported", confidence_score: 0.938 })) };
+  const scored = { ...result, overall_outcome: "Supported", confidence_score: 0.948, facets: result.facets.map(facet => ({ ...facet, outcome: "Supported", confidence_score: 0.948 })) };
   const html = renderToStaticMarkup(<GraphResultView result={scored} />);
-  for (const text of ['aria-label="Confidence in this result: 94 out of 100, moderate"', "Moderate confidence", "94/100", "out of 100"]) assert.ok(html.includes(text), text);
-  assert.ok(!html.includes("ev-band"));
+  for (const text of ['aria-label="Confidence in this result: 94 out of 100, moderate"', "Moderate confidence", "out of 100"]) assert.ok(html.includes(text), text);
+  assert.ok(!html.includes("ev-band") && !html.includes("94/100")); // one score only, in the ring
   const unscored = renderToStaticMarkup(<GraphResultView result={{ ...result, confidence_score: 0 }} />);
   assert.ok(unscored.includes("ev-band") && !unscored.includes("ev-ring-number") && unscored.includes("No score is given for this outcome"));
+});
+
+test("scoring trace reads as plain checks with the weight broken down", () => {
+  const { checks, weight } = explainPassage({ ...passage,
+    limitations: ["Independence is unverified; no additive corroboration credit.", "A duplicate source exists and is not counted as independent.", "No independent source corroborates this stance in the same lane."],
+    trace: ["Source: approved_policy authority=1.00. No person-level authority resolution was required.", "Status: current lifecycle multiplier=1.00; approval=0.50.",
+      "Date: no effective or updated date was available value=0.65.", "Supplied independence judgement: False; basis=''; origin group established=False.",
+      "Materiality: weighted dimensions 0.938 × lifecycle 1.00 × authority 1.00 = 0.938.", "Something new from the engine."] });
+  assert.deepEqual(weight, { fit: 0.938, status: 1, authority: 1, weight: 0.938 });
+  assert.deepEqual(checks.map(check => `${check.tone}: ${check.text}`), [
+    "ok: Approved policy · authority 100/100", "ok: Current version", "warn: Approval not confirmed, counted at 50%",
+    "warn: No effective or updated date was available, counted at 65%", "info: Something new from the engine",
+    "warn: Only source saying this, so it gets no extra credit for agreement", "info: A duplicate copy of this document exists and is counted once"]);
+  const gated = explainPassage({ ...passage, applicable: false, limitations: ["Assessment date follows the documented superseded date."],
+    trace: ["Applicability gate failed: Assessment date follows the documented superseded date. Evidence retained but not scored."] });
+  assert.deepEqual(gated.checks, [{ tone: "warn", text: "Not applied: assessment date follows the documented superseded date" }]);
+  const html = renderToStaticMarkup(<GraphResultView result={result} />);
+  for (const text of ["Why this passage counts", "Why this passage was not applied", "Technical trace"]) assert.ok(html.includes(text), text);
 });

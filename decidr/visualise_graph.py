@@ -21,8 +21,9 @@ from framework.graph import OrganisationalGraph
 import networkx as nx
 from pyvis.network import Network
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-GRAPH_PATH = REPO_ROOT / "framework" / "data" / "corpus_graph.json"
+from decidr.constants import CORPUS_GRAPH_PATH as GRAPH_PATH
+from decidr.constants import REPO_ROOT
+
 OUTPUT_DIR = REPO_ROOT / "graph_views"
 
 KIND_COLOUR = {

@@ -25,7 +25,7 @@ Run before pushing:
 - Type hints on functions
 - Docstrings on anything another person will call
 - Comments explain why, not what
-- No hard-coded paths - import them from `decidr/config.py`
+- No hard-coded paths or shared constants - import them from `decidr/constants.py`
 
 ## Notebooks
 

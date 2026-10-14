@@ -38,21 +38,102 @@ export function isGraphResult(value: unknown): value is GraphResult {
 
 // The engine scores how strongly the evidence backs a Supported or Contradicted outcome (0-1).
 // Contested and Insufficient evidence carry no score by design, and older results have none.
+// The band changes at 0.45 and 0.75, so the number is rounded down: 0.749 shows as 74 beside
+// "Moderate", never as 75, which would read as the start of the higher band.
 export function scoreOutOf100(outcome: string, score: number | undefined): number | null {
   const scored = outcome === "Supported" || outcome === "Contradicted";
-  return scored && typeof score === "number" && Number.isFinite(score) ? Math.round(Math.max(0, Math.min(1, score)) * 100) : null;
+  return scored && typeof score === "number" && Number.isFinite(score) ? Math.floor(Math.max(0, Math.min(1, score)) * 100 + 1e-9) : null;
 }
 const STANCE: Record<string, string> = { support: "Supports", contradict: "Contradicts", qualify: "Qualifies", context: "Context only", unresolved: "Unresolved" };
-const RETRIEVED_VIA: Record<string, string> = { graph_governed: "Governing document", graph_related: "Related document", keyword: "Keyword search" };
+const RETRIEVED_VIA: Record<string, string> = { graph_governed: "Governing document", graph_related: "Related document", keyword: "Keyword search", semantic: "Meaning search", hybrid: "Keyword + meaning search" };
 // Combiner rules arrive as short machine phrases ("any facet Contested -> Contested").
 export const ruleText = (rule: string) =>
   rule === "CLAIM_COMBINER_V1_CONJUNCTIVE" ? "Every counted part of the claim has to hold for the claim to be supported."
     : rule.replace(/\bfacets\b/g, "parts").replace(/\bfacet\b/g, "part").replace(/\s*->\s*/g, " → ").replace(/^./, letter => letter.toUpperCase());
 
+const out100 = (value: number) => Math.floor(Math.max(0, Math.min(1, value)) * 100 + 1e-9);
+
 function passageUse(passage: GraphPassage): string {
-  if (!passage.applicable) return "Not applicable · kept for reference";
-  const weight = passage.score === null ? "" : ` · weight ${passage.score.toFixed(2)}`;
+  if (!passage.applicable) return "Not applied · kept for reference";
+  const weight = passage.score === null ? "" : ` · weight ${out100(passage.score)}/100`;
   return `${passage.material ? "Used in assessment" : "Weighted down"}${weight}`;
+}
+
+// ── Why a passage counts ─────────────────────────────────────────────────────
+// The engine explains each passage in machine-style trace lines ("Status: current lifecycle
+// multiplier=1.00; approval=1.00."). These are read into plain checks; any line not recognised
+// is still shown, and the exact trace stays available underneath.
+
+export interface PassageCheck { tone: "ok" | "warn" | "info"; text: string }
+export interface WeightBreakdown { fit: number; status: number; authority: number; weight: number }
+
+const sentence = (text: string) => text.trim().replace(/^./, letter => letter.toUpperCase()).replace(/\.?$/, "");
+const percent = (value: number) => `${Math.round(value * 100)}%`;
+
+export function explainPassage(passage: GraphPassage): { checks: PassageCheck[]; weight: WeightBreakdown | null } {
+  const checks: PassageCheck[] = [];
+  let weight: WeightBreakdown | null = null;
+  for (const line of passage.trace) {
+    let match;
+    if ((match = line.match(/^Source: (\S+) authority=(\d+(?:\.\d+)?)\.\s*(.*)$/))) {
+      const authority = Number(match[2]);
+      checks.push({ tone: authority >= 0.8 ? "ok" : "info", text: `${sentence(humanize(match[1]))} · authority ${out100(authority)}/100` });
+      if (match[3] && !/No person-level authority resolution was required/i.test(match[3])) checks.push({ tone: "info", text: sentence(match[3]) });
+    } else if ((match = line.match(/^Status: (\S+) lifecycle multiplier=(\d+(?:\.\d+)?); approval=(\d+(?:\.\d+)?)\.?$/))) {
+      const lifecycle = Number(match[2]), approval = Number(match[3]);
+      checks.push({ tone: lifecycle >= 1 ? "ok" : "warn", text: `${sentence(humanize(match[1]))} version${lifecycle < 1 ? `, counted at ${percent(lifecycle)}` : ""}` });
+      checks.push(approval >= 1 ? { tone: "ok", text: "Formally approved" } : { tone: "warn", text: `Approval not confirmed, counted at ${percent(approval)}` });
+    } else if ((match = line.match(/^Date: (.*) value=(\d+(?:\.\d+)?)\.?$/))) {
+      const value = Number(match[2]);
+      checks.push(value >= 1 ? { tone: "ok", text: "In force on the assessment date" }
+        : { tone: "warn", text: `${sentence(match[1])}, counted at ${percent(value)}` });
+    } else if ((match = line.match(/^Materiality: weighted dimensions (\d+(?:\.\d+)?) × lifecycle (\d+(?:\.\d+)?) × authority (\d+(?:\.\d+)?) = (\d+(?:\.\d+)?)/))) {
+      weight = { fit: Number(match[1]), status: Number(match[2]), authority: Number(match[3]), weight: Number(match[4]) };
+    } else if ((match = line.match(/^Applicability gate failed: (.*?)\s*Evidence retained but not scored\.?$/))) {
+      checks.push({ tone: "warn", text: `Not applied: ${sentence(match[1]).replace(/^./, letter => letter.toLowerCase())}` });
+    } else if (!/^(Supplied independence judgement|Independence)/.test(line)) {
+      checks.push({ tone: "info", text: sentence(line) });
+    }
+  }
+  const limits = passage.limitations.map(limit => limit.trim());
+  const gated = passage.trace.some(line => line.startsWith("Applicability gate failed"));
+  if (limits.some(limit => /No independent source corroborates/i.test(limit)))
+    checks.push({ tone: "warn", text: "Only source saying this, so it gets no extra credit for agreement" });
+  else if (limits.some(limit => /Independence is unverified/i.test(limit)))
+    checks.push({ tone: "warn", text: "Independence from the other sources is not verified" });
+  if (limits.some(limit => /duplicate source exists/i.test(limit)))
+    checks.push({ tone: "info", text: "A duplicate copy of this document exists and is counted once" });
+  for (const limit of limits) {
+    if (/No independent source corroborates|Independence is unverified|duplicate source exists/i.test(limit)) continue;
+    if (gated && passage.trace.some(line => line.includes(limit))) continue; // already shown as "Not applied"
+    checks.push({ tone: "warn", text: sentence(limit) });
+  }
+  return { checks, weight };
+}
+
+const CHECK_MARK: Record<PassageCheck["tone"], { glyph: string; label: string }> = {
+  ok: { glyph: "✓", label: "Passed" }, warn: { glyph: "!", label: "Caveat" }, info: { glyph: "i", label: "Note" },
+};
+
+function WhyItCounts({ passage }: { passage: GraphPassage }) {
+  const { checks, weight } = explainPassage(passage);
+  if (!checks.length && !weight && !passage.limitations.length && !passage.trace.length) return null;
+  const passed = checks.filter(check => check.tone === "ok").length, caveats = checks.filter(check => check.tone === "warn").length;
+  return <details className="ev-why">
+    <summary>{passage.applicable ? "Why this passage counts" : "Why this passage was not applied"}
+      <span className="ev-why-tally">{passed > 0 && <span className="ev-why-ok">✓ {passed}</span>}{caveats > 0 && <span className="ev-why-warn">! {caveats}</span>}</span></summary>
+    {weight && <div className="ev-why-weight" aria-label={`Weight ${out100(weight.weight)} out of 100`}>
+      <strong>Weight {out100(weight.weight)}/100</strong>
+      {([["Evidence fit", weight.fit], ["Status", weight.status], ["Authority", weight.authority]] as const).map(([label, value], i) => <span key={label} className="ev-why-factor">
+        {i > 0 && <span className="ev-why-times" aria-hidden="true">×</span>}{label}<span className="ev-why-bar" aria-hidden="true"><i style={{ width: `${out100(value)}%` }} /></span><b>{out100(value)}</b>
+      </span>)}
+    </div>}
+    <ul className="ev-why-list">{checks.map((check, i) => <li key={i} className={`ev-why-${check.tone}`}>
+      <span className="ev-why-mark" role="img" aria-label={CHECK_MARK[check.tone].label}>{CHECK_MARK[check.tone].glyph}</span>{check.text}</li>)}</ul>
+    <details className="ev-why-raw"><summary>Technical trace</summary>
+      <ul>{[...passage.limitations, ...passage.trace].map((line, i) => <li key={i}>{line}</li>)}</ul>
+    </details>
+  </details>;
 }
 
 function PassageCard({ passage }: { passage: GraphPassage }) {
@@ -63,10 +144,7 @@ function PassageCard({ passage }: { passage: GraphPassage }) {
       <span className="ev-muted" style={{ display: "inline" }}>{passageUse(passage)}</span>
     </div>
     <div className="ev-cite"><div className="ev-cite-quote">{record ? <RecordQuote text={passage.quote} /> : <MarkdownLite text={passage.quote} />}</div></div>
-    {(passage.limitations.length > 0 || passage.trace.length > 0) && <details className="ev-notes"><summary>Limits and scoring detail</summary>
-      {passage.limitations.length > 0 && <ul>{passage.limitations.map((limit, i) => <li key={i}>{limit}</li>)}</ul>}
-      {passage.trace.length > 0 && <ul className="ev-muted">{passage.trace.map((step, i) => <li key={i}>{step}</li>)}</ul>}
-    </details>}
+    <WhyItCounts passage={passage} />
   </section>;
 }
 
@@ -194,21 +272,17 @@ export function GraphResultView({ result }: { result: GraphResult }) {
         {score === null ? <ConfidenceBand label={result.confidence} tone={outcomeTone(result.overall_outcome)} />
           : <ConfidenceRing score={score} label={result.confidence} tone={outcomeTone(result.overall_outcome)} />}
       </section>
-      {result.facets.length > 0 && <dl className="ev-component-summary">{result.facets.map(facet => <div key={facet.facet}>
-        <dt>{facet.summary || facet.facet}{!facet.decisive && <small className="ev-muted"> · not counted in the verdict</small>}</dt>
-        <dd>{scoreOutOf100(facet.outcome, facet.confidence_score) !== null && <span className="ev-muted ev-part-score">{scoreOutOf100(facet.outcome, facet.confidence_score)}/100</span>}<Badge tone={outcomeTone(facet.outcome)}>{facet.outcome}</Badge></dd>
-      </div>)}</dl>}
       <p className="ev-muted">{score === null
         ? (result.overall_outcome === "Supported" || result.overall_outcome === "Contradicted" ? "Confidence is a band from the scoring rules, not a probability that the claim is true. The claim takes the lowest band among its counted parts."
           : "No score is given for this outcome, because the evidence does not point confidently in one direction. The band comes from the scoring rules and is not a probability that the claim is true.")
-        : "The score is how strongly the evidence backs this outcome, out of 100. It is not a probability that the claim is true. The claim takes the score of its weakest counted part."}</p>
+        : "The score is how strongly the evidence backs this outcome, out of 100. It is not a probability that the claim is true."}</p>
       {result.notes.length > 0 && <div className="ev-notice" role="status"><strong>Processing notes</strong><ul>{result.notes.map((note, i) => <li key={i}>{note}</li>)}</ul></div>}
     </section>
     {result.facets.some(facet => facet.evidence.length > 0) && <EvidenceMap result={result} />}
     {result.facets.length > 0 && <section className="ev-card"><h3>Findings and evidence</h3>
       {result.facets.map(facet => <details key={facet.facet} className="ev-finding-group">
         <summary>{facet.summary || facet.facet} <Badge tone={outcomeTone(facet.outcome)}>{facet.outcome}</Badge> <Count>{facet.evidence.reduce((n, evidence) => n + evidence.passages.length, 0)}</Count></summary>
-        <p className="ev-muted">{facet.confidence}{scoreOutOf100(facet.outcome, facet.confidence_score) !== null ? ` · ${scoreOutOf100(facet.outcome, facet.confidence_score)}/100` : ""}{facet.decisive ? "" : " · flagged as an uncertain split, so it is shown but not counted"}</p>
+        <p className="ev-muted">{facet.confidence}{facet.decisive ? "" : " · flagged as an uncertain split, so it is shown but not counted"}</p>
         {facet.evidence.length ? facet.evidence.map(evidence => <SourceBlock key={`${evidence.source}:${evidence.mode}`} evidence={evidence} />)
           : <p>No passage that was read addresses this part of the claim.</p>}
       </details>)}

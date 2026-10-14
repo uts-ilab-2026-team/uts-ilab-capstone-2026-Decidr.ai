@@ -335,8 +335,8 @@ export interface SavedAssessmentSummary {
   formal_outcome: string; observed_outcome: string; record_type: string;
   review_status: string; snapshot_sha256: string; outcome_basis?: string;
 }
-export const getSavedAssessments = (offset: number) =>
-  request<{items: SavedAssessmentSummary[]}>(`/assessments?limit=20&offset=${offset}`);
+export const getSavedAssessments = (offset: number, limit = 20) =>
+  request<{items: SavedAssessmentSummary[]}>(`/assessments?limit=${limit}&offset=${offset}`);
 export const getSavedAssessment = (runId: string) =>
   request<import("./AutomaticAssessment").AssessmentSnapshot & {
     snapshot: { parent_run_id: string | null; created_at: string; record_type: string; revision_reason: string | null }

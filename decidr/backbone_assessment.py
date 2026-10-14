@@ -17,7 +17,6 @@ Demo (no Ollama; uses a recorded fixture + a synthetic authority probe):
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
 from datetime import date
 
 from framework import CONFIG_PATH
@@ -117,12 +116,6 @@ def assess_on_backbone(
 # --------------------------------------------------------------------------- #
 # Demo / self-test                                                            #
 # --------------------------------------------------------------------------- #
-
-
-@dataclass(frozen=True, slots=True)
-class _Scenario:
-    label: str
-    finding: LlmFinding
 
 
 def _print_assessment(title: str, assessment: FactAssessment) -> None:
