@@ -19,8 +19,11 @@ from pathlib import Path
 from framework import CONFIG_PATH
 from framework.config import GraphCredibilityConfig
 
-from decidr.backbone_graph import DATA_DIR, SOURCE_CLASS_BY_TYPE, _approval_key
-from decidr.constants import DEFAULT_AS_OF  # noqa: F401  (re-exported for existing importers)
+from decidr.backbone_graph import SOURCE_CLASS_BY_TYPE, _approval_key
+from decidr.constants import (
+    DEFAULT_AS_OF,  # noqa: F401  (re-exported for existing importers)
+    RAW_DATA_DIR,
+)
 from decidr.ingestion import ingest
 from decidr.retrieval_models import Evidence, Source
 
@@ -80,7 +83,9 @@ def _strip_release(source_id: str) -> str:
     return source_id.split(":", 1)[1] if ":" in source_id else source_id
 
 
-def load_corpus_snapshot(data_dir: Path = DATA_DIR, *, release: str = "phase1") -> CorpusSnapshot:
+def load_corpus_snapshot(
+    data_dir: Path = RAW_DATA_DIR, *, release: str = "phase1"
+) -> CorpusSnapshot:
     result = ingest({release: data_dir})
     sources_by_code: dict[str, Source] = {}
     evidence_by_source: dict[str, list[Evidence]] = {}

@@ -35,7 +35,7 @@ from decidr.constants import (
     CORPUS_GRAPH_PATH as OUTPUT_PATH,  # re-exported for existing importers
 )
 from decidr.constants import (
-    DATA_DIR,  # re-exported for existing importers
+    RAW_DATA_DIR,  # ingestion root (corpus lives under data/raw)
 )
 from decidr.ingestion import ingest
 from decidr.retrieval_models import Source
@@ -411,7 +411,7 @@ def _add_role_descriptions(
 
 
 def build_corpus_graph(
-    data_dir: Path = DATA_DIR, *, release: str = "phase1"
+    data_dir: Path = RAW_DATA_DIR, *, release: str = "phase1"
 ) -> OrganisationalGraph:
     """Build and validate the persistent backbone graph from the corpus.
 
