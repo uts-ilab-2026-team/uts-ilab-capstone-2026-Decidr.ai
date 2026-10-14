@@ -23,6 +23,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # The read-only corpus and the built organisational graph snapshot.
 DATA_DIR = REPO_ROOT / "data"
+# Raw corpus (ingestion root). Derived artifacts live beside it, never inside it, so the
+# recursive ingest scan never picks them up.
+RAW_DATA_DIR = DATA_DIR / "raw"
+# Shared runtime/derived-artifact directory for backend and frontend (embedding cache,
+# frontend databases, etc.). A sibling of the raw corpus, so ingestion never scans it.
+APP_DIR = DATA_DIR / "app"
 CORPUS_GRAPH_PATH = REPO_ROOT / "framework" / "data" / "corpus_graph.json"
 
 # --------------------------------------------------------------------------- #
@@ -52,3 +58,18 @@ ASSESSMENT_TIMEOUT = 180.0
 
 # Deterministic sampling options sent with every generation request.
 ASSESSMENT_SAMPLING = {"temperature": 0, "num_ctx": 32768, "num_predict": 8192}
+
+# --------------------------------------------------------------------------- #
+# Semantic retrieval (optional embedding lane)                                 #
+# --------------------------------------------------------------------------- #
+
+# Ollama embedding-model tag for the optional semantic retrieval lane, served by
+# the same local Ollama server as the assessment model (reuse ASSESSMENT_URL).
+# ``all-minilm`` is the Ollama port of all-MiniLM-L6-v2 (384-dim) -- the same model
+# the lexical-only baseline would otherwise skip. The lane is optional: when the
+# server or model is unavailable the deterministic lexical baseline is used instead.
+SEMANTIC_MODEL = "all-minilm"
+
+# Persistent embedding cache, built once at pre-index time (``python -m decidr.preindex``)
+# and read by every assessment so passages are embedded once rather than per claim.
+EMBEDDING_CACHE_PATH = APP_DIR / "embedding_cache.sqlite"
