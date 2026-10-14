@@ -25,6 +25,7 @@ dependencies = [
     "networkx>=3.3,<4",
     "notebook",
     "numpy",
+    "ollama>=0.3,<1",
     "pandas",
     "pip",
     "pytest",
@@ -37,11 +38,6 @@ dependencies = [
     "uvicorn>=0.30,<1",
 ]
 requires-python = "~=3.11.0"
-
-[project.optional-dependencies]
-semantic = [
-    "sentence-transformers>=3,<6",
-]
 
 
 [tool.ruff]

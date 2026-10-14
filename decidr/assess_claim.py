@@ -125,6 +125,10 @@ def _build_index(
         replace_source_evidence(
             connection, source.source_id, snapshot.evidence_by_source.get(source.source_id, [])
         )
+    # Load any pre-indexed embeddings so retrieval reuses them instead of re-embedding per claim.
+    from decidr.semantic import preload_cached_vectors
+
+    preload_cached_vectors(connection)
     return connection
 
 
@@ -259,6 +263,7 @@ def _retrieve_passages(
     restricts keyword search, so evidence with no process edge (CRM, logs, interviews) stays reachable.
     """
     from decidr.hybrid import search_corpus
+    from decidr.semantic import get_embedder
 
     facet_text = " ".join(component.get("text", "") for component in split.get("components", []))
     claim_tokens = _content_tokens(f"{claim} {facet_text}")
@@ -293,11 +298,14 @@ def _retrieve_passages(
             ]
         )
     )
+    # Build the optional semantic embedder once (None -> lexical-only) and reuse it across
+    # every query, so the local model is probed a single time per assessment.
+    embedder = get_embedder()
     best_rank: dict[str, int] = {}
     for query in queries:
         if not query or not query.strip():
             continue
-        result = search_corpus(connection, query, limit=_RETRIEVAL_LIMIT)
+        result = search_corpus(connection, query, limit=_RETRIEVAL_LIMIT, embedder=embedder)
         for candidate in result.candidates:
             rank = getattr(candidate, "rank", len(evidence_by_id))
             best_rank[candidate.evidence_id] = min(

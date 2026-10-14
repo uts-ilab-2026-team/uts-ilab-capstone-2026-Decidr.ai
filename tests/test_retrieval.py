@@ -527,3 +527,37 @@ def test_unknown_identifier_does_not_fall_back_to_keyword_matches(corpus_store):
     result = search_corpus(corpus_store, "CASE-987654 travel approval", limit=8)
     assert not result.ranked_groups
     assert not result.additional_linked_groups
+
+
+def test_index_evidence_then_preload_roundtrip(corpus_store, tmp_path):
+    """Pre-index embeds once into the persistent cache; preload copies vectors into a retrieval DB."""
+    from types import SimpleNamespace
+
+    from decidr.semantic import index_evidence, preload_cached_vectors
+
+    cache = tmp_path / "embedding_cache.sqlite"
+    rows = corpus_store.execute(
+        "SELECT evidence_id, text_content FROM evidence ORDER BY evidence_id"
+    ).fetchall()
+    evidence = [SimpleNamespace(evidence_id=row[0], text=row[1]) for row in rows]
+    embedder = RecordingEmbedder()
+
+    # First pre-index embeds every passage; a second run is idempotent (nothing re-embedded).
+    assert index_evidence(evidence, embedder, cache_path=cache) == len(evidence)
+    embedder.calls.clear()
+    assert index_evidence(evidence, embedder, cache_path=cache) == 0
+    assert embedder.calls == []
+
+    # Preloading copies the stored vectors into the retrieval connection's cache.
+    assert preload_cached_vectors(corpus_store, cache_path=cache) == len(evidence)
+    cached = corpus_store.execute(
+        "SELECT COUNT(*) FROM embedding_cache WHERE model_name=? AND model_version=?",
+        (embedder.name, embedder.version),
+    ).fetchone()[0]
+    assert cached == len(evidence)
+
+
+def test_preload_missing_cache_is_noop(corpus_store, tmp_path):
+    from decidr.semantic import preload_cached_vectors
+
+    assert preload_cached_vectors(corpus_store, cache_path=tmp_path / "absent.sqlite") == 0
