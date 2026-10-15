@@ -5,8 +5,8 @@ import sqlite3
 
 import pytest
 
-from decidr import ingestion
-from decidr.ingestion import pipeline
+from decidr.corpus import ingest as ingestion
+from decidr.corpus.ingest import pipeline
 
 
 def snapshot(database):

@@ -2,8 +2,8 @@
 
 import pytest
 
-from decidr.ingestion import build_source
-from decidr.retrieval_models import Source
+from decidr.corpus.ingest import build_source
+from decidr.corpus.models import Source
 
 
 def build(tmp_path, content):

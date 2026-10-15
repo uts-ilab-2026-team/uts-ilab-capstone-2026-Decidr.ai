@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import re
 import sqlite3
 
-from decidr.retrieval_models import Evidence
+from decidr.corpus.models import Evidence
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.%-]*")
 STOPWORDS = {

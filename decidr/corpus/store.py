@@ -8,7 +8,7 @@ from contextlib import closing
 from pathlib import Path
 import sqlite3
 
-from decidr.retrieval_models import Evidence, Source
+from decidr.corpus.models import Evidence, Source
 
 SCHEMA = "CREATE TABLE IF NOT EXISTS sources (\n                source_id TEXT PRIMARY KEY,\n                payload_json TEXT NOT NULL,\n                checksum TEXT NOT NULL,\n                original_file_path TEXT NOT NULL UNIQUE,\n                ingestion_status TEXT NOT NULL,\n                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n            );\nCREATE TABLE IF NOT EXISTS evidence (\n                evidence_id TEXT PRIMARY KEY,\n                source_id TEXT NOT NULL REFERENCES sources(source_id) ON DELETE CASCADE,\n                locator TEXT NOT NULL,\n                text_content TEXT NOT NULL,\n                payload_json TEXT NOT NULL,\n                UNIQUE(source_id, locator)\n            );\nCREATE VIRTUAL TABLE IF NOT EXISTS evidence_fts USING fts5(\n                evidence_id UNINDEXED,\n                text_content,\n                tokenize='porter unicode61'\n            );\nCREATE TABLE IF NOT EXISTS embedding_cache (\n                evidence_id TEXT NOT NULL REFERENCES evidence(evidence_id) ON DELETE CASCADE,\n                model_name TEXT NOT NULL,\n                model_version TEXT NOT NULL,\n                content_checksum TEXT NOT NULL,\n                vector_json TEXT NOT NULL,\n                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n                PRIMARY KEY(evidence_id, model_name, model_version)\n            );"
 

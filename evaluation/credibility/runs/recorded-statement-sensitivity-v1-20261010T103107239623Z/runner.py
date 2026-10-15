@@ -23,7 +23,7 @@ from decidr.graph.credibility import GraphCredibilityFramework
 import decidr.assessment_adapter as adapter
 from decidr.assessment_response import serialize_facet_assessment
 from decidr.interpretation_models import EvidenceInterpretation, InterpretationCitation
-from decidr.retrieval_models import Evidence, Source
+from decidr.corpus.models import Evidence, Source
 
 VERSION = 'recorded-statement-sensitivity-v1'
 BROAD_TARGETS = {

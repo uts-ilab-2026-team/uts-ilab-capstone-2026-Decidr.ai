@@ -5,9 +5,9 @@ import json
 
 import pytest
 
-from decidr.ingestion import ingest
+from decidr.corpus.ingest import ingest
 from decidr.retrieval import lexical_search_text
-from decidr.retrieval_store import connect
+from decidr.corpus.store import connect
 
 
 @pytest.fixture
@@ -111,8 +111,8 @@ class RecordingEmbedder:
 
 
 def test_semantic_cache_reuse_and_source_refresh(corpus_store):
-    from decidr.retrieval_models import Evidence
-    from decidr.retrieval_store import replace_source_evidence
+    from decidr.corpus.models import Evidence
+    from decidr.corpus.store import replace_source_evidence
     from decidr.semantic import semantic_search_text
 
     embedder = RecordingEmbedder()
@@ -195,7 +195,7 @@ def test_fusion_preserves_union_ranks_and_ignores_repeated_ids():
     assert [result.evidence_id for result in lexical_only] == ["a", "b"]
 
 def _grouping_passage(identifier, *, source="source:a", section="Topic", row=None, paragraph=None):
-    from decidr.retrieval_models import Evidence
+    from decidr.corpus.models import Evidence
 
     return Evidence(
         evidence_id=identifier,
@@ -350,7 +350,7 @@ def test_record_references_preserve_multiple_targets_and_unknowns():
 
 def test_corpus_search_anchors_to_explicit_record_without_unrelated_policy(corpus_store):
     from decidr.hybrid import search_corpus
-    from decidr.retrieval_store import replace_source_evidence
+    from decidr.corpus.store import replace_source_evidence
 
     audit_source = corpus_store.execute(
         "SELECT source_id FROM evidence WHERE locator LIKE '%AUD-9001%'"
@@ -387,7 +387,7 @@ def test_corpus_search_anchors_to_explicit_record_without_unrelated_policy(corpu
 
 def test_corpus_search_groups_before_limit_and_retains_context(corpus_store):
     from decidr.hybrid import search_corpus
-    from decidr.retrieval_store import replace_source_evidence
+    from decidr.corpus.store import replace_source_evidence
 
     source_id = "test:POL-91"
     passages = [
@@ -462,7 +462,7 @@ def test_corpus_search_noop_does_not_encode_or_write(corpus_store, query, limit)
 @pytest.mark.parametrize("limit", [1, 3])
 def test_corpus_record_priority_preserves_retrieval(corpus_store, monkeypatch, query, limit):
     import decidr.hybrid as hybrid
-    from decidr.retrieval_store import replace_source_evidence
+    from decidr.corpus.store import replace_source_evidence
 
     source = "test:POL-91"
     generic = _grouping_passage("generic1", source=source, section="General")

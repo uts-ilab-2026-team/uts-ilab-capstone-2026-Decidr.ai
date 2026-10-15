@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 import re
 
-from decidr.retrieval_models import Evidence, Source
+from decidr.corpus.models import Evidence, Source
 
 
 @dataclass(frozen=True)

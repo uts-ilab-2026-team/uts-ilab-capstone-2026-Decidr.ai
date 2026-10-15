@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 import re
 
-from decidr.ingestion.helpers import HEADING_PATTERN, _evidence_id, _parse_date
-from decidr.retrieval_models import Evidence, Source
+from decidr.corpus.ingest.helpers import HEADING_PATTERN, _evidence_id, _parse_date
+from decidr.corpus.models import Evidence, Source
 
 
 def extract_markdown(source: Source, path: Path) -> list[Evidence]:

@@ -10,7 +10,7 @@ import re
 import subprocess
 
 from decidr.constants import SOURCE_CODE_PATTERN
-from decidr.retrieval_models import Evidence, Source
+from decidr.corpus.models import Evidence, Source
 
 SUPPORTED_SUFFIXES = {".md", ".csv"}
 TECHNICAL_NAMES = {"README.md"}

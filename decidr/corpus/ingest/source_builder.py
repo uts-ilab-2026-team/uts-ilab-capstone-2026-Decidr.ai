@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from decidr.ingestion.helpers import (
+from decidr.corpus.ingest.helpers import (
     ANNOTATION_NAMES,
     TECHNICAL_NAMES,
     _related_source_codes,
@@ -10,13 +10,13 @@ from decidr.ingestion.helpers import (
     _source_type,
     sha256_file,
 )
-from decidr.retrieval_models import Source
-from decidr.source_metadata import (
+from decidr.corpus.ingest.metadata import (
     METADATA_VERSION,
     approval_lifecycle,
     header_date,
     read_header,
 )
+from decidr.corpus.models import Source
 
 
 def build_source(path: Path, root: Path, release: str) -> Source:

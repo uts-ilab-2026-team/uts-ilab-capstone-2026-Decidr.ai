@@ -8,10 +8,10 @@ import sqlite3
 
 import networkx as nx
 
+from decidr.corpus.models import Evidence
+from decidr.corpus.store import SCHEMA, replace_source_evidence, upsert_source
 from decidr.finding_shim import CorpusSnapshot, LlmFinding, _strip_release
 from decidr.graph.graph import OrganisationalGraph
-from decidr.retrieval_models import Evidence
-from decidr.retrieval_store import SCHEMA, replace_source_evidence, upsert_source
 
 # Reader relationship vocab -> shim stance vocab.
 _STANCE_FROM_RELATIONSHIP = {

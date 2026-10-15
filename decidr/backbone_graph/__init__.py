@@ -4,13 +4,13 @@ Produces a validated :class:`decidr.graph.graph.OrganisationalGraph` containing
 everything EXCEPT Fact nodes and FORMAL/OBSERVED attestation edges:
 
 * ``document`` nodes + ``SUPERSEDED_BY`` / ``RELATED`` — reused directly from
-  ``decidr.ingestion`` (no re-parsing of document metadata).
+  ``decidr.corpus.ingest`` (no re-parsing of document metadata).
 * ``person`` / ``role`` / ``function`` / ``process`` / ``system`` nodes and the
   backbone edges ``HOLDS`` / ``SITS_IN`` / ``REPORTS_TO`` / ``PARTICIPATES_IN`` /
   ``ACCESSES`` / ``GOVERNS`` — parsed deterministically from the clean markdown
   tables in ``data/00_overview/``.
 
-Design note: this module builds the backbone (it imports ``decidr.ingestion``),
+Design note: this module builds the backbone (it imports ``decidr.corpus.ingest``),
 whereas ``decidr.graph`` only ever *loads* the graph. The
 in-memory :class:`OrganisationalGraph` is the spine; the JSON dump is an
 optional, inspectable snapshot (for review + demo).

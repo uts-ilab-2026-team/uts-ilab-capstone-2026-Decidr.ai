@@ -21,10 +21,10 @@ from decidr.constants import (
     DEFAULT_AS_OF,  # noqa: F401  (re-exported for existing importers)
     RAW_DATA_DIR,
 )
+from decidr.corpus.ingest import ingest
+from decidr.corpus.models import Evidence, Source
 from decidr.graph import CONFIG_PATH
 from decidr.graph.config import GraphCredibilityConfig
-from decidr.ingestion import ingest
-from decidr.retrieval_models import Evidence, Source
 
 # --------------------------------------------------------------------------- #
 # The LLM finding (just the fields the shim consumes)                          #

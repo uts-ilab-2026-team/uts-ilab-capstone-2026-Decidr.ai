@@ -6,20 +6,20 @@ import csv
 from datetime import UTC, datetime
 from pathlib import Path
 
-from decidr.ingestion.deduplication import (
+from decidr.corpus.ingest.deduplication import (
     _apply_duplicate_and_version_links,
     _apply_near_duplicate_signals,
 )
-from decidr.ingestion.extractors import extract_csv, extract_markdown
-from decidr.ingestion.helpers import (
+from decidr.corpus.ingest.extractors import extract_csv, extract_markdown
+from decidr.corpus.ingest.helpers import (
     SUPPORTED_SUFFIXES,
     IngestionResult,
     code_version,
     dataset_fingerprint,
 )
-from decidr.ingestion.source_builder import build_source
-from decidr.retrieval_models import Evidence
-from decidr.retrieval_store import (
+from decidr.corpus.ingest.source_builder import build_source
+from decidr.corpus.models import Evidence
+from decidr.corpus.store import (
     connect,
     initialise_database,
     replace_source_evidence,

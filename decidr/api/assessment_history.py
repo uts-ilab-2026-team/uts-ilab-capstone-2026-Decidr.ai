@@ -74,9 +74,9 @@ def implementation_manifest() -> dict:
         "decidr/claim_split.py",
         "decidr/fast_reader.py",
         "decidr/claim_spans.py",
-        "decidr/retrieval_models.py",
+        "decidr/corpus/models.py",
         "decidr/hybrid.py",
-        "decidr/retrieval_store.py",
+        "decidr/corpus/store.py",
     ]
     names.extend(
         str(p.relative_to(root))
@@ -86,7 +86,8 @@ def implementation_manifest() -> dict:
         str(p.relative_to(root)) for p in sorted((root / "decidr" / "assess_claim").glob("*.py"))
     )
     names.extend(
-        str(p.relative_to(root)) for p in sorted((root / "decidr" / "ingestion").glob("*.py"))
+        str(p.relative_to(root))
+        for p in sorted((root / "decidr" / "corpus" / "ingest").glob("*.py"))
     )
     names.extend(
         str(p.relative_to(root)) for p in sorted((root / "decidr" / "backbone_graph").glob("*.py"))

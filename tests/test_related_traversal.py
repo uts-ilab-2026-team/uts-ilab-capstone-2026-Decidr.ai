@@ -9,7 +9,7 @@ Covers the three touch-points:
 
 from decidr.assess_claim import _related_codes, _related_view
 from decidr.backbone_assessment import load_skeleton
-from decidr.ingestion import _related_source_codes
+from decidr.corpus.ingest import _related_source_codes
 from decidr.graph.graph import OrganisationalGraph
 from decidr.graph.models import GraphEdge, GraphNode
 

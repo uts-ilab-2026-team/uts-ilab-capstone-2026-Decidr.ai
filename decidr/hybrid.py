@@ -5,13 +5,13 @@ from dataclasses import dataclass, replace
 import sqlite3
 from typing import Protocol
 
+from decidr.corpus.models import Evidence
 from decidr.retrieval import (
     RecordReference,
     find_record_references,
     lexical_search_text,
     record_identifiers,
 )
-from decidr.retrieval_models import Evidence
 from decidr.semantic import Embedder, semantic_search_text
 
 

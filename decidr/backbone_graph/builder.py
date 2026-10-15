@@ -24,9 +24,9 @@ from decidr.constants import (
 from decidr.constants import (
     RAW_DATA_DIR,  # ingestion root (corpus lives under data/raw)
 )
+from decidr.corpus.ingest import ingest
 from decidr.graph.graph import OrganisationalGraph
 from decidr.graph.models import GraphEdge
-from decidr.ingestion import ingest
 
 # --------------------------------------------------------------------------- #
 # Public API                                                                   #

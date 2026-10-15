@@ -12,7 +12,7 @@ from decidr.backbone_graph.common import (
     _iso,
     _slug,
 )
-from decidr.retrieval_models import Source
+from decidr.corpus.models import Source
 
 # --------------------------------------------------------------------------- #
 # Document layer (reused from ingestion — no document metadata is re-parsed)   #

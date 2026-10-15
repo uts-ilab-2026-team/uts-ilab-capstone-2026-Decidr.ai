@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 from decidr.constants import SOURCE_CODE_PATTERN
-from decidr.retrieval_models import Source
+from decidr.corpus.models import Source
 
 
 def _apply_duplicate_and_version_links(sources: list[Source]) -> None:
