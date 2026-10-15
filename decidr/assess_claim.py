@@ -164,10 +164,18 @@ def _match_processes(
 
 def _governs_map(skeleton: OrganisationalGraph) -> dict[str, list[str]]:
     """process node id -> the document codes that GOVERN it."""
+    graph = skeleton.graph
     mapping: dict[str, list[str]] = {}
-    for edge in skeleton.edges.values():
-        if edge.relationship == "GOVERNS":
-            mapping.setdefault(edge.target, []).append(edge.source.replace("document:", ""))
+    for nid, kind in graph.nodes(data="kind"):
+        if kind != "process":
+            continue
+        codes = [
+            source.replace("document:", "")
+            for source, _, rel in graph.in_edges(nid, data="relationship")
+            if rel == "GOVERNS"
+        ]
+        if codes:
+            mapping[nid] = codes
     return mapping
 
 
