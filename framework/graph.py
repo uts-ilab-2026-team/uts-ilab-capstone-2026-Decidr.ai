@@ -210,38 +210,41 @@ class OrganisationalGraph:
     def related_qualifiers(self, fact_id: str) -> list[str]:
         """Follow one Document RELATED hop and read the neighbour's own Fact edge."""
         source_documents = {edge.source for edge in self.attestations(fact_id)}
+        graph = self.graph
         related_documents: set[str] = set()
         reasons: dict[tuple[str, str], str] = {}
-        for edge in self.edges.values():
-            if edge.relationship != "RELATED":
-                continue
-            if edge.source in source_documents:
-                related_documents.add(edge.target)
-                reasons[(edge.source, edge.target)] = str(
-                    edge.attributes.get("reason", "related document")
-                )
-            if edge.target in source_documents:
-                related_documents.add(edge.source)
-                reasons[(edge.target, edge.source)] = str(
-                    edge.attributes.get("reason", "related document")
-                )
+        # One RELATED hop out of each source document (RELATED is treated as undirected).
+        # Incident edges are visited in edge-id order so the reason tiebreak is deterministic
+        # when a source links to the same neighbour through more than one RELATED edge.
+        for document_id in source_documents:
+            incident = [
+                (key, target, attrs)
+                for _, target, key, attrs in graph.out_edges(document_id, keys=True, data=True)
+            ]
+            incident += [
+                (key, source, attrs)
+                for source, _, key, attrs in graph.in_edges(document_id, keys=True, data=True)
+            ]
+            for _key, neighbour, attrs in sorted(incident, key=lambda item: item[0]):
+                if attrs.get("relationship") != "RELATED":
+                    continue
+                related_documents.add(neighbour)
+                reasons[(document_id, neighbour)] = str(attrs.get("reason", "related document"))
         qualifiers = []
-        for edge in self.edges.values():
-            if (
-                edge.source in related_documents
-                and edge.relationship in {"FORMAL", "OBSERVED"}
-                and edge.target != fact_id
-            ):
-                fact = self.nodes[edge.target]
+        for neighbour in related_documents:
+            for _, target, _key, attrs in graph.out_edges(neighbour, keys=True, data=True):
+                if attrs.get("relationship") not in {"FORMAL", "OBSERVED"} or target == fact_id:
+                    continue
+                fact = self.nodes[target]
                 reason = next(
                     (
                         value
                         for (origin, related), value in reasons.items()
-                        if related == edge.source and origin in source_documents
+                        if related == neighbour and origin in source_documents
                     ),
                     "related document",
                 )
-                qualifiers.append(f"{fact.label}: {edge.attributes['attests_value']} ({reason}).")
+                qualifiers.append(f"{fact.label}: {attrs['attests_value']} ({reason}).")
         return sorted(dict.fromkeys(qualifiers))
 
     def backbone_resolution(self, edge: GraphEdge) -> tuple[float, str]:
@@ -268,6 +271,7 @@ class OrganisationalGraph:
 
     def fact_dot(self, fact_id: str) -> str:
         """Render only the selected Fact, its Documents and one-hop related Documents."""
+        graph = self.graph
         lines = [
             "digraph graph_fact {",
             "rankdir=LR;",
@@ -276,31 +280,28 @@ class OrganisationalGraph:
         fact = self.nodes[fact_id]
         label = fact.label.replace('"', "'")
         lines.append(f'"{fact_id}" [label="{label}", fillcolor="#f59e0b"];')
-        document_ids = {edge.source for edge in self.attestations(fact_id)}
-        for edge in self.edges.values():
-            if edge.relationship == "RELATED" and (
-                edge.source in document_ids or edge.target in document_ids
-            ):
-                document_ids.update((edge.source, edge.target))
+        attesting = {edge.source for edge in self.attestations(fact_id)}
+        # One RELATED hop out of each attesting document (RELATED treated as undirected).
+        document_ids = set(attesting)
+        for document_id in attesting:
+            for _, target, rel in graph.out_edges(document_id, data="relationship"):
+                if rel == "RELATED":
+                    document_ids.add(target)
+            for source, _, rel in graph.in_edges(document_id, data="relationship"):
+                if rel == "RELATED":
+                    document_ids.add(source)
         for document_id in sorted(document_ids):
             document = self.nodes[document_id]
-            colour = (
-                "#93c5fd"
-                if document_id in {edge.source for edge in self.attestations(fact_id)}
-                else "#d1d5db"
-            )
+            colour = "#93c5fd" if document_id in attesting else "#d1d5db"
             doc_label = document.label.replace('"', "'")
             lines.append(f'"{document_id}" [label="{doc_label}", fillcolor="{colour}"];')
-        for edge in self.edges.values():
-            if edge.relationship in {"FORMAL", "OBSERVED"} and edge.target == fact_id:
-                lines.append(f'"{edge.source}" -> "{fact_id}" [label="{edge.relationship}"];')
-            elif (
-                edge.relationship == "RELATED"
-                and edge.source in document_ids
-                and edge.target in document_ids
-            ):
-                lines.append(
-                    f'"{edge.source}" -> "{edge.target}" [label="RELATED", style=dashed];'
-                )
+        for edge in self.attestations(fact_id):
+            lines.append(f'"{edge.source}" -> "{fact_id}" [label="{edge.relationship}"];')
+        related_lines = set()
+        for document_id in document_ids:
+            for source, target, rel in graph.out_edges(document_id, data="relationship"):
+                if rel == "RELATED" and source in document_ids and target in document_ids:
+                    related_lines.add(f'"{source}" -> "{target}" [label="RELATED", style=dashed];')
+        lines.extend(sorted(related_lines))
         lines.append("}")
         return "\n".join(lines)
