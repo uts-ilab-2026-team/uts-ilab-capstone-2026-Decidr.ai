@@ -6,9 +6,6 @@ from collections import defaultdict
 import json
 from pathlib import Path
 
-from framework.graph import OrganisationalGraph
-from framework.models import GraphEdge
-
 from decidr.backbone_graph.common import _GraphBuilder
 from decidr.backbone_graph.roster import (
     _add_processes,
@@ -27,6 +24,8 @@ from decidr.constants import (
 from decidr.constants import (
     RAW_DATA_DIR,  # ingestion root (corpus lives under data/raw)
 )
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import GraphEdge
 from decidr.ingestion import ingest
 
 # --------------------------------------------------------------------------- #

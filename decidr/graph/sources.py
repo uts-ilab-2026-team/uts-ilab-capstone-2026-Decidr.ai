@@ -1,12 +1,12 @@
 """Catalogue supplied sources without extracting claims or assigning verdicts."""
 
-from dataclasses import asdict, dataclass
+from collections.abc import Mapping
 import csv
+from dataclasses import asdict, dataclass
 from hashlib import sha256
 from io import StringIO
 import json
 from pathlib import Path
-from typing import Mapping
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,7 +46,8 @@ def build_source_catalogue(
     if not root.is_dir():
         raise ValueError(f"Dataset directory does not exist: {root}")
     paths = [
-        path for path in sorted(root.rglob("*"))
+        path
+        for path in sorted(root.rglob("*"))
         if path.is_file()
         and not any(part.startswith(".") for part in path.relative_to(root).parts)
         and path.relative_to(root).as_posix() not in exclude_paths
@@ -54,8 +55,7 @@ def build_source_catalogue(
     if not paths:
         raise ValueError("The dataset contains no source files")
     csv_paths = {
-        path.relative_to(root).as_posix() for path in paths
-        if path.suffix.lower() == ".csv"
+        path.relative_to(root).as_posix() for path in paths if path.suffix.lower() == ".csv"
     }
     if csv_paths != set(csv_id_columns):
         raise ValueError(
@@ -75,13 +75,15 @@ def build_source_catalogue(
         digest = sha256(raw).hexdigest()
         text = raw.decode("utf-8-sig")
         if kind == ".md":
-            records.append(SourceRecord(
-                source_id=_source_id(relative, None, None),
-                source_path=relative,
-                source_sha256=digest,
-                kind="markdown",
-                content=text,
-            ))
+            records.append(
+                SourceRecord(
+                    source_id=_source_id(relative, None, None),
+                    source_path=relative,
+                    source_sha256=digest,
+                    kind="markdown",
+                    content=text,
+                )
+            )
             continue
         key = csv_id_columns[relative]
         reader = csv.DictReader(StringIO(text, newline=""), strict=True)
@@ -103,13 +105,15 @@ def build_source_catalogue(
             if not identifier.strip() or identifier in seen:
                 raise ValueError(f"{relative}: empty or duplicate {key}: {identifier!r}")
             seen.add(identifier)
-            records.append(SourceRecord(
-                source_id=_source_id(relative, key, identifier),
-                source_path=relative,
-                source_sha256=digest,
-                kind="csv_record",
-                content=dict(row),
-                record_key=key,
-                record_id=identifier,
-            ))
+            records.append(
+                SourceRecord(
+                    source_id=_source_id(relative, key, identifier),
+                    source_path=relative,
+                    source_sha256=digest,
+                    kind="csv_record",
+                    content=dict(row),
+                    record_key=key,
+                    record_id=identifier,
+                )
+            )
     return tuple(sorted(records, key=lambda item: (item.source_path, item.record_id or "")))

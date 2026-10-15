@@ -2,11 +2,11 @@
 
 from datetime import date
 
-from framework import CONFIG_PATH, GraphCredibilityFramework
-from framework.config import GraphCredibilityConfig
-from framework.errors import GraphValidationError
-from framework.graph import OrganisationalGraph
-from framework.models import GraphEdge, GraphNode
+from decidr.graph import CONFIG_PATH, GraphCredibilityFramework
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.errors import GraphValidationError
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import GraphEdge, GraphNode
 import pytest
 
 DAY = date(2026, 7, 31)

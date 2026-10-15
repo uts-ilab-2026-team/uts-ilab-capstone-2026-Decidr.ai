@@ -4,11 +4,6 @@ from __future__ import annotations
 
 from datetime import date
 
-from framework import CONFIG_PATH
-from framework.config import GraphCredibilityConfig
-from framework.graph import OrganisationalGraph
-from framework.models import FactAssessment
-
 from decidr.assess_claim.retrieval import (
     _build_index,
     _finding_to_llm,
@@ -28,6 +23,10 @@ from decidr.finding_shim import (
     _strip_release,
     load_corpus_snapshot,
 )
+from decidr.graph import CONFIG_PATH
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import FactAssessment
 
 
 def assess_claim(

@@ -1,6 +1,6 @@
 """Build the persistent organisational backbone (the skeleton) from the corpus.
 
-Produces a validated :class:`framework.graph.OrganisationalGraph` containing
+Produces a validated :class:`decidr.graph.graph.OrganisationalGraph` containing
 everything EXCEPT Fact nodes and FORMAL/OBSERVED attestation edges:
 
 * ``document`` nodes + ``SUPERSEDED_BY`` / ``RELATED`` — reused directly from
@@ -10,8 +10,8 @@ everything EXCEPT Fact nodes and FORMAL/OBSERVED attestation edges:
   ``ACCESSES`` / ``GOVERNS`` — parsed deterministically from the clean markdown
   tables in ``data/00_overview/``.
 
-Design note: this module lives in ``decidr/`` (not ``framework/``) because it
-imports ``decidr.ingestion``. ``framework/`` only ever *loads* the graph. The
+Design note: this module builds the backbone (it imports ``decidr.ingestion``),
+whereas ``decidr.graph`` only ever *loads* the graph. The
 in-memory :class:`OrganisationalGraph` is the spine; the JSON dump is an
 optional, inspectable snapshot (for review + demo).
 

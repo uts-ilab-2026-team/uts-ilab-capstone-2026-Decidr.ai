@@ -19,12 +19,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import date
 
-from framework import CONFIG_PATH
-from framework.config import GraphCredibilityConfig
-from framework.credibility import GraphCredibilityFramework
-from framework.graph import OrganisationalGraph
-from framework.models import FactAssessment, GraphEdge, GraphNode
-
 from decidr.backbone_graph import OUTPUT_PATH as BACKBONE_PATH
 from decidr.backbone_graph import _slug
 from decidr.finding_shim import (
@@ -35,6 +29,11 @@ from decidr.finding_shim import (
     _map_quality,
     load_corpus_snapshot,
 )
+from decidr.graph import CONFIG_PATH
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.credibility import GraphCredibilityFramework
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import FactAssessment, GraphEdge, GraphNode
 
 _AGREES = {"support": True, "contradict": False}  # else -> None (qualify/context)
 

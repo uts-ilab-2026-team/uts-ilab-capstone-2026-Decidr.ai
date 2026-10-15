@@ -3,7 +3,7 @@
 A ``Fact`` is a searchable topic and stores no value.  Asserted values live on
 ``FORMAL`` or ``OBSERVED`` Document -> Fact edges as ``attests_value``.  This
 module holds the graph structure and read helpers only; credibility reasoning
-lives in ``framework.credibility``.
+lives in ``decidr.graph.credibility``.
 """
 
 from __future__ import annotations
@@ -16,8 +16,8 @@ import networkx as nx
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from framework.errors import GraphValidationError
-from framework.models import GraphEdge, GraphNode
+from decidr.graph.errors import GraphValidationError
+from decidr.graph.models import GraphEdge, GraphNode
 
 
 class OrganisationalGraph:

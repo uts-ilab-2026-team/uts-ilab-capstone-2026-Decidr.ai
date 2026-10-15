@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 import math
-from dataclasses import dataclass
 from pathlib import Path
 
-from framework.constants import CREDIBILITY_DIMENSIONS
-from framework.errors import GraphValidationError
+from decidr.graph.constants import CREDIBILITY_DIMENSIONS
+from decidr.graph.errors import GraphValidationError
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,14 +45,14 @@ class GraphCredibilityConfig:
         if not isinstance(self.config_version, str) or not self.config_version.strip():
             raise GraphValidationError("config_version must be a non-empty string")
 
-        for name in (
-            "materiality_threshold", "conflict_ratio", "undated_weight", "stale_weight"
-        ):
+        for name in ("materiality_threshold", "conflict_ratio", "undated_weight", "stale_weight"):
             self._validate_weight(name, getattr(self, name), bounded=True)
 
         for name in (
-            "dimension_weights", "source_class_weights",
-            "approval_weights", "lifecycle_multipliers",
+            "dimension_weights",
+            "source_class_weights",
+            "approval_weights",
+            "lifecycle_multipliers",
         ):
             weights = getattr(self, name)
             if not isinstance(weights, dict):
@@ -60,9 +60,7 @@ class GraphCredibilityConfig:
             for key, value in weights.items():
                 if not isinstance(key, str) or not key.strip():
                     raise GraphValidationError(f"{name} keys must be non-empty strings")
-                self._validate_weight(
-                    f"{name}.{key}", value, bounded=name != "dimension_weights"
-                )
+                self._validate_weight(f"{name}.{key}", value, bounded=name != "dimension_weights")
 
         if set(self.dimension_weights) != set(CREDIBILITY_DIMENSIONS):
             raise GraphValidationError(

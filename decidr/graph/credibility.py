@@ -3,7 +3,7 @@
 Evaluates a Fact's FORMAL and OBSERVED attestations with a
 source -> status -> date discipline, keeping formal and observed evidence in
 separate lanes and recording missing evidence as a gap rather than a
-contradiction.  The graph structure itself lives in ``framework.graph``.
+contradiction.  The graph structure itself lives in ``decidr.graph.graph``.
 """
 
 from __future__ import annotations
@@ -11,10 +11,10 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-from framework.config import GraphCredibilityConfig
-from framework.constants import CREDIBILITY_DIMENSIONS
-from framework.graph import OrganisationalGraph
-from framework.models import (
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.constants import CREDIBILITY_DIMENSIONS
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import (
     EdgeAssessment,
     FactAssessment,
     GraphEdge,

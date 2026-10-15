@@ -7,8 +7,8 @@ from datetime import date
 from io import StringIO
 import json
 
-from framework.credibility import GraphCredibilityFramework
-from framework.models import EdgeAssessment, FactAssessment
+from decidr.graph.credibility import GraphCredibilityFramework
+from decidr.graph.models import EdgeAssessment, FactAssessment
 
 
 @dataclass(frozen=True, slots=True)

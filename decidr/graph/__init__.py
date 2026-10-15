@@ -7,22 +7,22 @@ existing relational credibility framework.
 
 from pathlib import Path
 
-from framework.constants import CREDIBILITY_DIMENSIONS, CREDIBILITY_QUESTIONS
-from framework.credibility import GraphCredibilityFramework
-from framework.graph import OrganisationalGraph
-from framework.models import FactAssessment
-from framework.register import GraphFactsRegister
+from decidr.graph.constants import CREDIBILITY_DIMENSIONS, CREDIBILITY_QUESTIONS
+from decidr.graph.credibility import GraphCredibilityFramework
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import FactAssessment
+from decidr.graph.register import GraphFactsRegister
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 GRAPH_PATH = PACKAGE_ROOT / "data" / "prototype_graph.json"
 CONFIG_PATH = PACKAGE_ROOT / "data" / "credibility.json"
 
 __all__ = [
+    "CONFIG_PATH",
     "CREDIBILITY_DIMENSIONS",
     "CREDIBILITY_QUESTIONS",
-    "FactAssessment",
-    "CONFIG_PATH",
     "GRAPH_PATH",
+    "FactAssessment",
     "GraphCredibilityFramework",
     "GraphFactsRegister",
     "OrganisationalGraph",

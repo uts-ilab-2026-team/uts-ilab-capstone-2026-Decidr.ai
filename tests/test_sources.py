@@ -6,7 +6,7 @@ from hashlib import sha256
 
 import pytest
 
-from framework.sources import build_source_catalogue
+from decidr.graph.sources import build_source_catalogue
 
 
 @pytest.fixture

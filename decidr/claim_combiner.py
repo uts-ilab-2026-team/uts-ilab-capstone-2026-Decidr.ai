@@ -25,7 +25,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from framework.models import FactAssessment
+from decidr.graph.models import FactAssessment
 
 _OUTCOME_PRECEDENCE = ("Contradicted", "Contested", "Insufficient evidence", "Supported")
 _CONFIDENCE_RANK = {"Lower confidence": 0, "Moderate confidence": 1, "Higher confidence": 2}
@@ -120,11 +120,10 @@ def main() -> None:
     from dataclasses import replace
     from pathlib import Path
 
-    from framework import CONFIG_PATH
-    from framework.config import GraphCredibilityConfig
-
     from decidr.backbone_assessment import assess_on_backbone, load_skeleton
     from decidr.finding_shim import finding_from_result_json, load_corpus_snapshot
+    from decidr.graph import CONFIG_PATH
+    from decidr.graph.config import GraphCredibilityConfig
 
     config = GraphCredibilityConfig.load(CONFIG_PATH)
     snapshot = load_corpus_snapshot()

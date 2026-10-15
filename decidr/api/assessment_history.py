@@ -91,7 +91,9 @@ def implementation_manifest() -> dict:
     names.extend(
         str(p.relative_to(root)) for p in sorted((root / "decidr" / "backbone_graph").glob("*.py"))
     )
-    names.extend(str(p.relative_to(root)) for p in sorted((root / "framework").glob("*.py")))
+    names.extend(
+        str(p.relative_to(root)) for p in sorted((root / "decidr" / "graph").glob("*.py"))
+    )
     hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names}
     return {
         "method": "source-files-on-disk-v1",

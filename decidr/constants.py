@@ -29,7 +29,7 @@ RAW_DATA_DIR = DATA_DIR / "raw"
 # Shared runtime/derived-artifact directory for backend and frontend (embedding cache,
 # frontend databases, etc.). A sibling of the raw corpus, so ingestion never scans it.
 APP_DIR = DATA_DIR / "app"
-CORPUS_GRAPH_PATH = REPO_ROOT / "framework" / "data" / "corpus_graph.json"
+CORPUS_GRAPH_PATH = REPO_ROOT / "decidr" / "graph" / "data" / "corpus_graph.json"
 
 # --------------------------------------------------------------------------- #
 # Corpus evaluation date                                                       #

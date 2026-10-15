@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from framework.models import FactAssessment
+from decidr.graph.models import FactAssessment
 
 if TYPE_CHECKING:
     from decidr.assess_claim.types import ClaimAssessment

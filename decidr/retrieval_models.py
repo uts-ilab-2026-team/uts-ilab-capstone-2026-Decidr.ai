@@ -1,7 +1,7 @@
 """Validated source and passage records for corpus retrieval.
 
 Adapted from decidr/models.py at retrieval commit 90ffff9.
-Graph nodes and assessment records remain in framework.models.
+Graph nodes and assessment records remain in decidr.graph.models.
 """
 
 from datetime import date

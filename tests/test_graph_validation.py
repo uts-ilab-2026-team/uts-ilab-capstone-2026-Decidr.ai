@@ -5,9 +5,9 @@ import json
 
 import pytest
 
-from framework.errors import GraphValidationError
-from framework.graph import OrganisationalGraph
-from framework.models import GraphEdge, GraphNode
+from decidr.graph.errors import GraphValidationError
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import GraphEdge, GraphNode
 
 
 @pytest.fixture(params=["FORMAL", "OBSERVED"])
@@ -206,8 +206,8 @@ def test_json_loading_enforces_evidence_validation(payload, tmp_path):
 def test_validated_completeness_reaches_assessment(payload, completeness):
     from datetime import date
 
-    from framework import CONFIG_PATH, GraphCredibilityFramework
-    from framework.config import GraphCredibilityConfig
+    from decidr.graph import CONFIG_PATH, GraphCredibilityFramework
+    from decidr.graph.config import GraphCredibilityConfig
 
     payload["edges"][0]["attributes"]["completeness"] = completeness
     graph = build_graph(payload)

@@ -4,8 +4,8 @@ from dataclasses import replace
 
 import pytest
 
-from framework.credibility import GraphCredibilityFramework
-from framework.models import EdgeAssessment
+from decidr.graph.credibility import GraphCredibilityFramework
+from decidr.graph.models import EdgeAssessment
 
 
 @pytest.fixture

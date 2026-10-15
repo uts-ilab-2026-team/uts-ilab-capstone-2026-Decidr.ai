@@ -81,7 +81,7 @@ def test_committed_graph_has_owned_by_edges():
     import pathlib
 
     graph = json.loads(
-        pathlib.Path("framework/data/corpus_graph.json").read_text(encoding="utf-8")
+        pathlib.Path("decidr/graph/data/corpus_graph.json").read_text(encoding="utf-8")
     )
     owned = [e for e in graph["edges"] if e["relationship"] == "OWNED_BY"]
     assert len(owned) == 14

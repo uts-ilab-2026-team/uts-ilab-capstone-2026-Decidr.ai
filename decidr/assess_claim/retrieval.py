@@ -6,10 +6,10 @@ from __future__ import annotations
 import re
 import sqlite3
 
-from framework.graph import OrganisationalGraph
 import networkx as nx
 
 from decidr.finding_shim import CorpusSnapshot, LlmFinding, _strip_release
+from decidr.graph.graph import OrganisationalGraph
 from decidr.retrieval_models import Evidence
 from decidr.retrieval_store import SCHEMA, replace_source_evidence, upsert_source
 

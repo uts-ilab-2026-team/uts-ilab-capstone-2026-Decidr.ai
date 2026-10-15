@@ -17,12 +17,12 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-from framework.graph import OrganisationalGraph
 import networkx as nx
 from pyvis.network import Network
 
 from decidr.constants import CORPUS_GRAPH_PATH as GRAPH_PATH
 from decidr.constants import REPO_ROOT
+from decidr.graph.graph import OrganisationalGraph
 
 OUTPUT_DIR = REPO_ROOT / "graph_views"
 

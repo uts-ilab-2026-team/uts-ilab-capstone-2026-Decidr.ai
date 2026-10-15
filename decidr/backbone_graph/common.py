@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import date
 import re
 
-from framework.models import GraphEdge, GraphNode
+from decidr.graph.models import GraphEdge, GraphNode
 
 PROCESS_CODE_PATTERN = re.compile(r"\bP([1-8])\b")
 LEFT_COMPANY_PATTERN = re.compile(

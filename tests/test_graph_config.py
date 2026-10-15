@@ -5,10 +5,10 @@ import json
 
 import pytest
 
-from framework import CONFIG_PATH
-from framework.config import GraphCredibilityConfig
-from framework.constants import CREDIBILITY_DIMENSIONS
-from framework.errors import GraphValidationError
+from decidr.graph import CONFIG_PATH
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.constants import CREDIBILITY_DIMENSIONS
+from decidr.graph.errors import GraphValidationError
 
 DIMENSION = CREDIBILITY_DIMENSIONS[0]
 

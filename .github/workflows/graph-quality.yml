@@ -25,7 +25,7 @@ jobs:
       - name: Check graph formatting
         run: >-
           python -m ruff format --check
-          framework
+          decidr/graph
           decidr/api
           tests/test_graph_prototype.py
           tests/test_api.py
@@ -34,7 +34,7 @@ jobs:
       - name: Lint graph files
         run: >-
           python -m ruff check
-          framework
+          decidr/graph
           decidr/api
           tests/test_graph_prototype.py
           tests/test_api.py

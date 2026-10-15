@@ -5,9 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date
 
-from framework.models import FactAssessment
-
 from decidr.claim_combiner import ClaimVerdict
+from decidr.graph.models import FactAssessment
 
 
 @dataclass(frozen=True, slots=True)

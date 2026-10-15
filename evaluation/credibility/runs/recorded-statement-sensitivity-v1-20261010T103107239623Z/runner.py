@@ -17,9 +17,9 @@ if not (ROOT / 'decidr/assessment_adapter.py').is_file():
     raise SystemExit('Run this script from the Decidr-integration repository.')
 sys.path.insert(0, str(ROOT))
 
-from framework import CONFIG_PATH
-from framework.config import GraphCredibilityConfig
-from framework.credibility import GraphCredibilityFramework
+from decidr.graph import CONFIG_PATH
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.credibility import GraphCredibilityFramework
 import decidr.assessment_adapter as adapter
 from decidr.assessment_response import serialize_facet_assessment
 from decidr.interpretation_models import EvidenceInterpretation, InterpretationCitation
