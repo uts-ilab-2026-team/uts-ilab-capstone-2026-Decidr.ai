@@ -19,19 +19,19 @@ read failure yields an Insufficient verdict with a note, never an exception to t
 
 Live run (needs a local Ollama model; ~2-3 LLM calls, seconds):
     DECIDR_ASSESSMENT_PROVIDER=ollama DECIDR_ASSESSMENT_MODEL=qwen3.5:9b \
-        uv run python -m decidr.assess_claim
+        uv run python -m decidr.pipeline
 """
 
-from decidr.assess_claim.assess import assess_claim
-from decidr.assess_claim.cli import main
-from decidr.assess_claim.confidence import (
+from decidr.pipeline.assess import assess_claim
+from decidr.pipeline.cli import main
+from decidr.pipeline.confidence import (
     _confidence_band,
     _facet_confidence,
     _reconcile_confidence,
 )
-from decidr.assess_claim.payload import to_payload
-from decidr.assess_claim.retrieval import _related_codes, _related_view
-from decidr.assess_claim.types import ClaimAssessment
+from decidr.pipeline.payload import to_payload
+from decidr.pipeline.retrieval import _related_codes, _related_view
+from decidr.pipeline.types import ClaimAssessment
 
 __all__ = [
     "ClaimAssessment",

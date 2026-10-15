@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from decidr.graph.models import FactAssessment
 
 if TYPE_CHECKING:
-    from decidr.assess_claim.types import ClaimAssessment
+    from decidr.pipeline.types import ClaimAssessment
 
 # Confidence is ONE reconciled axis: the 0-1 score and its categorical tier come from the same
 # calculation, so the number and the label can never disagree. The score rewards BOTH evidence

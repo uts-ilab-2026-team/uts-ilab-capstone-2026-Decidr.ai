@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from decidr.assess_claim.assess import assess_claim
-from decidr.assess_claim.confidence import _reconcile_confidence
-from decidr.assess_claim.payload import to_payload
 from decidr.claim_interpreter import ProviderError
+from decidr.pipeline.assess import assess_claim
+from decidr.pipeline.confidence import _reconcile_confidence
+from decidr.pipeline.payload import to_payload
 from decidr.reading.finding_shim import DEFAULT_AS_OF, _strip_release
 
 if TYPE_CHECKING:
-    from decidr.assess_claim.types import ClaimAssessment
+    from decidr.pipeline.types import ClaimAssessment
 
 
 # A spread chosen to land on DIFFERENT verdicts: a formal rule (expect Supported), a general

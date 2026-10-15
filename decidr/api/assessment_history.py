@@ -82,7 +82,7 @@ def implementation_manifest() -> dict:
         for p in sorted((root / "decidr" / "claim_interpreter").glob("*.py"))
     )
     names.extend(
-        str(p.relative_to(root)) for p in sorted((root / "decidr" / "assess_claim").glob("*.py"))
+        str(p.relative_to(root)) for p in sorted((root / "decidr" / "pipeline").glob("*.py"))
     )
     names.extend(
         str(p.relative_to(root))

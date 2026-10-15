@@ -4,13 +4,6 @@ from __future__ import annotations
 
 from datetime import date
 
-from decidr.assess_claim.retrieval import (
-    _build_index,
-    _finding_to_llm,
-    _retrieve_passages,
-    _skeleton_codes,
-)
-from decidr.assess_claim.types import ClaimAssessment
 from decidr.backbone.assessment import assess_on_backbone, load_skeleton
 from decidr.claim_interpreter import Provider, ProviderError
 from decidr.claims.combiner import combine
@@ -19,6 +12,13 @@ from decidr.graph import CONFIG_PATH
 from decidr.graph.config import GraphCredibilityConfig
 from decidr.graph.graph import OrganisationalGraph
 from decidr.graph.models import FactAssessment
+from decidr.pipeline.retrieval import (
+    _build_index,
+    _finding_to_llm,
+    _retrieve_passages,
+    _skeleton_codes,
+)
+from decidr.pipeline.types import ClaimAssessment
 from decidr.reading.fast_reader import evaluate_evidence_fast
 from decidr.reading.finding_shim import (
     DEFAULT_AS_OF,

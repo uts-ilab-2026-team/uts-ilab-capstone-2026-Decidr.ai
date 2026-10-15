@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from decidr.assess_claim.confidence import _reconcile_confidence
 from decidr.graph.models import FactAssessment
+from decidr.pipeline.confidence import _reconcile_confidence
 from decidr.reading.finding_shim import _strip_release
 
 if TYPE_CHECKING:
-    from decidr.assess_claim.types import ClaimAssessment
+    from decidr.pipeline.types import ClaimAssessment
 
 
 def _score(value: float | None) -> float | None:

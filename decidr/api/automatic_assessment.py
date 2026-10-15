@@ -1,6 +1,6 @@
 """Claim runner + save: POST /api/assessments/automatic runs the graph engine and saves it.
 
-The claim check now runs the single-path graph engine (``decidr.assess_claim`` via
+The claim check now runs the single-path graph engine (``decidr.pipeline`` via
 ``graph_assessment.build_graph_bundle``). The former general/bounded scorers are retired. The
 saved bundle keeps the history envelope (``response``/``request``/``provenance``) so the history
 read endpoints (list/snapshot/export) keep working.

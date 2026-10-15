@@ -9,7 +9,7 @@ confidence-in-evidence for the STATED outcome, never a probability the claim is 
 
 from types import SimpleNamespace
 
-from decidr.assess_claim import (
+from decidr.pipeline import (
     _confidence_band,
     _facet_confidence,
     _reconcile_confidence,
