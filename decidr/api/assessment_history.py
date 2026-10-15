@@ -75,13 +75,16 @@ def implementation_manifest() -> dict:
         "decidr/claim_combiner.py",
         "decidr/claim_split.py",
         "decidr/fast_reader.py",
-        "decidr/claim_interpreter.py",
         "decidr/claim_spans.py",
         "decidr/retrieval_models.py",
         "decidr/ingestion.py",
         "decidr/hybrid.py",
         "decidr/retrieval_store.py",
     ]
+    names.extend(
+        str(p.relative_to(root))
+        for p in sorted((root / "decidr" / "claim_interpreter").glob("*.py"))
+    )
     names.extend(str(p.relative_to(root)) for p in sorted((root / "framework").glob("*.py")))
     hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names}
     return {

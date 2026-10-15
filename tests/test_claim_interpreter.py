@@ -350,7 +350,7 @@ def test_explicit_cloud_model_is_rejected():
 def mocked_http(monkeypatch, handler):
     real_client = httpx.Client
     monkeypatch.setattr(
-        "decidr.claim_interpreter.httpx.Client",
+        "decidr.claim_interpreter.providers.httpx.Client",
         lambda **kwargs: real_client(transport=httpx.MockTransport(handler), **kwargs),
     )
 
