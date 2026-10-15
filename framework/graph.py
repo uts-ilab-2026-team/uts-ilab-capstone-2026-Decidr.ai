@@ -162,7 +162,7 @@ class OrganisationalGraph:
 
     def fact_nodes(self) -> list[GraphNode]:
         return sorted(
-            (node for node in self.nodes.values() if node.kind == "fact"),
+            (self.nodes[nid] for nid, kind in self.graph.nodes(data="kind") if kind == "fact"),
             key=lambda item: item.node_id,
         )
 
@@ -173,11 +173,13 @@ class OrganisationalGraph:
         return node
 
     def attestations(self, fact_id: str) -> list[GraphEdge]:
+        if fact_id not in self.graph:
+            return []
         return sorted(
             (
-                edge
-                for edge in self.edges.values()
-                if edge.target == fact_id and edge.relationship in {"FORMAL", "OBSERVED"}
+                self.edges[key]
+                for _, _, key, rel in self.graph.in_edges(fact_id, keys=True, data="relationship")
+                if rel in {"FORMAL", "OBSERVED"}
             ),
             key=lambda item: item.edge_id,
         )
@@ -253,9 +255,9 @@ class OrganisationalGraph:
             return 0.5, "The named actor could not be resolved to a Person node."
         active = person.attributes.get("status") == "active"
         held_roles = {
-            item.target
-            for item in self.edges.values()
-            if item.source == actor_id and item.relationship == "HOLDS"
+            target
+            for _, target, rel in self.graph.out_edges(actor_id, data="relationship")
+            if rel == "HOLDS"
         }
         if not active:
             return 0.5, f"{person.label} is not marked active."

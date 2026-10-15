@@ -102,7 +102,9 @@ class ClaimAssessment:
 def _skeleton_codes(skeleton: OrganisationalGraph) -> set[str]:
     """The document codes that have a node in the backbone (the only scoreable sources)."""
     return {
-        node_id.split(":", 1)[1] for node_id in skeleton.nodes if node_id.startswith("document:")
+        nid.split(":", 1)[1]
+        for nid, kind in skeleton.graph.nodes(data="kind")
+        if kind == "document"
     }
 
 
@@ -147,13 +149,13 @@ def _match_processes(
 ) -> list[tuple[str, str]]:
     """Pick the process node(s) whose label best overlaps the claim. Empty if nothing matches."""
     scored: list[tuple[int, str, str]] = []
-    for node in skeleton.nodes.values():
-        if not node.node_id.startswith("process:"):
+    for nid, data in skeleton.graph.nodes(data=True):
+        if data.get("kind") != "process":
             continue
-        label_tokens = _content_tokens(node.label) - _PROCESS_STOP
+        label_tokens = _content_tokens(data["label"]) - _PROCESS_STOP
         overlap = len(claim_tokens & label_tokens)
         if overlap > 0:
-            scored.append((overlap, node.node_id, node.label))
+            scored.append((overlap, nid, data["label"]))
     if not scored:
         return []
     best = max(score for score, _, _ in scored)
