@@ -75,7 +75,7 @@ def implementation_manifest() -> dict:
         "decidr/fast_reader.py",
         "decidr/claim_spans.py",
         "decidr/corpus/models.py",
-        "decidr/hybrid.py",
+        "decidr/retrieval/hybrid.py",
         "decidr/corpus/store.py",
     ]
     names.extend(

@@ -6,13 +6,13 @@ import sqlite3
 from typing import Protocol
 
 from decidr.corpus.models import Evidence
-from decidr.retrieval import (
+from decidr.retrieval.lexical import (
     RecordReference,
     find_record_references,
     lexical_search_text,
     record_identifiers,
 )
-from decidr.semantic import Embedder, semantic_search_text
+from decidr.retrieval.semantic import Embedder, semantic_search_text
 
 
 class RankedResult(Protocol):

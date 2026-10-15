@@ -10,7 +10,7 @@ if none is available nothing is written and assessments fall back to lexical-onl
 from __future__ import annotations
 
 from decidr.finding_shim import load_corpus_snapshot
-from decidr.semantic import get_embedder, index_evidence
+from decidr.retrieval.semantic import get_embedder, index_evidence
 
 
 def main() -> None:

@@ -66,7 +66,7 @@ def _build_index(
             connection, source.source_id, snapshot.evidence_by_source.get(source.source_id, [])
         )
     # Load any pre-indexed embeddings so retrieval reuses them instead of re-embedding per claim.
-    from decidr.semantic import preload_cached_vectors
+    from decidr.retrieval.semantic import preload_cached_vectors
 
     preload_cached_vectors(connection)
     return connection
@@ -212,8 +212,8 @@ def _retrieve_passages(
     only), or ``"hybrid"`` (both lanes). Graph-guidance only ever ADDS governing docs; it never
     restricts the search, so evidence with no process edge (CRM, logs, interviews) stays reachable.
     """
-    from decidr.hybrid import search_corpus
-    from decidr.semantic import get_embedder
+    from decidr.retrieval.hybrid import search_corpus
+    from decidr.retrieval.semantic import get_embedder
 
     facet_text = " ".join(component.get("text", "") for component in split.get("components", []))
     claim_tokens = _content_tokens(f"{claim} {facet_text}")

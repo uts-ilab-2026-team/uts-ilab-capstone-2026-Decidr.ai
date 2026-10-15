@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from decidr.api import auth
 from decidr.claim_scope import scope_context
 from decidr.corpus.models import Evidence, Source
-from decidr.hybrid import search_corpus
+from decidr.retrieval.hybrid import search_corpus
 
 router = APIRouter(
     prefix="/api/corpus",
