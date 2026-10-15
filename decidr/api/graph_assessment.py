@@ -20,9 +20,9 @@ from decidr.api import auth
 from decidr.assess_claim import assess_claim, to_payload
 from decidr.backbone_assessment import load_skeleton
 from decidr.claim_interpreter import ProviderError, get_provider
-from decidr.finding_shim import load_corpus_snapshot
 from decidr.graph import CONFIG_PATH
 from decidr.graph.config import GraphCredibilityConfig
+from decidr.reading.finding_shim import load_corpus_snapshot
 
 router = APIRouter(
     prefix="/api/corpus",

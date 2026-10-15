@@ -7,7 +7,7 @@ done by ``decidr.backbone_assessment`` (fact + FORMAL/OBSERVED overlay on the re
 ``evaluate_fact``); this module only supplies the per-edge fields.
 
 Run the bundled demo (one recorded llama fixture, no Ollama needed):
-    uv run python -m decidr.finding_shim
+    uv run python -m decidr.reading.finding_shim
 """
 
 from __future__ import annotations

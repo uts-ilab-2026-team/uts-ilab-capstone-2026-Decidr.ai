@@ -15,18 +15,18 @@ from decidr.backbone_assessment import assess_on_backbone, load_skeleton
 from decidr.claim_combiner import combine
 from decidr.claim_interpreter import Provider, ProviderError
 from decidr.claim_split import split_claim
-from decidr.fast_reader import evaluate_evidence_fast
-from decidr.finding_shim import (
+from decidr.graph import CONFIG_PATH
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import FactAssessment
+from decidr.reading.fast_reader import evaluate_evidence_fast
+from decidr.reading.finding_shim import (
     DEFAULT_AS_OF,
     CorpusSnapshot,
     LlmFinding,
     _strip_release,
     load_corpus_snapshot,
 )
-from decidr.graph import CONFIG_PATH
-from decidr.graph.config import GraphCredibilityConfig
-from decidr.graph.graph import OrganisationalGraph
-from decidr.graph.models import FactAssessment
 
 
 def assess_claim(

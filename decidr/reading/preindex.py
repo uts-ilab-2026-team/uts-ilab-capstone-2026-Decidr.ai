@@ -4,12 +4,12 @@ Run once after building or updating the corpus so each claim check reuses the st
 instead of re-embedding every passage. Requires a local Ollama embedding model to be running;
 if none is available nothing is written and assessments fall back to lexical-only retrieval.
 
-    uv run python -m decidr.preindex
+    uv run python -m decidr.reading.preindex
 """
 
 from __future__ import annotations
 
-from decidr.finding_shim import load_corpus_snapshot
+from decidr.reading.finding_shim import load_corpus_snapshot
 from decidr.retrieval.semantic import get_embedder, index_evidence
 
 

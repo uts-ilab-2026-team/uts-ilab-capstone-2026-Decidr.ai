@@ -16,7 +16,7 @@ Result: ~1 LLM call for the read (plus ~1 for interpret_claim) = ~2 per claim, s
 
 Demo (REQUIRES a local Ollama model running; counts the LLM calls to prove it is batched):
     DECIDR_ASSESSMENT_PROVIDER=ollama DECIDR_ASSESSMENT_MODEL=llama3.1:8b \
-        uv run python -m decidr.fast_reader
+        uv run python -m decidr.reading.fast_reader
 """
 
 from __future__ import annotations
@@ -225,7 +225,7 @@ class _CountingProvider:
 
 def main() -> None:
     from decidr.claim_interpreter import get_provider, interpret_claim
-    from decidr.finding_shim import load_corpus_snapshot
+    from decidr.reading.finding_shim import load_corpus_snapshot
 
     claim = "Discounts above 15% require Head of Finance approval before the deal is closed."
     as_of = DEFAULT_AS_OF

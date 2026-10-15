@@ -42,7 +42,7 @@ Both are served by the same local Ollama server (`http://127.0.0.1:11434`). Afte
 place, pre-index its embeddings once so each claim reuses the stored vectors instead of
 re-embedding every passage:
 
-    uv run python -m decidr.preindex      # writes data/app/embedding_cache.sqlite
+    uv run python -m decidr.reading.preindex      # writes data/app/embedding_cache.sqlite
 
 ## Running the app
 

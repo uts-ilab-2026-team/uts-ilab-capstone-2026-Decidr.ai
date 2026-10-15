@@ -8,7 +8,7 @@ from decidr.assess_claim.assess import assess_claim
 from decidr.assess_claim.confidence import _reconcile_confidence
 from decidr.assess_claim.payload import to_payload
 from decidr.claim_interpreter import ProviderError
-from decidr.finding_shim import DEFAULT_AS_OF, _strip_release
+from decidr.reading.finding_shim import DEFAULT_AS_OF, _strip_release
 
 if TYPE_CHECKING:
     from decidr.assess_claim.types import ClaimAssessment

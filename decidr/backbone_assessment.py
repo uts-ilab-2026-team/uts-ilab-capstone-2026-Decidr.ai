@@ -21,7 +21,12 @@ from datetime import date
 
 from decidr.backbone_graph import OUTPUT_PATH as BACKBONE_PATH
 from decidr.backbone_graph import _slug
-from decidr.finding_shim import (
+from decidr.graph import CONFIG_PATH
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.credibility import GraphCredibilityFramework
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import FactAssessment, GraphEdge, GraphNode
+from decidr.reading.finding_shim import (
     DEFAULT_AS_OF,
     CorpusSnapshot,
     LlmFinding,
@@ -29,11 +34,6 @@ from decidr.finding_shim import (
     _map_quality,
     load_corpus_snapshot,
 )
-from decidr.graph import CONFIG_PATH
-from decidr.graph.config import GraphCredibilityConfig
-from decidr.graph.credibility import GraphCredibilityFramework
-from decidr.graph.graph import OrganisationalGraph
-from decidr.graph.models import FactAssessment, GraphEdge, GraphNode
 
 _AGREES = {"support": True, "contradict": False}  # else -> None (qualify/context)
 
@@ -142,7 +142,7 @@ def main() -> None:
         / "C01-01--approval_requirement"
         / "result.json"
     )
-    from decidr.finding_shim import finding_from_result_json
+    from decidr.reading.finding_shim import finding_from_result_json
 
     base = finding_from_result_json(fixture)
 

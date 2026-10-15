@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from decidr.assess_claim.confidence import _reconcile_confidence
-from decidr.finding_shim import _strip_release
 from decidr.graph.models import FactAssessment
+from decidr.reading.finding_shim import _strip_release
 
 if TYPE_CHECKING:
     from decidr.assess_claim.types import ClaimAssessment

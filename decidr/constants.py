@@ -70,6 +70,6 @@ ASSESSMENT_SAMPLING = {"temperature": 0, "num_ctx": 32768, "num_predict": 8192}
 # server or model is unavailable the deterministic lexical baseline is used instead.
 SEMANTIC_MODEL = "all-minilm"
 
-# Persistent embedding cache, built once at pre-index time (``python -m decidr.preindex``)
+# Persistent embedding cache, built once at pre-index time (``python -m decidr.reading.preindex``)
 # and read by every assessment so passages are embedded once rather than per claim.
 EMBEDDING_CACHE_PATH = APP_DIR / "embedding_cache.sqlite"

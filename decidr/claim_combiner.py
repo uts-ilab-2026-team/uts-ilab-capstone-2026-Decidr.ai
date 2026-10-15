@@ -121,9 +121,9 @@ def main() -> None:
     from pathlib import Path
 
     from decidr.backbone_assessment import assess_on_backbone, load_skeleton
-    from decidr.finding_shim import finding_from_result_json, load_corpus_snapshot
     from decidr.graph import CONFIG_PATH
     from decidr.graph.config import GraphCredibilityConfig
+    from decidr.reading.finding_shim import finding_from_result_json, load_corpus_snapshot
 
     config = GraphCredibilityConfig.load(CONFIG_PATH)
     snapshot = load_corpus_snapshot()
