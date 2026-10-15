@@ -11,7 +11,7 @@ from decidr.assess_claim.retrieval import (
     _skeleton_codes,
 )
 from decidr.assess_claim.types import ClaimAssessment
-from decidr.backbone_assessment import assess_on_backbone, load_skeleton
+from decidr.backbone.assessment import assess_on_backbone, load_skeleton
 from decidr.claim_interpreter import Provider, ProviderError
 from decidr.claims.combiner import combine
 from decidr.claims.split import split_claim

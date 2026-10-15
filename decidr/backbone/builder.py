@@ -6,13 +6,13 @@ from collections import defaultdict
 import json
 from pathlib import Path
 
-from decidr.backbone_graph.common import _GraphBuilder
-from decidr.backbone_graph.roster import (
+from decidr.backbone.common import _GraphBuilder
+from decidr.backbone.roster import (
     _add_processes,
     _add_role_descriptions,
     _add_roster,
 )
-from decidr.backbone_graph.structure import (
+from decidr.backbone.structure import (
     _add_documents,
     _add_governs,
     _add_owned_by,

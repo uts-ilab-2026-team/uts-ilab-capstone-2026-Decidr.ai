@@ -120,7 +120,7 @@ def main() -> None:
     from dataclasses import replace
     from pathlib import Path
 
-    from decidr.backbone_assessment import assess_on_backbone, load_skeleton
+    from decidr.backbone.assessment import assess_on_backbone, load_skeleton
     from decidr.graph import CONFIG_PATH
     from decidr.graph.config import GraphCredibilityConfig
     from decidr.reading.finding_shim import finding_from_result_json, load_corpus_snapshot

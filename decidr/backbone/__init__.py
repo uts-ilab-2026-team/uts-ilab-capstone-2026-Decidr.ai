@@ -19,14 +19,14 @@ Decision rights / "who approves what" are deliberately NOT encoded here — they
 are per-claim evidence (the FORMAL/OBSERVED overlay), not structural identity.
 """
 
-from decidr.backbone_graph.builder import OUTPUT_PATH, build_corpus_graph, dump_json
-from decidr.backbone_graph.common import (
+from decidr.backbone.builder import OUTPUT_PATH, build_corpus_graph, dump_json
+from decidr.backbone.common import (
     SOURCE_CLASS_BY_TYPE,
     _approval_key,
     _GraphBuilder,
     _slug,
 )
-from decidr.backbone_graph.structure import _add_owned_by
+from decidr.backbone.structure import _add_owned_by
 
 __all__ = [
     "OUTPUT_PATH",

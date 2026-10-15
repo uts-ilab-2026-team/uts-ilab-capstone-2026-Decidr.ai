@@ -11,7 +11,7 @@ The verbatim-quote trust rail is preserved: ``_find_passage`` rejects any findin
 whose quotation is not an exact substring of a stored passage.
 
 Demo (no Ollama; uses a recorded fixture + a synthetic authority probe):
-    uv run python -m decidr.backbone_assessment
+    uv run python -m decidr.backbone.assessment
 """
 
 from __future__ import annotations
@@ -19,8 +19,8 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import date
 
-from decidr.backbone_graph import OUTPUT_PATH as BACKBONE_PATH
-from decidr.backbone_graph import _slug
+from decidr.backbone import OUTPUT_PATH as BACKBONE_PATH
+from decidr.backbone import _slug
 from decidr.graph import CONFIG_PATH
 from decidr.graph.config import GraphCredibilityConfig
 from decidr.graph.credibility import GraphCredibilityFramework
@@ -39,7 +39,7 @@ _AGREES = {"support": True, "contradict": False}  # else -> None (qualify/contex
 
 
 def load_skeleton() -> OrganisationalGraph:
-    """Load the persistent backbone graph built by ``decidr.backbone_graph``."""
+    """Load the persistent backbone graph built by ``decidr.backbone``."""
     return OrganisationalGraph.load(BACKBONE_PATH)
 
 

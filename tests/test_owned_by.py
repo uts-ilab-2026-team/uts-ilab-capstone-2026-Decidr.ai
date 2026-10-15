@@ -7,7 +7,7 @@ edge. These unit-test _add_owned_by directly with a hand-built builder.
 
 from types import SimpleNamespace
 
-from decidr.backbone_graph import _GraphBuilder, _add_owned_by
+from decidr.backbone import _GraphBuilder, _add_owned_by
 
 
 def _builder() -> _GraphBuilder:

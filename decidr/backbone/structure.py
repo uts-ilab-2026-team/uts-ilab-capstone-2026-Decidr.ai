@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from decidr.backbone_graph.common import (
+from decidr.backbone.common import (
     PROCESS_BY_DOCUMENT_CODE,
     SOURCE_CLASS_BY_TYPE,
     _approval_key,

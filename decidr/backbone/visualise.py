@@ -4,10 +4,10 @@ Drag nodes, zoom, and hover to read a node's kind + attributes. The HTML inlines
 its JS, so it works offline (good for the demo). The full graph is busy, so pick
 a *view*:
 
-    uv run python -m decidr.visualise_graph org        # people side: person/role/function
-    uv run python -m decidr.visualise_graph process     # process side: role/process/document
-    uv run python -m decidr.visualise_graph discount     # just the P1 discount scenario
-    uv run python -m decidr.visualise_graph all          # everything
+    uv run python -m decidr.backbone.visualise org        # people side: person/role/function
+    uv run python -m decidr.backbone.visualise process     # process side: role/process/document
+    uv run python -m decidr.backbone.visualise discount     # just the P1 discount scenario
+    uv run python -m decidr.backbone.visualise all          # everything
 
 Writes ``graph_views/backbone_<view>.html`` — open it in any browser.
 """

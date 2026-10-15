@@ -3,7 +3,7 @@
 The shim does NO judging. It provides the pure field table (`_map_quality`) that maps an LLM
 finding's stance/mode/source_type onto the engine's attestation scalars, and the verbatim-quote
 resolver (`_find_passage`) that binds a quotation to its stored passage. The scoring itself is
-done by ``decidr.backbone_assessment`` (fact + FORMAL/OBSERVED overlay on the real skeleton →
+done by ``decidr.backbone.assessment`` (fact + FORMAL/OBSERVED overlay on the real skeleton →
 ``evaluate_fact``); this module only supplies the per-edge fields.
 
 Run the bundled demo (one recorded llama fixture, no Ollama needed):
@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
-from decidr.backbone_graph import SOURCE_CLASS_BY_TYPE, _approval_key
+from decidr.backbone import SOURCE_CLASS_BY_TYPE, _approval_key
 from decidr.constants import (
     DEFAULT_AS_OF,  # noqa: F401  (re-exported for existing importers)
     RAW_DATA_DIR,
@@ -188,7 +188,7 @@ def main() -> None:
         f"{quality['directness']}/{quality['specificity']}/{quality['completeness']}"
     )
     print(f"  matched passage   = {passage.evidence_id} ({passage.source_id}) [{start}:{end}]")
-    print("\n(scoring: see `python -m decidr.backbone_assessment` — fact overlay on the skeleton)")
+    print("\n(scoring: see `python -m decidr.backbone.assessment` — fact overlay on the skeleton)")
 
 
 if __name__ == "__main__":

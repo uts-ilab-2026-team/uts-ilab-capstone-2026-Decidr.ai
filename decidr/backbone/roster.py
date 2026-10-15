@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from decidr.backbone_graph.common import (
+from decidr.backbone.common import (
     LEFT_COMPANY_PATTERN,
     PROCESS_CODE_PATTERN,
     _GraphBuilder,

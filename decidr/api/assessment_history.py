@@ -68,7 +68,6 @@ def implementation_manifest() -> dict:
         "decidr/api/graph_assessment.py",
         "decidr/api/assessment_history.py",
         "decidr/assessment_history.py",
-        "decidr/backbone_assessment.py",
         "decidr/reading/finding_shim.py",
         "decidr/claims/combiner.py",
         "decidr/claims/split.py",
@@ -90,7 +89,7 @@ def implementation_manifest() -> dict:
         for p in sorted((root / "decidr" / "corpus" / "ingest").glob("*.py"))
     )
     names.extend(
-        str(p.relative_to(root)) for p in sorted((root / "decidr" / "backbone_graph").glob("*.py"))
+        str(p.relative_to(root)) for p in sorted((root / "decidr" / "backbone").glob("*.py"))
     )
     names.extend(
         str(p.relative_to(root)) for p in sorted((root / "decidr" / "graph").glob("*.py"))
