@@ -6,14 +6,13 @@ import sqlite3
 import pytest
 
 from decidr import ingestion
+from decidr.ingestion import pipeline
 
 
 def snapshot(database):
     with closing(sqlite3.connect(database)) as connection:
         return {
-            table: connection.execute(
-                f"SELECT * FROM {table} ORDER BY 1"
-            ).fetchall()
+            table: connection.execute(f"SELECT * FROM {table} ORDER BY 1").fetchall()
             for table in ("sources", "evidence", "evidence_fts", "embedding_cache")
         }
 
@@ -90,14 +89,14 @@ def test_extraction_failure_preserves_entire_index(corpus, monkeypatch):
     root, first, second, database = corpus
     before = snapshot(database)
     first.write_text("# POL-01\n\nreplacementword\n", encoding="utf-8")
-    original = ingestion.extract_markdown
+    original = pipeline.extract_markdown
 
     def fail_second(source, path):
         if path == second:
             raise ValueError("Simulated extraction failure")
         return original(source, path)
 
-    monkeypatch.setattr(ingestion, "extract_markdown", fail_second)
+    monkeypatch.setattr(pipeline, "extract_markdown", fail_second)
 
     with pytest.raises(ValueError, match="Simulated extraction failure"):
         ingestion.ingest({"phase2": root}, database_path=database)
@@ -109,7 +108,7 @@ def test_storage_failure_rolls_back_all_source_updates(corpus, monkeypatch):
     root, first, _, database = corpus
     before = snapshot(database)
     first.write_text("# POL-01\n\nreplacementword\n", encoding="utf-8")
-    original = ingestion.replace_source_evidence
+    original = pipeline.replace_source_evidence
     calls = 0
 
     def fail_second(connection, source_id, evidence):
@@ -119,7 +118,7 @@ def test_storage_failure_rolls_back_all_source_updates(corpus, monkeypatch):
             raise sqlite3.IntegrityError("Simulated storage failure")
         return original(connection, source_id, evidence)
 
-    monkeypatch.setattr(ingestion, "replace_source_evidence", fail_second)
+    monkeypatch.setattr(pipeline, "replace_source_evidence", fail_second)
 
     with pytest.raises(sqlite3.IntegrityError, match="Simulated storage failure"):
         ingestion.ingest({"phase2": root}, database_path=database)
@@ -137,10 +136,7 @@ def test_markdown_separators_are_not_evidence(corpus, separator):
     )
 
     result = ingestion.ingest({"phase2": root})
-    passages = [
-        item.text for item in result.evidence
-        if item.source_id == "phase2:POL-01"
-    ]
+    passages = [item.text for item in result.evidence if item.source_id == "phase2:POL-01"]
 
     assert passages == ["First requirement.", "Second requirement."]
 
@@ -158,9 +154,6 @@ def test_separator_filter_preserves_content_and_fenced_code(corpus):
     )
 
     result = ingestion.ingest({"phase2": root})
-    passages = [
-        item.text for item in result.evidence
-        if item.source_id == "phase2:POL-01"
-    ]
+    passages = [item.text for item in result.evidence if item.source_id == "phase2:POL-01"]
 
     assert passages == blocks
