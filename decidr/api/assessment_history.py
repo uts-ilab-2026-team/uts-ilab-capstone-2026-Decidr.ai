@@ -68,7 +68,6 @@ def implementation_manifest() -> dict:
         "decidr/api/graph_assessment.py",
         "decidr/api/assessment_history.py",
         "decidr/assessment_history.py",
-        "decidr/assess_claim.py",
         "decidr/backbone_graph.py",
         "decidr/backbone_assessment.py",
         "decidr/finding_shim.py",
@@ -84,6 +83,9 @@ def implementation_manifest() -> dict:
     names.extend(
         str(p.relative_to(root))
         for p in sorted((root / "decidr" / "claim_interpreter").glob("*.py"))
+    )
+    names.extend(
+        str(p.relative_to(root)) for p in sorted((root / "decidr" / "assess_claim").glob("*.py"))
     )
     names.extend(str(p.relative_to(root)) for p in sorted((root / "framework").glob("*.py")))
     hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names}
