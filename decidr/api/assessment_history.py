@@ -17,8 +17,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import Field
 
-from decidr import assessment_history as history
 from decidr.api import auth
+from decidr.infra import history
 
 router = APIRouter(prefix="/api/assessments")
 Owner = Annotated[dict, Depends(auth.current_user)]
@@ -67,7 +67,7 @@ def implementation_manifest() -> dict:
         "decidr/api/automatic_assessment.py",
         "decidr/api/graph_assessment.py",
         "decidr/api/assessment_history.py",
-        "decidr/assessment_history.py",
+        "decidr/infra/history.py",
         "decidr/reading/finding_shim.py",
         "decidr/claims/combiner.py",
         "decidr/claims/split.py",

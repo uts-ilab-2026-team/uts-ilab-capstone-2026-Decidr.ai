@@ -19,7 +19,7 @@ import re
 # --------------------------------------------------------------------------- #
 
 # Repository root (``decidr/`` sits one level below it).
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # The read-only corpus and the built organisational graph snapshot.
 DATA_DIR = REPO_ROOT / "data"

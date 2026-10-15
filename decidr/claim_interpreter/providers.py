@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from decidr.constants import (
+from decidr.infra.constants import (
     ASSESSMENT_MODEL,
     ASSESSMENT_PROVIDER,
     ASSESSMENT_SAMPLING,
@@ -300,7 +300,7 @@ def get_provider() -> Provider:
     if ASSESSMENT_PROVIDER != "ollama" or not ASSESSMENT_MODEL.strip():
         raise ProviderError(
             "provider_unavailable",
-            "Set ASSESSMENT_PROVIDER='ollama' and an installed ASSESSMENT_MODEL in decidr.constants.",
+            "Set ASSESSMENT_PROVIDER='ollama' and an installed ASSESSMENT_MODEL in decidr.infra.constants.",
         )
     if not 1 <= ASSESSMENT_TIMEOUT <= 900:
         raise ProviderError(

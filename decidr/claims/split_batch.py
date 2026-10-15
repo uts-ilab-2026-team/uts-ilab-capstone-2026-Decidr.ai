@@ -16,7 +16,7 @@ from pathlib import Path
 
 from decidr.claim_interpreter import ProviderError, get_provider
 from decidr.claims.split import split_claim
-from decidr.constants import DEFAULT_AS_OF, REPO_ROOT
+from decidr.infra.constants import DEFAULT_AS_OF, REPO_ROOT
 
 AS_OF = DEFAULT_AS_OF
 

@@ -18,15 +18,15 @@ from decidr.backbone.structure import (
     _add_owned_by,
     _add_supersession_and_related,
 )
-from decidr.constants import (
-    CORPUS_GRAPH_PATH as OUTPUT_PATH,  # re-exported for existing importers
-)
-from decidr.constants import (
-    RAW_DATA_DIR,  # ingestion root (corpus lives under data/raw)
-)
 from decidr.corpus.ingest import ingest
 from decidr.graph.graph import OrganisationalGraph
 from decidr.graph.models import GraphEdge
+from decidr.infra.constants import (
+    CORPUS_GRAPH_PATH as OUTPUT_PATH,  # re-exported for existing importers
+)
+from decidr.infra.constants import (
+    RAW_DATA_DIR,  # ingestion root (corpus lives under data/raw)
+)
 
 # --------------------------------------------------------------------------- #
 # Public API                                                                   #

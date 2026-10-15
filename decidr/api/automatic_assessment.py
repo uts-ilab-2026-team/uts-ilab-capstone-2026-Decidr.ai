@@ -10,7 +10,6 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import Field
 
-from decidr import assessment_history as history
 from decidr.api import auth
 from decidr.api.assessment_history import (
     Owner,
@@ -20,6 +19,7 @@ from decidr.api.assessment_history import (
 )
 from decidr.api.graph_assessment import ASSESSMENT_METHOD, build_graph_bundle
 from decidr.api.interpretation import InterpretationProposalRequest
+from decidr.infra import history
 
 router = APIRouter(dependencies=[Depends(auth.current_user)])
 

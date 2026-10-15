@@ -1,16 +1,16 @@
 from dotenv import load_dotenv
 from loguru import logger
 
-from decidr.constants import (
+from decidr.infra.constants import (
     DATA_DIR,
     RAW_DATA_DIR,  # noqa: F401  (re-exported for existing importers)
 )
-from decidr.constants import REPO_ROOT as PROJ_ROOT
+from decidr.infra.constants import REPO_ROOT as PROJ_ROOT
 
 # Load environment variables from .env file if it exists
 load_dotenv()
 
-# Paths (PROJ_ROOT / DATA_DIR / RAW_DATA_DIR are the single-source values from decidr.constants)
+# Paths (PROJ_ROOT / DATA_DIR / RAW_DATA_DIR are the single-source values from decidr.infra.constants)
 logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
 
 PROCESSED_DATA_DIR = DATA_DIR / "processed"

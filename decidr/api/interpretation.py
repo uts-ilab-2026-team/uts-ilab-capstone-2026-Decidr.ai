@@ -10,7 +10,7 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from decidr.assessment_targets import AssessmentTarget
+from decidr.infra.targets import AssessmentTarget
 
 
 class InterpretationProposalRequest(BaseModel):

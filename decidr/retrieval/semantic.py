@@ -12,7 +12,7 @@ from typing import Protocol
 
 import ollama
 
-from decidr.constants import ASSESSMENT_URL, EMBEDDING_CACHE_PATH, SEMANTIC_MODEL
+from decidr.infra.constants import ASSESSMENT_URL, EMBEDDING_CACHE_PATH, SEMANTIC_MODEL
 
 # Standalone persistent-cache schema (no FK to evidence, so it stands alone as a file).
 _CACHE_SCHEMA = """

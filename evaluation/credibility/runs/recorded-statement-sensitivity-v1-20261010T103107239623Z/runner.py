@@ -151,7 +151,7 @@ def main():
     config_bytes = CONFIG_PATH.read_bytes()
     config = GraphCredibilityConfig.load(CONFIG_PATH)
     code_paths = [Path(inspect.getfile(GraphCredibilityFramework)),
-                  Path(inspect.getfile(adapter)), ROOT / 'decidr/assessment_targets.py',
+                  Path(inspect.getfile(adapter)), ROOT / 'decidr/infra/targets.py',
                   Path(__file__).resolve()]
     hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in code_paths}
     results = []

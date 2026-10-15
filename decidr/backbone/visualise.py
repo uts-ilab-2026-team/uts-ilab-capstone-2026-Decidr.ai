@@ -20,9 +20,9 @@ import sys
 import networkx as nx
 from pyvis.network import Network
 
-from decidr.constants import CORPUS_GRAPH_PATH as GRAPH_PATH
-from decidr.constants import REPO_ROOT
 from decidr.graph.graph import OrganisationalGraph
+from decidr.infra.constants import CORPUS_GRAPH_PATH as GRAPH_PATH
+from decidr.infra.constants import REPO_ROOT
 
 OUTPUT_DIR = REPO_ROOT / "graph_views"
 

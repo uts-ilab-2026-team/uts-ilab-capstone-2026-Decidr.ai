@@ -25,7 +25,7 @@ from decidr.claim_interpreter import (
     _validate_claim_numbers,
 )
 from decidr.claims.spans import exact_claim_span
-from decidr.constants import DEFAULT_AS_OF
+from decidr.infra.constants import DEFAULT_AS_OF
 
 # --------------------------------------------------------------------------- #
 # Prompts                                                                      #

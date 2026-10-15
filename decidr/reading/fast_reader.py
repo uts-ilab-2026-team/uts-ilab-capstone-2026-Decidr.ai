@@ -39,7 +39,7 @@ from decidr.claim_interpreter import (
     claim_evidence_exclusion,
 )
 from decidr.claims.event_date import event_date_exclusion
-from decidr.constants import DEFAULT_AS_OF
+from decidr.infra.constants import DEFAULT_AS_OF
 
 
 def _evaluate_evidence_fast_once(

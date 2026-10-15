@@ -1,1 +1,1 @@
-from decidr import config  # noqa: F401
+from decidr.infra import config  # noqa: F401

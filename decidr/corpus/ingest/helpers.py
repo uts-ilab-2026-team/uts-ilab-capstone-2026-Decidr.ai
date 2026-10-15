@@ -9,8 +9,8 @@ from pathlib import Path
 import re
 import subprocess
 
-from decidr.constants import SOURCE_CODE_PATTERN
 from decidr.corpus.models import Evidence, Source
+from decidr.infra.constants import SOURCE_CODE_PATTERN
 
 SUPPORTED_SUFFIXES = {".md", ".csv"}
 TECHNICAL_NAMES = {"README.md"}
