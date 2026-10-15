@@ -12,9 +12,9 @@ from decidr.assess_claim.retrieval import (
 )
 from decidr.assess_claim.types import ClaimAssessment
 from decidr.backbone_assessment import assess_on_backbone, load_skeleton
-from decidr.claim_combiner import combine
 from decidr.claim_interpreter import Provider, ProviderError
-from decidr.claim_split import split_claim
+from decidr.claims.combiner import combine
+from decidr.claims.split import split_claim
 from decidr.graph import CONFIG_PATH
 from decidr.graph.config import GraphCredibilityConfig
 from decidr.graph.graph import OrganisationalGraph

@@ -5,7 +5,7 @@ Loads unique ``claim_text`` values from the development input set, runs ``split_
 vs degraded (flagged undecisive) vs errored.
 
     DECIDR_ASSESSMENT_PROVIDER=ollama DECIDR_ASSESSMENT_MODEL=llama3.1:8b \
-        uv run python -m decidr.claim_split_batch
+        uv run python -m decidr.claims.split_batch
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import json
 from pathlib import Path
 
 from decidr.claim_interpreter import ProviderError, get_provider
-from decidr.claim_split import split_claim
+from decidr.claims.split import split_claim
 from decidr.constants import DEFAULT_AS_OF, REPO_ROOT
 
 AS_OF = DEFAULT_AS_OF

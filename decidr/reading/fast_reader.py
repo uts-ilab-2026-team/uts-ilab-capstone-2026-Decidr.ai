@@ -38,8 +38,8 @@ from decidr.claim_interpreter import (
     _validated_retry,
     claim_evidence_exclusion,
 )
+from decidr.claims.event_date import event_date_exclusion
 from decidr.constants import DEFAULT_AS_OF
-from decidr.event_date_check import event_date_exclusion
 
 
 def _evaluate_evidence_fast_once(

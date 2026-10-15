@@ -2,7 +2,7 @@
 
 import pytest
 
-from decidr.claim_spans import exact_claim_span, exact_evidence_span
+from decidr.claims.spans import exact_claim_span, exact_evidence_span
 
 
 @pytest.mark.parametrize(

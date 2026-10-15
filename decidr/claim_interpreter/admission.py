@@ -11,7 +11,7 @@ from decidr.claim_interpreter.text_numeric import (
     _quantity_mentions,
     _scalar_observations,
 )
-from decidr.claim_spans import exact_evidence_span
+from decidr.claims.spans import exact_evidence_span
 
 
 def _threshold_support_exclusion(component: dict, quotation: str) -> str | None:

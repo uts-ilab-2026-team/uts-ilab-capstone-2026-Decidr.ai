@@ -23,7 +23,7 @@ from decidr.claim_interpreter.schemas import (
 )
 from decidr.claim_interpreter.text_numeric import _normative_threshold_claim
 from decidr.claim_interpreter.validation import _validate_claim_numbers
-from decidr.claim_spans import exact_claim_span
+from decidr.claims.spans import exact_claim_span
 
 
 def _interpret_claim_once(

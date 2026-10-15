@@ -12,7 +12,7 @@ from decidr.claim_interpreter.text_numeric import (
     _numeric_unit,
     _scalar_observations,
 )
-from decidr.claim_spans import exact_claim_span
+from decidr.claims.spans import exact_claim_span
 
 
 def _validate_claim_numbers(claim: str, output: dict) -> None:

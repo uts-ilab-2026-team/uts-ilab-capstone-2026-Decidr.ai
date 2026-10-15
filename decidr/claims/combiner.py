@@ -17,7 +17,7 @@ Confidence = the LOWEST facet confidence (a claim is only as sure as its weakest
 Missing/insufficient evidence yields Insufficient, never Contradicted (rule GCF7).
 
 Demo (no Ollama):
-    uv run python -m decidr.claim_combiner
+    uv run python -m decidr.claims.combiner
 """
 
 from __future__ import annotations

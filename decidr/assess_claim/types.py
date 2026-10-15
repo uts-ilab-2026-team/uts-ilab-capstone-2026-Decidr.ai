@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date
 
-from decidr.claim_combiner import ClaimVerdict
+from decidr.claims.combiner import ClaimVerdict
 from decidr.graph.models import FactAssessment
 
 

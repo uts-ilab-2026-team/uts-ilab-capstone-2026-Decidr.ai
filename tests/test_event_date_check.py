@@ -7,7 +7,7 @@ record's date contradicts the claim's asserted date.
 
 import json
 
-from decidr.event_date_check import event_date_exclusion
+from decidr.claims.event_date import event_date_exclusion
 
 # A trimmed real-shape CRM row: the deal actually closed 2025-07-05; 2025-07-02 was the Slack
 # approval date (hidden inside a non-date-valued field, so it must NOT be picked up as a date).

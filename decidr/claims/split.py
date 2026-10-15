@@ -8,7 +8,7 @@ tradeoff), so one label disagreement can never abort a whole claim.
 `claim_interpreter.py` is left untouched; the schema builders, verifier model, number check
 and span check are imported from it / `claim_spans`.
 
-    uv run python -m decidr.claim_split            # live split of a sample claim (needs Ollama)
+    uv run python -m decidr.claims.split            # live split of a sample claim (needs Ollama)
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from decidr.claim_interpreter import (
     _interpretation_model,
     _validate_claim_numbers,
 )
-from decidr.claim_spans import exact_claim_span
+from decidr.claims.spans import exact_claim_span
 from decidr.constants import DEFAULT_AS_OF
 
 # --------------------------------------------------------------------------- #
