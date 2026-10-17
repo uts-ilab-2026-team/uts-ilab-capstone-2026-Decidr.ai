@@ -5,8 +5,8 @@ import sqlite3
 
 import pytest
 
-from decidr.retrieval_models import Evidence, Source
-from decidr.retrieval_store import (
+from decidr.corpus.models import Evidence, Source
+from decidr.corpus.store import (
     connect,
     initialise_database,
     replace_source_evidence,

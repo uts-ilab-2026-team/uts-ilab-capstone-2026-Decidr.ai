@@ -10,9 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from decidr.api import auth
-from decidr.claim_scope import scope_context
-from decidr.hybrid import search_corpus
-from decidr.retrieval_models import Evidence, Source
+from decidr.claims.scope import scope_context
+from decidr.corpus.models import Evidence, Source
+from decidr.retrieval.hybrid import search_corpus
 
 router = APIRouter(
     prefix="/api/corpus",

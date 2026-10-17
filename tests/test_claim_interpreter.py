@@ -317,9 +317,9 @@ def test_genuine_unspecified_currency_and_scope_are_preserved_as_ambiguity():
 
 
 def test_provider_is_configured_from_constants_not_env(monkeypatch):
-    # The provider is pinned in decidr.constants, not the environment: a "paid-provider"
+    # The provider is pinned in decidr.infra.constants, not the environment: a "paid-provider"
     # env var cannot silently redirect it, and nothing remote is ever reachable.
-    from decidr.constants import ASSESSMENT_MODEL, ASSESSMENT_URL
+    from decidr.infra.constants import ASSESSMENT_MODEL, ASSESSMENT_URL
 
     monkeypatch.setenv("DECIDR_ASSESSMENT_PROVIDER", "paid-provider")
     monkeypatch.setenv("DECIDR_ASSESSMENT_MODEL", "remote-model")
@@ -350,7 +350,7 @@ def test_explicit_cloud_model_is_rejected():
 def mocked_http(monkeypatch, handler):
     real_client = httpx.Client
     monkeypatch.setattr(
-        "decidr.claim_interpreter.httpx.Client",
+        "decidr.claim_interpreter.providers.httpx.Client",
         lambda **kwargs: real_client(transport=httpx.MockTransport(handler), **kwargs),
     )
 

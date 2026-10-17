@@ -4,10 +4,10 @@ from dataclasses import replace
 from datetime import date
 import json
 
-from framework import CONFIG_PATH, GraphCredibilityFramework, GraphFactsRegister
-from framework.config import GraphCredibilityConfig
-from framework.graph import OrganisationalGraph
-from framework.models import GraphEdge, GraphNode
+from decidr.graph import CONFIG_PATH, GraphCredibilityFramework, GraphFactsRegister
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import GraphEdge, GraphNode
 import pytest
 
 AS_OF = date(2026, 7, 31)

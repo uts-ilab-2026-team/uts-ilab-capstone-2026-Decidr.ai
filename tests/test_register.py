@@ -6,8 +6,8 @@ import json
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from framework.models import EdgeAssessment, FactAssessment
-from framework.register import GraphFactsRegister
+from decidr.graph.models import EdgeAssessment, FactAssessment
+from decidr.graph.register import GraphFactsRegister
 import pytest
 
 AS_OF = date(2026, 7, 31)
@@ -269,7 +269,7 @@ def test_unknown_fact_preserves_upstream_error(assessment):
 
 def test_register_fields_survive_api_listing_and_exports(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
-    from framework import CONFIG_PATH, GRAPH_PATH, GraphCredibilityFramework
+    from decidr.graph import CONFIG_PATH, GRAPH_PATH, GraphCredibilityFramework
 
     from decidr.api.app import app
 

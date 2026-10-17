@@ -2,8 +2,8 @@
 
 from datetime import date
 
-from decidr.ingestion import build_source
-from decidr.retrieval_models import Source
+from decidr.corpus.ingest import build_source
+from decidr.corpus.models import Source
 
 
 def source_from_header(tmp_path, header):

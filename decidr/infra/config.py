@@ -1,0 +1,26 @@
+from dotenv import load_dotenv
+from loguru import logger
+
+from decidr.infra.constants import (
+    DATA_DIR,
+    RAW_DATA_DIR,  # noqa: F401  (re-exported for existing importers)
+)
+from decidr.infra.constants import REPO_ROOT as PROJ_ROOT
+
+# Load environment variables from .env file if it exists
+load_dotenv()
+
+# Paths (PROJ_ROOT / DATA_DIR / RAW_DATA_DIR are the single-source values from decidr.infra.constants)
+logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
+
+PROCESSED_DATA_DIR = DATA_DIR / "processed"
+
+# If tqdm is installed, configure loguru with tqdm.write
+# https://github.com/Delgan/loguru/issues/135
+try:
+    from tqdm import tqdm
+
+    logger.remove(0)
+    logger.add(lambda msg: tqdm.write(msg, end=""), colorize=True)
+except ModuleNotFoundError:
+    pass

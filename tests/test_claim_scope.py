@@ -2,8 +2,8 @@
 
 import pytest
 
-from decidr.claim_scope import scope_context
-from decidr.retrieval_models import Evidence, Source
+from decidr.claims.scope import scope_context
+from decidr.corpus.models import Evidence, Source
 
 
 def corpus():

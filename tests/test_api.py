@@ -2,7 +2,7 @@ from collections.abc import Iterator
 import json
 
 from fastapi.testclient import TestClient
-from framework import CONFIG_PATH, GRAPH_PATH, GraphCredibilityFramework
+from decidr.graph import CONFIG_PATH, GRAPH_PATH, GraphCredibilityFramework
 import pytest
 
 from decidr.api import app as api_module

@@ -1,6 +1,6 @@
 """Claim runner + save: POST /api/assessments/automatic runs the graph engine and saves it.
 
-The claim check now runs the single-path graph engine (``decidr.assess_claim`` via
+The claim check now runs the single-path graph engine (``decidr.pipeline`` via
 ``graph_assessment.build_graph_bundle``). The former general/bounded scorers are retired. The
 saved bundle keeps the history envelope (``response``/``request``/``provenance``) so the history
 read endpoints (list/snapshot/export) keep working.
@@ -10,7 +10,6 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import Field
 
-from decidr import assessment_history as history
 from decidr.api import auth
 from decidr.api.assessment_history import (
     Owner,
@@ -20,6 +19,7 @@ from decidr.api.assessment_history import (
 )
 from decidr.api.graph_assessment import ASSESSMENT_METHOD, build_graph_bundle
 from decidr.api.interpretation import InterpretationProposalRequest
+from decidr.infra import history
 
 router = APIRouter(dependencies=[Depends(auth.current_user)])
 

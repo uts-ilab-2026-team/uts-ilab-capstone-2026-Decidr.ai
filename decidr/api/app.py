@@ -14,17 +14,17 @@ from typing import Any
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from framework import (
+from pydantic import BaseModel, Field
+
+from decidr.api import auth
+from decidr.graph import (
     CONFIG_PATH,
     GRAPH_PATH,
     GraphCredibilityFramework,
     GraphFactsRegister,
     OrganisationalGraph,
 )
-from framework.errors import GraphValidationError
-from pydantic import BaseModel, Field
-
-from decidr.api import auth
+from decidr.graph.errors import GraphValidationError
 
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 ATTESTATIONS = {"FORMAL", "OBSERVED"}

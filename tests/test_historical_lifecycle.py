@@ -3,10 +3,10 @@
 from datetime import date
 import unittest
 
-from framework import CONFIG_PATH, GraphCredibilityFramework, GraphFactsRegister
-from framework.config import GraphCredibilityConfig
-from framework.graph import OrganisationalGraph
-from framework.models import GraphEdge, GraphNode
+from decidr.graph import CONFIG_PATH, GraphCredibilityFramework, GraphFactsRegister
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import GraphEdge, GraphNode
 
 
 def assess(status="superseded", *, when="2024-06-01", count=1, same_origin=False, **overrides):

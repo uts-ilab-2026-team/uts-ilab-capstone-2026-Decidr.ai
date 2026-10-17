@@ -2,16 +2,16 @@
 
 Covers the three touch-points:
   * ingestion parsing of the header line into Source.related_source_codes,
-  * the directed single-hop traversal (decidr.assess_claim._related_codes), including that the
+  * the directed single-hop traversal (decidr.pipeline._related_codes), including that the
     RELATED-only view ignores GOVERNS out-edges,
   * a realistic assertion against the committed skeleton (POL-01 -> POL-06, the demo path).
 """
 
-from decidr.assess_claim import _related_codes, _related_view
-from decidr.backbone_assessment import load_skeleton
-from decidr.ingestion import _related_source_codes
-from framework.graph import OrganisationalGraph
-from framework.models import GraphEdge, GraphNode
+from decidr.pipeline import _related_codes, _related_view
+from decidr.backbone.assessment import load_skeleton
+from decidr.corpus.ingest import _related_source_codes
+from decidr.graph.graph import OrganisationalGraph
+from decidr.graph.models import GraphEdge, GraphNode
 
 
 # --------------------------------------------------------------------------- #

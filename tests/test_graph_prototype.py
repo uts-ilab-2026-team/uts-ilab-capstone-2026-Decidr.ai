@@ -1,6 +1,6 @@
 from datetime import date
 
-from framework import (
+from decidr.graph import (
     CONFIG_PATH,
     GRAPH_PATH,
     GraphCredibilityFramework,

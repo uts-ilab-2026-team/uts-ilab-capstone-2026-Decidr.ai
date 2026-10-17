@@ -5,9 +5,9 @@ import json
 
 import pytest
 
-from decidr.ingestion import ingest
-from decidr.retrieval import lexical_search_text
-from decidr.retrieval_store import connect
+from decidr.corpus.ingest import ingest
+from decidr.retrieval.lexical import lexical_search_text
+from decidr.corpus.store import connect
 
 
 @pytest.fixture
@@ -111,9 +111,9 @@ class RecordingEmbedder:
 
 
 def test_semantic_cache_reuse_and_source_refresh(corpus_store):
-    from decidr.retrieval_models import Evidence
-    from decidr.retrieval_store import replace_source_evidence
-    from decidr.semantic import semantic_search_text
+    from decidr.corpus.models import Evidence
+    from decidr.corpus.store import replace_source_evidence
+    from decidr.retrieval.semantic import semantic_search_text
 
     embedder = RecordingEmbedder()
     query = "travel"
@@ -150,7 +150,7 @@ def test_semantic_cache_reuse_and_source_refresh(corpus_store):
 
 
 def test_blank_semantic_query_does_not_encode_or_write(corpus_store):
-    from decidr.semantic import semantic_search_text
+    from decidr.retrieval.semantic import semantic_search_text
 
     embedder = RecordingEmbedder()
     before = corpus_store.total_changes
@@ -163,7 +163,7 @@ def test_blank_semantic_query_does_not_encode_or_write(corpus_store):
 def test_fusion_preserves_union_ranks_and_ignores_repeated_ids():
     from types import SimpleNamespace
 
-    from decidr.hybrid import reciprocal_rank_fusion
+    from decidr.retrieval.hybrid import reciprocal_rank_fusion
 
     def item(identifier, rank):
         return SimpleNamespace(
@@ -195,7 +195,7 @@ def test_fusion_preserves_union_ranks_and_ignores_repeated_ids():
     assert [result.evidence_id for result in lexical_only] == ["a", "b"]
 
 def _grouping_passage(identifier, *, source="source:a", section="Topic", row=None, paragraph=None):
-    from decidr.retrieval_models import Evidence
+    from decidr.corpus.models import Evidence
 
     return Evidence(
         evidence_id=identifier,
@@ -224,7 +224,7 @@ def _grouping_result(passage, rank):
 
 
 def test_grouping_preserves_citations_and_ranked_matches():
-    from decidr.hybrid import group_ranked_evidence
+    from decidr.retrieval.hybrid import group_ranked_evidence
 
     first = _grouping_passage("a1")
     second = _grouping_passage("a2")
@@ -257,7 +257,7 @@ def test_grouping_preserves_citations_and_ranked_matches():
 
 
 def test_grouping_keeps_sections_sources_and_csv_records_separate():
-    from decidr.hybrid import group_ranked_evidence
+    from decidr.retrieval.hybrid import group_ranked_evidence
 
     passages = [
         _grouping_passage("a1", section="Topic > Formal"),
@@ -281,7 +281,7 @@ def test_grouping_keeps_sections_sources_and_csv_records_separate():
 
 
 def test_grouping_rejects_missing_or_mismatched_citations():
-    from decidr.hybrid import group_ranked_evidence
+    from decidr.retrieval.hybrid import group_ranked_evidence
 
     passage = _grouping_passage("a1")
     result = _grouping_result(passage, 1)
@@ -294,7 +294,7 @@ def test_grouping_rejects_missing_or_mismatched_citations():
         group_ranked_evidence([result], [passage])
 
 def test_record_references_distinguish_identity_link_and_mention():
-    from decidr.retrieval import find_record_references
+    from decidr.retrieval.lexical import find_record_references
 
     record = _grouping_passage("a1", row="CASE-731")
     audit = _grouping_passage("b1", source="audit", row="EVENT-812")
@@ -327,7 +327,7 @@ def test_record_references_distinguish_identity_link_and_mention():
     ["CASE-7310", "CASE-731-02", "OTHER-CASE-731", "CASE-731_extra"],
 )
 def test_record_references_do_not_match_partial_identifiers(text):
-    from decidr.retrieval import find_record_references
+    from decidr.retrieval.lexical import find_record_references
 
     passage = _grouping_passage("a1")
     passage.text = text
@@ -335,7 +335,7 @@ def test_record_references_do_not_match_partial_identifiers(text):
 
 
 def test_record_references_preserve_multiple_targets_and_unknowns():
-    from decidr.retrieval import find_record_references
+    from decidr.retrieval.lexical import find_record_references
 
     passage = _grouping_passage("a1")
     passage.text = "CASE-731 and INCIDENT-2026-02 concern different events."
@@ -349,8 +349,8 @@ def test_record_references_preserve_multiple_targets_and_unknowns():
     assert find_record_references("Was the billing release approved?", [passage]) == []
 
 def test_corpus_search_anchors_to_explicit_record_without_unrelated_policy(corpus_store):
-    from decidr.hybrid import search_corpus
-    from decidr.retrieval_store import replace_source_evidence
+    from decidr.retrieval.hybrid import search_corpus
+    from decidr.corpus.store import replace_source_evidence
 
     audit_source = corpus_store.execute(
         "SELECT source_id FROM evidence WHERE locator LIKE '%AUD-9001%'"
@@ -386,8 +386,8 @@ def test_corpus_search_anchors_to_explicit_record_without_unrelated_policy(corpu
 
 
 def test_corpus_search_groups_before_limit_and_retains_context(corpus_store):
-    from decidr.hybrid import search_corpus
-    from decidr.retrieval_store import replace_source_evidence
+    from decidr.retrieval.hybrid import search_corpus
+    from decidr.corpus.store import replace_source_evidence
 
     source_id = "test:POL-91"
     passages = [
@@ -418,8 +418,8 @@ def test_corpus_search_groups_before_limit_and_retains_context(corpus_store):
 
 
 def test_corpus_search_semantic_union_and_reference_deduplication(corpus_store):
-    from decidr.hybrid import reciprocal_rank_fusion, search_corpus
-    from decidr.semantic import semantic_search_text
+    from decidr.retrieval.hybrid import reciprocal_rank_fusion, search_corpus
+    from decidr.retrieval.semantic import semantic_search_text
 
     query = "AUD-9001 travel"
     embedder = RecordingEmbedder()
@@ -445,7 +445,7 @@ def test_corpus_search_semantic_union_and_reference_deduplication(corpus_store):
 
 @pytest.mark.parametrize("query,limit", [("", 8), ("   ", 8), ("travel", 0)])
 def test_corpus_search_noop_does_not_encode_or_write(corpus_store, query, limit):
-    from decidr.hybrid import search_corpus
+    from decidr.retrieval.hybrid import search_corpus
 
     embedder = RecordingEmbedder()
     before = corpus_store.total_changes
@@ -461,8 +461,8 @@ def test_corpus_search_noop_does_not_encode_or_write(corpus_store, query, limit)
 @pytest.mark.parametrize("query", ["CASE-731 approval", "general approval"])
 @pytest.mark.parametrize("limit", [1, 3])
 def test_corpus_record_priority_preserves_retrieval(corpus_store, monkeypatch, query, limit):
-    import decidr.hybrid as hybrid
-    from decidr.retrieval_store import replace_source_evidence
+    import decidr.retrieval.hybrid as hybrid
+    from decidr.corpus.store import replace_source_evidence
 
     source = "test:POL-91"
     generic = _grouping_passage("generic1", source=source, section="General")
@@ -523,7 +523,7 @@ def test_corpus_record_priority_preserves_retrieval(corpus_store, monkeypatch, q
 
 
 def test_unknown_identifier_does_not_fall_back_to_keyword_matches(corpus_store):
-    from decidr.hybrid import search_corpus
+    from decidr.retrieval.hybrid import search_corpus
     result = search_corpus(corpus_store, "CASE-987654 travel approval", limit=8)
     assert not result.ranked_groups
     assert not result.additional_linked_groups
@@ -533,7 +533,7 @@ def test_index_evidence_then_preload_roundtrip(corpus_store, tmp_path):
     """Pre-index embeds once into the persistent cache; preload copies vectors into a retrieval DB."""
     from types import SimpleNamespace
 
-    from decidr.semantic import index_evidence, preload_cached_vectors
+    from decidr.retrieval.semantic import index_evidence, preload_cached_vectors
 
     cache = tmp_path / "embedding_cache.sqlite"
     rows = corpus_store.execute(
@@ -558,6 +558,6 @@ def test_index_evidence_then_preload_roundtrip(corpus_store, tmp_path):
 
 
 def test_preload_missing_cache_is_noop(corpus_store, tmp_path):
-    from decidr.semantic import preload_cached_vectors
+    from decidr.retrieval.semantic import preload_cached_vectors
 
     assert preload_cached_vectors(corpus_store, cache_path=tmp_path / "absent.sqlite") == 0

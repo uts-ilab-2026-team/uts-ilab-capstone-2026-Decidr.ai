@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from decidr.config import PROCESSED_DATA_DIR, PROJ_ROOT, RAW_DATA_DIR
+from decidr.infra.config import PROCESSED_DATA_DIR, PROJ_ROOT, RAW_DATA_DIR
 
 
 def test_dataset_directories_are_anchored_to_project_root() -> None:

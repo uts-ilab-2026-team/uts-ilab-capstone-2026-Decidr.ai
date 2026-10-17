@@ -1,6 +1,6 @@
 import pytest
 
-from decidr.transaction_claims import parse_transaction_claim
+from decidr.claims.transaction import parse_transaction_claim
 
 CLAIM = "CASE-782 Jordan approved 37% discount before the contract was signed."
 

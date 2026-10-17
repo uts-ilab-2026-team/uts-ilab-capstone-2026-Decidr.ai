@@ -17,13 +17,13 @@ if not (ROOT / 'decidr/assessment_adapter.py').is_file():
     raise SystemExit('Run this script from the Decidr-integration repository.')
 sys.path.insert(0, str(ROOT))
 
-from framework import CONFIG_PATH
-from framework.config import GraphCredibilityConfig
-from framework.credibility import GraphCredibilityFramework
+from decidr.graph import CONFIG_PATH
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.graph.credibility import GraphCredibilityFramework
 import decidr.assessment_adapter as adapter
 from decidr.assessment_response import serialize_facet_assessment
 from decidr.interpretation_models import EvidenceInterpretation, InterpretationCitation
-from decidr.retrieval_models import Evidence, Source
+from decidr.corpus.models import Evidence, Source
 
 VERSION = 'recorded-statement-sensitivity-v1'
 BROAD_TARGETS = {
@@ -151,7 +151,7 @@ def main():
     config_bytes = CONFIG_PATH.read_bytes()
     config = GraphCredibilityConfig.load(CONFIG_PATH)
     code_paths = [Path(inspect.getfile(GraphCredibilityFramework)),
-                  Path(inspect.getfile(adapter)), ROOT / 'decidr/assessment_targets.py',
+                  Path(inspect.getfile(adapter)), ROOT / 'decidr/infra/targets.py',
                   Path(__file__).resolve()]
     hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in code_paths}
     results = []

@@ -7,7 +7,7 @@ edge. These unit-test _add_owned_by directly with a hand-built builder.
 
 from types import SimpleNamespace
 
-from decidr.backbone_graph import _GraphBuilder, _add_owned_by
+from decidr.backbone import _GraphBuilder, _add_owned_by
 
 
 def _builder() -> _GraphBuilder:
@@ -81,7 +81,7 @@ def test_committed_graph_has_owned_by_edges():
     import pathlib
 
     graph = json.loads(
-        pathlib.Path("framework/data/corpus_graph.json").read_text(encoding="utf-8")
+        pathlib.Path("decidr/graph/data/corpus_graph.json").read_text(encoding="utf-8")
     )
     owned = [e for e in graph["edges"] if e["relationship"] == "OWNED_BY"]
     assert len(owned) == 14

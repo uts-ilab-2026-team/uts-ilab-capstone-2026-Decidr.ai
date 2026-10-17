@@ -1,6 +1,6 @@
 """Single-path claim assessment endpoint: NL claim -> graph-engine credibility verdict.
 
-Exposes the ``decidr.assess_claim`` pipeline (split -> retrieve -> read -> shim -> graph engine
+Exposes the ``decidr.pipeline`` pipeline (split -> retrieve -> read -> shim -> graph engine
 -> combine) over HTTP for the frontend. Returns ``to_payload``'s clean, UI-ready shape — NOT the
 legacy ``build_general_bundle`` envelope. The older ``/api/corpus/assess-automatic`` route is left
 untouched as a fallback.
@@ -14,15 +14,15 @@ from functools import lru_cache
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
-from framework import CONFIG_PATH
-from framework.config import GraphCredibilityConfig
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from decidr.api import auth
-from decidr.assess_claim import assess_claim, to_payload
-from decidr.backbone_assessment import load_skeleton
+from decidr.backbone.assessment import load_skeleton
 from decidr.claim_interpreter import ProviderError, get_provider
-from decidr.finding_shim import load_corpus_snapshot
+from decidr.graph import CONFIG_PATH
+from decidr.graph.config import GraphCredibilityConfig
+from decidr.pipeline import assess_claim, to_payload
+from decidr.reading.finding_shim import load_corpus_snapshot
 
 router = APIRouter(
     prefix="/api/corpus",

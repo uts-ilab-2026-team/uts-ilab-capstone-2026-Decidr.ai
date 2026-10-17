@@ -17,8 +17,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import Field
 
-from decidr import assessment_history as history
 from decidr.api import auth
+from decidr.infra import history
 
 router = APIRouter(prefix="/api/assessments")
 Owner = Annotated[dict, Depends(auth.current_user)]
@@ -67,22 +67,33 @@ def implementation_manifest() -> dict:
         "decidr/api/automatic_assessment.py",
         "decidr/api/graph_assessment.py",
         "decidr/api/assessment_history.py",
-        "decidr/assessment_history.py",
-        "decidr/assess_claim.py",
-        "decidr/backbone_graph.py",
-        "decidr/backbone_assessment.py",
-        "decidr/finding_shim.py",
-        "decidr/claim_combiner.py",
-        "decidr/claim_split.py",
-        "decidr/fast_reader.py",
-        "decidr/claim_interpreter.py",
-        "decidr/claim_spans.py",
-        "decidr/retrieval_models.py",
-        "decidr/ingestion.py",
-        "decidr/hybrid.py",
-        "decidr/retrieval_store.py",
+        "decidr/infra/history.py",
+        "decidr/reading/finding_shim.py",
+        "decidr/claims/combiner.py",
+        "decidr/claims/split.py",
+        "decidr/reading/fast_reader.py",
+        "decidr/claims/spans.py",
+        "decidr/corpus/models.py",
+        "decidr/retrieval/hybrid.py",
+        "decidr/corpus/store.py",
     ]
-    names.extend(str(p.relative_to(root)) for p in sorted((root / "framework").glob("*.py")))
+    names.extend(
+        str(p.relative_to(root))
+        for p in sorted((root / "decidr" / "claim_interpreter").glob("*.py"))
+    )
+    names.extend(
+        str(p.relative_to(root)) for p in sorted((root / "decidr" / "pipeline").glob("*.py"))
+    )
+    names.extend(
+        str(p.relative_to(root))
+        for p in sorted((root / "decidr" / "corpus" / "ingest").glob("*.py"))
+    )
+    names.extend(
+        str(p.relative_to(root)) for p in sorted((root / "decidr" / "backbone").glob("*.py"))
+    )
+    names.extend(
+        str(p.relative_to(root)) for p in sorted((root / "decidr" / "graph").glob("*.py"))
+    )
     hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names}
     return {
         "method": "source-files-on-disk-v1",
